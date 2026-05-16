@@ -316,7 +316,7 @@
         // =========================================
         // ===         التنقل بين الصفحات        ===
         // =========================================
-        window.showPage = function(pageId) {
+            window.showPage = function(pageId) {
             currentActivePage = pageId;
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById('page-' + pageId).classList.add('active');
@@ -328,6 +328,9 @@
             const titles = { 'daily': 'البيان اليومي', 'monthly': 'البنود الشهرية', 'history': 'إدخال بيانات سابقة', 'report30': 'تقرير 30 يوم', 'reportFull': 'التقرير الشامل', 'users': 'إدارة المستخدمين' };
             document.getElementById('page-title').textContent = titles[pageId];
             toggleMobileMenu(true); 
+            
+            // دالة عشان تعرض البيانات فوراً لما تفتح الشاشة
+            renderCurrentPage(); 
         }
 
         window.toggleMobileMenu = function(forceClose = false) {
