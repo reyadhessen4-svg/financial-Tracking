@@ -650,12 +650,42 @@
                     </div>
                 </div>`;
 
-            const fields = [ { key: 'bankBalance', label: 'رصيد البنك' }, { key: 'caravansBalance', label: 'رصيد القوافل' }, { key: 'vendorsBalance', label: 'رصيد الموردين' }, { key: 'customersDue', label: 'مستحقة العملاء' }, { key: 'customersBilled', label: 'محررة العملاء' }, { key: 'collectionBalance', label: 'رصيد التحصيل' } ];
+                        const fields = [ { key: 'bankBalance', label: 'رصيد البنك' }, { key: 'caravansBalance', label: 'رصيد القوافل' }, { key: 'vendorsBalance', label: 'رصيد الموردين' }, { key: 'customersDue', label: 'مستحقة العملاء' }, { key: 'customersBilled', label: 'محررة العملاء' }, { key: 'collectionBalance', label: 'رصيد التحصيل' } ];
+            
             fields.forEach(field => {
-                const values = data.map(d => Number(d[field.key])||0).filter(v => v > 0);
-                const max = values.length > 0 ? Math.max(...values) : 0;
-                const min = values.length > 0 ? Math.min(...values) : 0;
-                container.innerHTML += `<div class="border border-slate-200 rounded-lg p-4 bg-slate-50"><h4 class="font-bold text-slate-800 mb-3">${field.label}</h4><div class="flex justify-between text-sm"><div class="text-emerald-600"><span class="block text-slate-500 text-xs">أعلى مبلغ</span><span class="font-bold text-lg">${max.toLocaleString()}</span></div><div class="text-red-600"><span class="block text-slate-500 text-xs">أقل مبلغ</span><span class="font-bold text-lg">${min.toLocaleString()}</span></div></div></div>`;
+                // بنجيب البيانات اللي مش بصفر عشان نتجاهلها زي ما طلبت
+                const filteredData = data.filter(d => Number(d[field.key]) !== 0);
+                
+                let max = 0, min = 0, maxDate = '', minDate = '';
+                
+                if (filteredData.length > 0) {
+                    // نجيب صف البيان اللي فيه أعلى مبلغ
+                    const maxItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) > Number(current[field.key])) ? prev : current);
+                    max = Number(maxItem[field.key]) || 0;
+                    maxDate = maxItem.date || ''; // نستخرج التاريخ
+                    
+                    // نجيب صف البيان اللي فيه أقل مبلغ
+                    const minItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) < Number(current[field.key])) ? prev : current);
+                    min = Number(minItem[field.key]) || 0;
+                    minDate = minItem.date || ''; // نستخرج التاريخ
+                }
+
+                container.innerHTML += `
+                <div class="border border-slate-200 rounded-lg p-4 bg-slate-50">
+                    <h4 class="font-bold text-slate-800 mb-3">${field.label}</h4>
+                    <div class="flex justify-between text-sm">
+                        <div class="text-emerald-600">
+                            <span class="block text-slate-500 text-xs">أعلى مبلغ</span>
+                            <span class="font-bold text-lg">${max.toLocaleString()}</span>
+                            ${maxDate ? `<span class="block text-slate-400 text-[10px] mt-1"><i class="fa-regular fa-calendar ml-1"></i>${maxDate}</span>` : ''}
+                        </div>
+                        <div class="text-red-600">
+                            <span class="block text-slate-500 text-xs">أقل مبلغ</span>
+                            <span class="font-bold text-lg">${min.toLocaleString()}</span>
+                            ${minDate ? `<span class="block text-slate-400 text-[10px] mt-1"><i class="fa-regular fa-calendar ml-1"></i>${minDate}</span>` : ''}
+                        </div>
+                    </div>
+                </div>`;
             });
         }
 
