@@ -114,6 +114,9 @@
                 <button onclick="showPage('reportFull')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="reportFull">
                     <i class="fa-solid fa-chart-pie w-4 h-4"></i><span>التقرير الشامل</span>
                 </button>
+                <button onclick="showPage('monthlySales')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="monthlySales">
+                    <i class="fa-solid fa-cart-shopping w-4 h-4"></i><span>المبيعات الشهرية</span>
+                </button>
             </nav>
             <div class="border-t border-[#1e293b] p-4">
                 <div class="flex items-center gap-3">
@@ -213,14 +216,40 @@
                     <div id="report30-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 </div>
 
-                <!-- 5. التقرير الشامل -->
+                                <!-- 5. التقرير الشامل -->
                 <div id="page-reportFull" class="page space-y-6">
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
                         <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-chart-pie text-indigo-600"></i> التقرير الشامل</h2>
+                        
+                        <div class="flex flex-wrap gap-4 items-end mb-6 pb-4 border-b border-slate-100">
+                            <div><label class="block text-sm text-slate-500 mb-1">من تاريخ</label><input type="date" id="rf-start" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <div><label class="block text-sm text-slate-500 mb-1">إلى تاريخ</label><input type="date" id="rf-end" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <button onclick="calcReportFull()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg h-10">عرض التقرير</button>
+                        </div>
+
                         <div id="reportFull-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                     </div>
                 </div>
+                <!-- 5.5 المبيعات الشهرية -->
+                <div id="page-monthlySales" class="page space-y-6">
+                    <div class="flex flex-wrap gap-4 items-end bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                        <div><label class="block text-sm text-slate-500 mb-1">من تاريخ</label><input type="date" id="ms-start" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                        <div><label class="block text-sm text-slate-500 mb-1">إلى تاريخ</label><input type="date" id="ms-end" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                        <button onclick="calcMonthlySales()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg h-10">عرض المبيعات</button>
+                    </div>
+                    
+                    <div id="ms-total-card" class="hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div><p class="text-sm text-slate-500 mb-1">إجمالي المبيعات (المبالغ المحررة) خلال الفترة</p><h3 id="ms-total-val" class="text-2xl font-bold text-emerald-700">0 <span class="text-sm font-normal">ر.س</span></h3></div>
+                        <div class="p-3 rounded-xl bg-emerald-50 text-emerald-600"><i class="fa-solid fa-file-invoice-dollar text-xl"></i></div>
+                    </div>
 
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
+                        <table class="w-full text-sm text-right">
+                            <thead class="bg-slate-50 text-slate-600"><tr><th class="p-4 font-medium">التاريخ</th><th class="p-4 font-medium">إجمالي المبالغ المحررة للعملاء</th></tr></thead>
+                            <tbody id="ms-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
                 <!-- 6. إدارة المستخدمين -->
                 <div id="page-users" class="page space-y-6">
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
@@ -325,7 +354,7 @@
             const navBtn = document.querySelector(`.nav-item[data-page="${pageId}"]`);
             if(navBtn) navBtn.classList.add('active');
 
-            const titles = { 'daily': 'البيان اليومي', 'monthly': 'البنود الشهرية', 'history': 'إدخال بيانات سابقة', 'report30': 'تقرير 30 يوم', 'reportFull': 'التقرير الشامل', 'users': 'إدارة المستخدمين' };
+            const titles = { 'daily': 'البيان اليومي', 'monthly': 'البنود الشهرية', 'history': 'إدخال بيانات سابقة', 'report30': 'تقرير 30 يوم', 'reportFull': 'التقرير الشامل', 'monthlySales': 'المبيعات الشهرية', 'users': 'إدارة المستخدمين' };
             document.getElementById('page-title').textContent = titles[pageId];
             toggleMobileMenu(true); 
             
@@ -487,8 +516,15 @@
         // =========================================
         // ===       5. التقرير الشامل           ===
         // =========================================
-        window.calcReportFull = function() {
-            const data = (window.dailyStatementsArr || []).slice(0, 30);
+            window.calcReportFull = function() {
+            const startDate = document.getElementById('rf-start').value;
+            const endDate = document.getElementById('rf-end').value;
+            let data = window.dailyStatementsArr || [];
+            
+            // تصفية البيانات حسب التاريخ
+            if(startDate) data = data.filter(d => d.date >= startDate);
+            if(endDate) data = data.filter(d => d.date <= endDate);
+
             const container = document.getElementById('reportFull-cards');
             container.innerHTML = '';
             const monthlyItems = window.monthlyItemsArr || [];
@@ -516,7 +552,6 @@
                 container.innerHTML += `<div class="border border-slate-200 rounded-lg p-4 bg-slate-50"><h4 class="font-bold text-slate-800 mb-3">${field.label}</h4><div class="flex justify-between text-sm"><div class="text-emerald-600"><span class="block text-slate-500 text-xs">أعلى مبلغ</span><span class="font-bold text-lg">${max.toLocaleString()}</span></div><div class="text-red-600"><span class="block text-slate-500 text-xs">أقل مبلغ</span><span class="font-bold text-lg">${min.toLocaleString()}</span></div></div></div>`;
             });
         }
-
         // =========================================
         // ===       6. إدارة المستخدمين         ===
         // =========================================
@@ -561,12 +596,42 @@
         // =========================================
         // ===          تشغيل النظام             ===
         // =========================================
-        function renderCurrentPage() {
+            function renderCurrentPage() {
             if(currentActivePage === 'history') renderHistory();
             if(currentActivePage === 'monthly') renderMonthlyItems();
             if(currentActivePage === 'report30') calcReport30();
             if(currentActivePage === 'reportFull') calcReportFull();
+            if(currentActivePage === 'monthlySales') calcMonthlySales();
             if(currentActivePage === 'users') renderUsers();
+        }
+
+        // دالة المبيعات الشهرية الجديدة
+        window.calcMonthlySales = function() {
+            const startDate = document.getElementById('ms-start').value;
+            const endDate = document.getElementById('ms-end').value;
+            let data = window.dailyStatementsArr || [];
+            
+            if(startDate) data = data.filter(d => d.date >= startDate);
+            if(endDate) data = data.filter(d => d.date <= endDate);
+            
+            let totalBilled = 0;
+            const tbody = document.getElementById('ms-table-body');
+            tbody.innerHTML = '';
+            
+            if(data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="2" class="p-4 text-center text-slate-400">لا توجد بيانات لهذه الفترة</td></tr>';
+                document.getElementById('ms-total-card').classList.add('hidden');
+                return;
+            }
+            
+            document.getElementById('ms-total-card').classList.remove('hidden');
+            
+            data.forEach(item => {
+                totalBilled += item.customersBilled;
+                tbody.innerHTML += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${item.date}</td><td class="p-4 text-emerald-700 font-bold">${item.customersBilled.toLocaleString()} ر.س</td></tr>`;
+            });
+            
+            document.getElementById('ms-total-val').innerHTML = `${totalBilled.toLocaleString()} <span class="text-sm font-normal">ر.س</span>`;
         }
 
         function initApp() {
