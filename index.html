@@ -93,6 +93,11 @@
                 </div>
             </div>
             <nav class="flex-1 overflow-y-auto py-3 px-3">
+                              <div class="mt-4 pt-4 border-t border-[#1e293b]">
+                    <button onclick="showPage('users')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1 admin-only" data-page="users">
+                        <i class="fa-solid fa-shield-halved w-4 h-4"></i><span>إدارة المستخدمين</span>
+                    </button>
+                </div>
                 <p class="px-3 py-2 text-slate-500 text-xs font-bold">المتابعة اليومية</p>
                 <button onclick="showPage('daily')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="daily">
                     <i class="fa-solid fa-pen-to-square w-4 h-4"></i><span>البيان اليومي</span>
@@ -272,7 +277,49 @@
                     </div>
                     <div id="report30-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 </div>
-
+                <!-- 6. إدارة المستخدمين -->
+                <div id="page-users" class="page space-y-6">
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
+                        <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-user-plus text-indigo-600"></i> إضافة مستخدم جديد</h2>
+                        <div class="flex flex-wrap gap-4 items-end">
+                            <div class="flex-1 min-w-[150px]">
+                                <label class="block text-sm font-medium text-slate-600 mb-1">اسم المستخدم (للدخول)</label>
+                                <input type="text" id="u-username" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            </div>
+                            <div class="flex-1 min-w-[150px]">
+                                <label class="block text-sm font-medium text-slate-600 mb-1">الاسم المعروض</label>
+                                <input type="text" id="u-displayname" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            </div>
+                            <div class="w-40">
+                                <label class="block text-sm font-medium text-slate-600 mb-1">كلمة المرور</label>
+                                <input type="password" id="u-password" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            </div>
+                            <div class="w-40">
+                                <label class="block text-sm font-medium text-slate-600 mb-1">الصلاحية</label>
+                                <select id="u-role" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                                    <option value="مشاهد">مشاهد (قراءة فقط)</option>
+                                    <option value="محرر">محرر (إضافة وتعديل)</option>
+                                    <option value="مدير">مدير (كامل)</option>
+                                </select>
+                            </div>
+                            <button onclick="addUser()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium">إضافة</button>
+                        </div>
+                    </div>
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
+                        <table class="w-full text-sm text-right">
+                            <thead class="bg-slate-50 text-slate-600">
+                                <tr>
+                                    <th class="p-4 font-medium">اسم المستخدم</th>
+                                    <th class="p-4 font-medium">الاسم المعروض</th>
+                                    <th class="p-4 font-medium">الصلاحية</th>
+                                    <th class="p-4 font-medium">الحالة</th>
+                                    <th class="p-4 font-medium">إجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
                 <!-- 5. التقرير الشامل -->
                 <div id="page-reportFull" class="page space-y-6">
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
@@ -286,6 +333,125 @@
     </div>
 
     <!-- Firebase & Core Script -->
+           // =========================================
+        // ===       6. إدارة المستخدمين         ===
+        // =========================================
+        
+        // تعديل نظام تسجيل الدخول ليعمل مع Firebase
+        document.getElementById('login-form').removeEventListener('submit', window.loginHandler);
+        window.loginHandler = async function(e) {
+            e.preventDefault();
+            const u = document.getElementById('login-user').value;
+            const p = document.getElementById('login-pass').value;
+            
+            // التحقق من المستخدمين في قاعدة البيانات
+            const usersArr = window.usersArr || [];
+            const foundUser = usersArr.find(user => user.username.toLowerCase() === u.toLowerCase() && user.password === p && user.isActive);
+
+            if (foundUser) {
+                window.currentUserRole = foundUser.role;
+                window.currentUserName = foundUser.displayName;
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+                document.getElementById('main-app').classList.add('flex');
+                applyRoleAccess();
+                initApp();
+            } else {
+                document.getElementById('login-error').classList.remove('hidden');
+            }
+        };
+        document.getElementById('login-form').addEventListener('submit', window.loginHandler);
+
+        // تطبيق الصلاحيات على القائمة الجانبية
+        window.applyRoleAccess = function() {
+            const adminOnlyElements = document.querySelectorAll('.admin-only');
+            const editorOnlyElements = document.querySelectorAll('.editor-only');
+            
+            // إخفاء زر إدارة المستخدمين لغير المديرين
+            adminOnlyElements.forEach(el => {
+                el.style.display = window.currentUserRole === 'مدير' ? '' : 'none';
+            });
+        }
+
+        // استماع لبيانات المستخدمين من Firebase
+        onValue(ref(db, 'users'), (snapshot) => {
+            const data = snapshot.val();
+            window.usersArr = data ? Object.values(data) : [];
+            
+            // لو مفيش مستخدمين في الداتابيز (أول مرة)، أضف المستخدم الأساسي
+            if(window.usersArr.length === 0) {
+                set(ref(db, 'users/u1'), {
+                    id: 'u1',
+                    username: 'Reyad',
+                    displayName: 'Reyad Hussein',
+                    password: '1357',
+                    role: 'مدير',
+                    isActive: true
+                });
+            }
+            
+            if(currentActivePage === 'users') renderUsers();
+        });
+
+        window.addUser = function() {
+            const username = document.getElementById('u-username').value;
+            const displayName = document.getElementById('u-displayname').value;
+            const password = document.getElementById('u-password').value;
+            const role = document.getElementById('u-role').value;
+            
+            if(!username || !password) return alert('أدخل اسم المستخدم وكلمة المرور');
+            
+            const newUserRef = push(ref(db, 'users'));
+            set(newUserRef, {
+                id: newUserRef.key,
+                username: username,
+                displayName: displayName || username,
+                password: password,
+                role: role,
+                isActive: true
+            }).then(() => {
+                document.getElementById('u-username').value = '';
+                document.getElementById('u-displayname').value = '';
+                document.getElementById('u-password').value = '';
+            });
+        }
+
+        window.toggleUserStatus = function(id, currentStatus) {
+            const updates = {};
+            updates['/users/' + id + '/isActive'] = !currentStatus;
+            update(ref(db), updates);
+        }
+
+        function renderUsers() {
+            const tbody = document.getElementById('users-table-body');
+            const data = window.usersArr || [];
+            tbody.innerHTML = '';
+            
+            if(data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">لا يوجد مستخدمين</td></tr>';
+                return;
+            }
+
+            data.forEach(user => {
+                const roleClass = user.role === 'مدير' ? 'bg-red-100 text-red-700' : user.role === 'محرر' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700';
+                const statusText = user.isActive ? 'نشط' : 'معطل';
+                const statusBtnClass = user.isActive ? 'text-red-600 hover:text-red-800' : 'text-emerald-600 hover:text-emerald-800';
+                
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-4 font-medium">${user.username}</td>
+                        <td class="p-4">${user.displayName}</td>
+                        <td class="p-4"><span class="px-2 py-1 rounded-full text-xs ${roleClass}">${user.role}</span></td>
+                        <td class="p-4"><span class="text-xs ${user.isActive ? 'text-emerald-600' : 'text-red-600'}">${statusText}</span></td>
+                        <td class="p-4">
+                            <button onclick="toggleUserStatus('${user.id}', ${user.isActive})" class="${statusBtnClass} text-sm">
+                                <i class="fa-solid ${user.isActive ? 'fa-ban' : 'fa-check-circle'} ml-1"></i> ${user.isActive ? 'تعطيل' : 'تفعيل'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
     <script type="module">
         // 1. استدعاء مكتبات Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
