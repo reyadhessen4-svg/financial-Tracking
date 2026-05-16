@@ -472,23 +472,21 @@
             XLSX.writeFile(wb, "Financial_Template.xlsx");
         }
 
-                window.handleExcelUpload = function(event) {
+                       window.handleExcelUpload = function(event) {
             const file = event.target.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
                 const data = new Uint8Array(e.target.result);
                 
-                // إضافة cellDates: true عشان يحول أرقام الإكسيل لتواريخ حقيقية
+                // تحويل التواريخ تلقائياً
                 const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-                
-                // إضافة raw: false و dateNF عشان يطلع التاريخ بصيغة نصية yyyy-mm-dd بدل ما يطلعه رقم
                 const jsonArr = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: false, dateNF: 'yyyy-mm-dd' });
                 
                 let updates = {}; let count = 0;
 
                 jsonArr.forEach(row => {
                     if (row.date) {
-                        // تنظيف التاريخ لو ظهر معه وقت (زي 2025-01-15 00:00:00) يأخذ الأول بس
+                        // تنظيف التاريخ لو ظهر معه وقت
                         let dateStr = String(row.date).split('T')[0].split(' ')[0];
                         
                         updates['/dailyStatements/' + dateStr] = {
@@ -504,7 +502,7 @@
                     }
                 });
 
-                                if(count > 0) {
+                if(count > 0) {
                     update(ref(db), updates).then(() => {
                         alert(`تم رفع وإضافة ${count} سجل بنجاح!`);
                         // تحديث الشاشة فوراً بعد الرفع
