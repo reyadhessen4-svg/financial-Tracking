@@ -10,6 +10,7 @@
     <script>
         tailwind.config = { theme: { extend: { fontFamily: { sans: ['Tajawal', 'sans-serif'] } } } }
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
         body { font-family: 'Tajawal', sans-serif; }
@@ -105,6 +106,9 @@
                 </button>
                 <button onclick="showPage('monthlySales')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="monthlySales">
                     <i class="fa-solid fa-cart-shopping w-4 h-4"></i><span>المبيعات الشهرية</span>
+                </button>
+                    <button onclick="showPage('adminReport')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="adminReport">
+                    <i class="fa-solid fa-file-pdf w-4 h-4"></i><span>تقرير الإدارة</span>
                 </button>
             </nav>
             <div class="border-t border-[#1e293b] p-4">
@@ -240,6 +244,56 @@
                     </div>
                 </div>
 
+                                <!-- 7. تقرير الإدارة -->
+                <div id="page-adminReport" class="page space-y-6">
+                    <div class="flex flex-wrap gap-4 items-end bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                        <div><label class="block text-sm text-slate-500 mb-1">اختر يوم التقرير</label><input type="date" id="ar-date" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                        <button onclick="generateAdminReport()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg h-10">عرض التقرير</button>
+                        <button onclick="exportAdminReportPDF()" class="bg-red-600 text-white px-4 py-2 rounded-lg h-10 flex items-center gap-2"><i class="fa-solid fa-file-pdf"></i> تصدير PDF</button>
+                    </div>
+
+                    <div id="admin-report-content" class="bg-white border border-slate-200 shadow-sm rounded-xl p-8">
+                        <!-- رأس التقرير -->
+                        <div class="text-center border-b-2 border-slate-800 pb-4 mb-8">
+                            <h2 class="text-xl font-extrabold text-slate-800">زاد الجود للوجبات السريعة</h2>
+                            <h3 class="text-lg font-bold text-indigo-700 mt-1">التقرير المالي الإداري</h3>
+                            <p id="ar-date-display" class="text-slate-500 text-sm mt-2 font-medium">التاريخ: --</p>
+                        </div>
+
+                        <!-- قسم الأرصدة اليومية -->
+                        <div class="mb-8">
+                            <h4 class="font-bold text-slate-700 mb-4 text-md border-b border-slate-200 pb-2">أولاً: الأرصدة والبيان اليومي</h4>
+                            <div id="ar-daily-cards" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <!-- هنا هيتم وضع الكروت -->
+                            </div>
+                        </div>
+
+                        <!-- قسم البنود الشهرية المتبقية -->
+                        <div>
+                            <h4 class="font-bold text-slate-700 mb-4 text-md border-b border-slate-200 pb-2">ثانياً: المتبقي من الالتزامات والمصروفات الشهرية</h4>
+                            <table class="w-full text-sm text-right border-collapse">
+                                <thead class="bg-slate-100"><tr><th class="p-3 font-medium border border-slate-200">البند</th><th class="p-3 font-medium border border-slate-200">التصنيف</th><th class="p-3 font-medium border border-slate-200">المتبقي</th></tr></thead>
+                                <tbody id="ar-monthly-tbody" class="divide-y divide-slate-100">
+                                    <!-- هنا هيتم وضع البنود -->
+                                </tbody>
+                                <tfoot id="ar-monthly-footer" class="bg-slate-50 font-bold"></tfoot>
+                            </table>
+                        </div>
+                        
+                        <!-- توقيعات -->
+                        <div class="mt-12 pt-8 border-t-2 border-slate-200 grid grid-cols-2 gap-8 text-center">
+                            <div>
+                                <p class="text-sm text-slate-500 mb-8">مدير المالية</p>
+                                <div class="border-b border-slate-400 w-3/4 mx-auto"></div>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500 mb-8">المدير العام</p>
+                                <div class="border-b border-slate-400 w-3/4 mx-auto"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 6. إدارة المستخدمين -->
                 <div id="page-users" class="page space-y-6">
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
@@ -360,8 +414,7 @@
             const navBtn = document.querySelector(`.nav-item[data-page="${pageId}"]`);
             if(navBtn) navBtn.classList.add('active');
 
-            const titles = { 'daily': 'البيان اليومي', 'monthly': 'البنود الشهرية', 'history': 'إدخال بيانات سابقة', 'report30': 'تقرير 30 يوم', 'reportFull': 'التقرير الشامل', 'monthlySales': 'المبيعات الشهرية', 'users': 'إدارة المستخدمين' };
-            document.getElementById('page-title').textContent = titles[pageId];
+            const titles = { 'daily': 'البيان اليومي', 'monthly': 'البنود الشهرية', 'history': 'إدخال بيانات سابقة', 'report30': 'تقرير 30 يوم', 'reportFull': 'التقرير الشامل', 'monthlySales': 'المبيعات الشهرية', 'users': 'إدارة المستخدمين', 'adminReport': 'تقرير الإدارة' };            document.getElementById('page-title').textContent = titles[pageId];
             toggleMobileMenu(true); 
             renderCurrentPage(); 
         }
@@ -780,6 +833,87 @@
             }
         }
 
+              // =========================================
+        // ===       7. تقرير الإدارة            ===
+        // =========================================
+        window.generateAdminReport = function() {
+            const dateInput = document.getElementById('ar-date').value;
+            if(!dateInput) return alert('يرجى اختيار التاريخ أولاً');
+            
+            const date = normalizeDate(dateInput); // توحيد التاريخ
+            document.getElementById('ar-date-display').innerText = `التاريخ: ${date}`;
+            
+            // 1. ملء الأرصدة اليومية
+            const dayData = window.dailyStatementsArr.find(d => d.date === date);
+            const dailyCards = document.getElementById('ar-daily-cards');
+            
+            if(dayData) {
+                const items = [
+                    { label: 'الرصيد البنكي', value: Number(dayData.bankBalance)||0, color: 'text-blue-700 bg-blue-50 border-blue-200' },
+                    { label: 'رصيد القوافل', value: Number(dayData.caravansBalance)||0, color: 'text-purple-700 bg-purple-50 border-purple-200' },
+                    { label: 'رصيد الموردين', value: Number(dayData.vendorsBalance)||0, color: 'text-red-700 bg-red-50 border-red-200' },
+                    { label: 'مستحقة العملاء', value: Number(dayData.customersDue)||0, color: 'text-amber-700 bg-amber-50 border-amber-200' },
+                    { label: 'محررة العملاء', value: Number(dayData.customersBilled)||0, color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+                    { label: 'رصيد التحصيل', value: Number(dayData.collectionBalance)||0, color: 'text-cyan-700 bg-cyan-50 border-cyan-200' }
+                ];
+                
+                let cardsHtml = '';
+                items.forEach(item => {
+                    cardsHtml += `<div class="p-4 rounded-lg border ${item.color}">
+                        <span class="block text-xs font-medium mb-1">${item.label}</span>
+                        <span class="block text-lg font-bold">${item.value.toLocaleString()} ر.س</span>
+                    </div>`;
+                });
+                dailyCards.innerHTML = cardsHtml;
+            } else {
+                dailyCards.innerHTML = '<div class="col-span-3 text-center text-red-500 p-4 font-bold">لا توجد بيانات مسجلة في هذا اليوم</div>';
+            }
+
+            // 2. ملء البنود الشهرية المتبقية
+            const monthlyData = window.monthlyItemsArr || [];
+            const tbody = document.getElementById('ar-monthly-tbody');
+            const tfooter = document.getElementById('ar-monthly-footer');
+            let monthlyHtml = '';
+            let totalRemaining = 0;
+
+            monthlyData.forEach(item => {
+                const remaining = (item.totalAmount || 0) - (item.paidAmount || 0);
+                totalRemaining += remaining;
+                const typeClass = item.type === 'التزام' ? 'text-orange-700' : 'text-blue-700';
+                monthlyHtml += `<tr class="hover:bg-slate-50">
+                    <td class="p-3 border border-slate-200 font-medium">${item.name}</td>
+                    <td class="p-3 border border-slate-200 ${typeClass} text-center text-xs font-bold">${item.type}</td>
+                    <td class="p-3 border border-slate-200 text-red-700 font-bold text-center">${remaining.toLocaleString()} ر.س</td>
+                </tr>`;
+            });
+
+            tbody.innerHTML = monthlyHtml;
+            tfooter.innerHTML = `<tr>
+                <td class="p-3 border border-slate-200" colspan="2">الإجمالي المتبقي من الالتزامات</td>
+                <td class="p-3 border border-slate-200 text-red-900 text-center font-extrabold">${totalRemaining.toLocaleString()} ر.س</td>
+            </tr>`;
+        }
+
+        window.exportAdminReportPDF = function() {
+            const element = document.getElementById('admin-report-content');
+            const dateInput = document.getElementById('ar-date').value || 'report';
+            
+            // إعدادات الـ PDF
+            const opt = {
+                margin:       [0.5, 0.5, 0.5, 0.5], // هوامش
+                filename:     `تقرير_الإدارة_${dateInput}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            // رسالة تحميل
+            alert('جاري إعداد ملف PDF، يرجى الانتظار...');
+
+            // توليد وحفظ الملف
+            html2pdf().set(opt).from(element).save();
+        }  
+        
         function initApp() {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('d-date').value = today;
