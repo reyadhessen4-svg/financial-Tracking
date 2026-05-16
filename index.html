@@ -298,7 +298,11 @@
                         </div>
 
                 <!-- 6. إدارة المستخدمين -->
-                <div id="page-users" class="page space-y-6">
+                                <!-- صندوق الكشف عن المشكلة -->
+                <div id="users-debug" class="bg-yellow-100 text-yellow-800 p-2 text-center text-xs font-bold rounded-lg mb-2">
+                    جاري تحميل بيانات المستخدمين...
+                </div>
+                        <div id="page-users" class="page space-y-6">
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
                         <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-user-plus text-indigo-600"></i> إضافة مستخدم جديد</h2>
                         <div class="flex flex-wrap gap-4 items-end">
@@ -956,33 +960,45 @@
             update(ref(db), updates);
         }
 
-                onValue(ref(db, 'users'), (snapshot) => {
+            onValue(ref(db, 'users'), (snapshot) => {
             const data = snapshot.val();
             window.usersArr = data ? Object.values(data) : [];
-            console.log("Users Data Loaded:", window.usersArr.length, "users"); // عشان نعرف الداتا وصلت
+            console.log("Users Data Loaded:", window.usersArr.length, "users");
             
             // لو مفيش يوزرات، أنشئ المدير الأساسي
             if(window.usersArr.length === 0) {
                 set(ref(db, 'users/u1'), { id: 'u1', username: 'Reyad', displayName: 'Reyad Hussein', password: '1357', role: 'مدير', isActive: true });
             }
             
-            // إجبار الشاشة على الرسم لو انت داخل عليها
+            // لو الشاشة المفتوحة هي يوزرات، ارسمها فوراً
             if(currentActivePage === 'users') {
                 renderUsers();
             }
+        }, (error) => {
+            console.error("Firebase Users Error:", error);
+            const debugBox = document.getElementById('users-debug');
+            if(debugBox) debugBox.innerHTML = "❌ خطأ في قراءة المستخدمين: " + error.message;
         });
 
-                function renderUsers() {
+            function renderUsers() {
             const tbody = document.getElementById('users-table-body');
-            if(!tbody) return; // حماية
+            const debugBox = document.getElementById('users-debug');
+            
+            if(!tbody) {
+                if(debugBox) debugBox.innerHTML = "❌ خطأ: لم يتم العثور على جدول المستخدمين في الصفحة!";
+                return;
+            }
             
             const data = window.usersArr || [];
             tbody.innerHTML = '';
             
             if(data.length === 0) { 
                 tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">لا يوجد مستخدمين</td></tr>'; 
+                if(debugBox) debugBox.innerHTML = "⚠️ الاتصال تمام، لكن لا يوجد مستخدمين في الداتابيز";
                 return; 
             }
+            
+            if(debugBox) debugBox.innerHTML = `✅ تم تحميل ${data.length} مستخدم بنجاح!`;
             
             let rowsHtml = '';
             data.forEach(user => {
