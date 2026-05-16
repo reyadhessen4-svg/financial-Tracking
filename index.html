@@ -368,10 +368,13 @@
         // =========================================
         // ===        1. البيان اليومي           ===
         // =========================================
-        document.getElementById('daily-form').addEventListener('submit', function(e) {
+                document.getElementById('daily-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            const date = document.getElementById('d-date').value;
+            let date = document.getElementById('d-date').value;
             if(!date) return alert('حدد التاريخ');
+            
+            // تحويل الشرطات المائلة إلى شرطات عادية عشان متتقسمش في Firebase
+            date = date.replace(/\//g, '-');
             
             const entry = {
                 date: date,
@@ -388,7 +391,7 @@
                     alert('تم حفظ البيان بنجاح');
                     this.reset();
                     document.getElementById('d-date').value = new Date().toISOString().split('T')[0];
-                    showPage('history'); // نقل المستخدم تلقائياً لشاشة البيانات السابقة عشان يشوف الداتا
+                    showPage('history');
                 }).catch((error) => alert('حدث خطأ: ' + error));
         });
 
@@ -504,6 +507,7 @@
                 jsonArr.forEach(row => {
                     if (row.date) {
                         let dateStr = String(row.date).split('T')[0].split(' ')[0];
+                        dateStr = dateStr.replace(/\//g, '-'); // تحويل الشرطات المائلة
                         updates['/dailyStatements/' + dateStr] = {
                             date: dateStr,
                             bankBalance: Number(row.bankBalance)||0,
