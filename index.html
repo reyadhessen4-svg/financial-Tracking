@@ -7,10 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         tailwind.config = { theme: { extend: { fontFamily: { sans: ['Tajawal', 'sans-serif'] } } } }
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
         body { font-family: 'Tajawal', sans-serif; }
@@ -18,7 +18,6 @@
         .page.active { display: block; }
         .nav-item.active { background-color: #4f46e5; color: white; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.5); }
         .sidebar { transition: transform 0.3s ease-in-out; }
-            /* نافذة الأرشيف */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; display: flex; align-items: center; justify-content: center; }
         .modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 800px; width: 90%; max-height: 80vh; overflow-y: auto; }
     </style>
@@ -110,7 +109,7 @@
                 <button onclick="showPage('monthlySales')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="monthlySales">
                     <i class="fa-solid fa-cart-shopping w-4 h-4"></i><span>المبيعات الشهرية</span>
                 </button>
-                    <button onclick="showPage('adminReport')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="adminReport">
+                <button onclick="showPage('adminReport')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="adminReport">
                     <i class="fa-solid fa-file-pdf w-4 h-4"></i><span>تقرير الإدارة</span>
                 </button>
             </nav>
@@ -167,13 +166,13 @@
                 <!-- 2. البنود الشهرية -->
                 <div id="page-monthly" class="page space-y-6">
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6 editor-only-section">
-                                                    <div class="flex justify-between items-center w-full mb-4">
-                                <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-plus-circle text-indigo-600"></i> إضافة بند شهري</h2>
-                                <div class="flex gap-2">
-                                    <button onclick="openArchiveModal()" class="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm"><i class="fa-solid fa-box-archive ml-2"></i> الأرشيف</button>
-                                    <button onclick="startNewMonth()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm"><i class="fa-solid fa-calendar-plus ml-2"></i> بدء شهر جديد</button>
-                                </div>
+                        <div class="flex justify-between items-center w-full mb-4">
+                            <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-plus-circle text-indigo-600"></i> إضافة بند شهري</h2>
+                            <div class="flex gap-2">
+                                <button onclick="openArchiveModal()" class="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm"><i class="fa-solid fa-box-archive ml-2"></i> الأرشيف</button>
+                                <button onclick="startNewMonth()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm"><i class="fa-solid fa-calendar-plus ml-2"></i> بدء شهر جديد</button>
                             </div>
+                        </div>
                         <div class="flex flex-wrap gap-4 items-end">
                             <div class="flex-1 min-w-[200px]"><label class="block text-sm font-medium text-slate-600 mb-1">اسم البند</label><input type="text" id="m-name" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
                             <div class="w-40"><label class="block text-sm font-medium text-slate-600 mb-1">التصنيف</label><select id="m-type" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"><option value="مصروف">مصروف</option><option value="التزام">التزام</option></select></div>
@@ -201,7 +200,8 @@
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-right">
-                            <thead class="bg-slate-50 text-slate-600"><tr><th class="p-3 font-medium">التاريخ</th><th class="p-3 font-medium">البنك</th><th class="p-3 font-medium">القوافل</th><th class="p-3 font-medium">الموردين</th><th class="p-3 font-medium">مستحقة</th><th class="p-3 font-medium">محررة</th><th class="p-3 font-medium">التحصيل</th><th class="p-3 font-medium">إجراء</th></tr></thead>                                <tbody id="history-table-body" class="divide-y divide-slate-100"></tbody>
+                            <thead class="bg-slate-50 text-slate-600"><tr><th class="p-3 font-medium">التاريخ</th><th class="p-3 font-medium">البنك</th><th class="p-3 font-medium">القوافل</th><th class="p-3 font-medium">الموردين</th><th class="p-3 font-medium">مستحقة</th><th class="p-3 font-medium">محررة</th><th class="p-3 font-medium">التحصيل</th><th class="p-3 font-medium">إجراء</th></tr></thead>
+                                <tbody id="history-table-body" class="divide-y divide-slate-100"></tbody>
                             </table>
                         </div>
                     </div>
@@ -221,13 +221,11 @@
                 <div id="page-reportFull" class="page space-y-6">
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
                         <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-chart-pie text-indigo-600"></i> التقرير الشامل</h2>
-                        
                         <div class="flex flex-wrap gap-4 items-end mb-6 pb-4 border-b border-slate-100">
                             <div><label class="block text-sm text-slate-500 mb-1">من تاريخ</label><input type="date" id="rf-start" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
                             <div><label class="block text-sm text-slate-500 mb-1">إلى تاريخ</label><input type="date" id="rf-end" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
                             <button onclick="calcReportFull()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg h-10">عرض التقرير</button>
                         </div>
-
                         <div id="reportFull-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                     </div>
                 </div>
@@ -239,12 +237,10 @@
                         <div><label class="block text-sm text-slate-500 mb-1">إلى تاريخ</label><input type="date" id="ms-end" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
                         <button onclick="calcMonthlySales()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg h-10">عرض المبيعات</button>
                     </div>
-                    
                     <div id="ms-total-card" class="hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                         <div><p class="text-sm text-slate-500 mb-1">إجمالي المبيعات (المبالغ المحررة) خلال الفترة</p><h3 id="ms-total-val" class="text-2xl font-bold text-emerald-700">0 <span class="text-sm font-normal">ر.س</span></h3></div>
                         <div class="p-3 rounded-xl bg-emerald-50 text-emerald-600"><i class="fa-solid fa-file-invoice-dollar text-xl"></i></div>
                     </div>
-
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
                         <table class="w-full text-sm text-right">
                             <thead class="bg-slate-50 text-slate-600"><tr><th class="p-4 font-medium">التاريخ</th><th class="p-4 font-medium">إجمالي المبالغ المحررة للعملاء</th></tr></thead>
@@ -253,52 +249,8 @@
                     </div>
                 </div>
 
-                                <!-- 7. تقرير الإدارة -->
-                <div id="page-adminReport" class="page space-y-6">
-                    <div class="flex flex-wrap gap-4 items-end bg-white p-4 rounded-lg shadow-sm border border-slate-200">
-                        <div><label class="block text-sm text-slate-500 mb-1">اختر يوم التقرير</label><input type="date" id="ar-date" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
-                        <button onclick="generateAdminReport()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg h-10">عرض التقرير</button>
-                        <button onclick="exportAdminReportPDF()" class="bg-red-600 text-white px-4 py-2 rounded-lg h-10 flex items-center gap-2"><i class="fa-solid fa-file-pdf"></i> تصدير PDF</button>
-                    </div>
-
-                    <div id="admin-report-content" class="bg-white border border-slate-200 shadow-sm rounded-xl p-8">
-                        <!-- رأس التقرير -->
-                        <div class="text-center border-b-2 border-slate-800 pb-4 mb-8">
-                            <h2 class="text-xl font-extrabold text-slate-800">زاد الجود للوجبات السريعة</h2>
-                            <h3 class="text-lg font-bold text-indigo-700 mt-1">التقرير المالي الإداري</h3>
-                            <p id="ar-date-display" class="text-slate-500 text-sm mt-2 font-medium">التاريخ: --</p>
-                        </div>
-
-                        <!-- قسم الأرصدة اليومية -->
-                        <div class="mb-8">
-                            <h4 class="font-bold text-slate-700 mb-4 text-md border-b border-slate-200 pb-2">أولاً: الأرصدة والبيان اليومي</h4>
-                            <div id="ar-daily-cards" class="grid grid-cols-1 md:grid-cols-2 gap-4">                                <!-- هنا هيتم وضع الكروت -->
-                            </div>
-                        </div>
-
-                        <!-- قسم البنود الشهرية المتبقية -->
-                        <div>
-                            <h4 class="font-bold text-slate-700 mb-4 text-md border-b border-slate-200 pb-2">ثانياً: المتبقي من الالتزامات والمصروفات الشهرية</h4>
-                            <table class="w-full text-sm text-right border-collapse">
-                                <thead class="bg-slate-100"><tr><th class="p-3 font-medium border border-slate-200">البند</th><th class="p-3 font-medium border border-slate-200">التصنيف</th><th class="p-3 font-medium border border-slate-200">المتبقي</th></tr></thead>
-                                <tbody id="ar-monthly-tbody" class="divide-y divide-slate-100">
-                                    <!-- هنا هيتم وضع البنود -->
-                                </tbody>
-                                <tfoot id="ar-monthly-footer" class="bg-slate-50 font-bold"></tfoot>
-                            </table>
-                        </div>
-                        
-                                                <!-- توقيعات -->
-                        <div class="mt-12 pt-8 border-t-2 border-slate-200 flex justify-center text-center">
-                            <div class="w-1/2 md:w-1/3">
-                                <p class="text-sm text-slate-500 mb-8">المدير المالى</p>
-                                <div class="border-b border-slate-400 w-3/4 mx-auto"></div>
-                                <p class="text-sm font-bold text-slate-700 mt-2">Reyad Hussein</p>
-                            </div>
-                        </div>
-
                 <!-- 6. إدارة المستخدمين --> 
-                    <div id="page-users" class="page space-y-6">
+                <div id="page-users" class="page space-y-6">
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
                         <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-user-plus text-indigo-600"></i> إضافة مستخدم جديد</h2>
                         <div class="flex flex-wrap gap-4 items-end">
@@ -317,14 +269,68 @@
                     </div>
                 </div>
 
+                <!-- 7. تقرير الإدارة -->
+                <div id="page-adminReport" class="page space-y-6">
+                    <div class="flex flex-wrap gap-4 items-end bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                        <div><label class="block text-sm text-slate-500 mb-1">اختر يوم التقرير</label><input type="date" id="ar-date" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                        <button onclick="generateAdminReport()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg h-10">عرض التقرير</button>
+                        <button onclick="exportAdminReportPDF()" class="bg-red-600 text-white px-4 py-2 rounded-lg h-10 flex items-center gap-2"><i class="fa-solid fa-file-pdf"></i> تصدير PDF</button>
+                    </div>
+
+                    <div id="admin-report-content" class="bg-white border border-slate-200 shadow-sm rounded-xl p-8">
+                        <div class="text-center border-b-2 border-slate-800 pb-4 mb-8">
+                            <h2 class="text-xl font-extrabold text-slate-800">زاد الجود للوجبات السريعة</h2>
+                            <h3 class="text-lg font-bold text-indigo-700 mt-1">التقرير المالي الإداري</h3>
+                            <p id="ar-date-display" class="text-slate-500 text-sm mt-2 font-medium">التاريخ: --</p>
+                        </div>
+                        <div class="mb-8">
+                            <h4 class="font-bold text-slate-700 mb-4 text-md border-b border-slate-200 pb-2">أولاً: الأرصدة والبيان اليومي</h4>
+                            <div id="ar-daily-cards" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-700 mb-4 text-md border-b border-slate-200 pb-2">ثانياً: المتبقي من الالتزامات والمصروفات الشهرية</h4>
+                            <table class="w-full text-sm text-right border-collapse">
+                                <thead class="bg-slate-100"><tr><th class="p-3 font-medium border border-slate-200">البند</th><th class="p-3 font-medium border border-slate-200">التصنيف</th><th class="p-3 font-medium border border-slate-200">المتبقي</th></tr></thead>
+                                <tbody id="ar-monthly-tbody" class="divide-y divide-slate-100"></tbody>
+                                <tfoot id="ar-monthly-footer" class="bg-slate-50 font-bold"></tfoot>
+                            </table>
+                        </div>
+                        <div class="mt-12 pt-8 border-t-2 border-slate-200 flex justify-center text-center">
+                            <div class="w-1/2 md:w-1/3">
+                                <p class="text-sm text-slate-500 mb-8">المدير المالى</p>
+                                <div class="border-b border-slate-400 w-3/4 mx-auto"></div>
+                                <p class="text-sm font-bold text-slate-700 mt-2">Reyad Hussein</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </main>
+    </div>
+
+    <!-- نافذة الأرشيف -->
+    <div id="archive-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-box-archive ml-2 text-indigo-600"></i> أرشيف البنود الشهرية</h3>
+                <button onclick="closeArchiveModal()" class="text-slate-400 hover:text-red-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-600 mb-1">اختر الشهر</label>
+                <select id="archive-select" onchange="loadArchivedMonth(this.value)" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                    <option value="">-- اختر شهراً من الأرشيف --</option>
+                </select>
+            </div>
+            <div id="archive-table-container" class="text-center text-slate-400 text-sm">اختر شهراً لعرض بنوده</div>
+        </div>
     </div>
 
     <!-- Firebase & Core Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getDatabase, ref, set, push, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        
         const firebaseConfig = {
             apiKey: "AIzaSyA9QBzup2EZJtiA291VynvLWtmaRyW9tCU",
             authDomain: "financial-management-ddfcb.firebaseapp.com",
@@ -340,29 +346,23 @@
         const db = getDatabase(app);
 
         let currentActivePage = 'daily';
-                // دالة لتوحيد صيغة التاريخ لتكون YYYY-MM-DD
-        function normalizeDate(dateStr) {
-            if (!dateStr) return '';
-            dateStr = String(dateStr).replace(/\//g, '-'); // تحويل الشرطة المائلة لشرطة عادية
-            // لو التاريخ شكله DD-MM-YYYY (يوم-شهر-سنة) نعملوه Flip
-            if (dateStr.match(/^\d{2}-\d{2}-\d{4}$/)) {
-                const parts = dateStr.split('-');
-                return `${parts[2]}-${parts[1]}-${parts[0]}`; // يرجعه YYYY-MM-DD
-            }
-            return dateStr; // لو已经是 صح يسيبه زي ما هو
-        }
         window.currentUserRole = 'مشاهد'; 
         window.currentUserName = '';
-        
-        // تعريف المتغيرات بشكل صحيح لتكون متاحة في الـ Console
         window.dailyStatementsArr = [];
         window.monthlyItemsArr = [];
         window.usersArr = [];
 
+        function normalizeDate(dateStr) {
+            if (!dateStr) return '';
+            dateStr = String(dateStr).replace(/\//g, '-');
+            if (dateStr.match(/^\d{2}-\d{2}-\d{4}$/)) {
+                const parts = dateStr.split('-');
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+            return dateStr;
+        }
+
         // =========================================
-        // ===           تسجيل الدخول           ===
-        // =========================================
-                // =========================================
         // ===           تسجيل الدخول           ===
         // =========================================
         document.getElementById('login-form').addEventListener('submit', async function(e) {
@@ -371,25 +371,20 @@
             const p = document.getElementById('login-pass').value;
             
             let usersArr = window.usersArr || [];
-
-            // لو القائمة فاضية (يعني لسه ماتنزلتش)، انزلها دلوقتي من Firebase
             if (usersArr.length === 0) {
                 try {
                     const snapshot = await get(ref(db, 'users'));
                     if (snapshot.exists()) {
                         usersArr = Object.values(snapshot.val());
-                        window.usersArr = usersArr; // احفظها في الذاكرة
+                        window.usersArr = usersArr;
                     }
-                } catch (error) {
-                    console.error("Error fetching users:", error);
-                }
+                } catch (error) { console.error("Error fetching users:", error); }
             }
 
-            // البحث عن المستخدم وتسجيل الدخول
             const foundUser = usersArr.find(user => 
                 user.username.toLowerCase() === u.toLowerCase() && 
-                String(user.password) === String(p) && // تحويل الاتنين لنص عشان يقارنهم صح
-                user.isActive // لازم يكون الحساب مفعل
+                String(user.password) === String(p) && 
+                user.isActive
             );
 
             if (foundUser) {
@@ -402,7 +397,6 @@
                 initApp();
             } else {
                 document.getElementById('login-error').classList.remove('hidden');
-                console.log("Login failed. Users loaded:", usersArr); // عشان نعرف إيه السبب لو اتعطل
             }
         });
 
@@ -418,11 +412,9 @@
         window.applyRoleAccess = function() {
             const adminOnlyElements = document.querySelectorAll('.admin-only');
             const editorOnlyElements = document.querySelectorAll('.editor-only, .editor-only-section');
-
             document.getElementById('sidebar-avatar').innerText = window.currentUserName.charAt(0);
             document.getElementById('sidebar-name').innerText = window.currentUserName;
             document.getElementById('sidebar-role').innerText = window.currentUserRole;
-            
             adminOnlyElements.forEach(el => el.style.display = window.currentUserRole === 'مدير' ? 'block' : 'none');
             editorOnlyElements.forEach(el => el.style.display = (window.currentUserRole === 'محرر' || window.currentUserRole === 'مدير') ? 'block' : 'none');
         }
@@ -434,12 +426,11 @@
             currentActivePage = pageId;
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById('page-' + pageId).classList.add('active');
-            
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             const navBtn = document.querySelector(`.nav-item[data-page="${pageId}"]`);
             if(navBtn) navBtn.classList.add('active');
-
-            const titles = { 'daily': 'البيان اليومي', 'monthly': 'البنود الشهرية', 'history': 'إدخال بيانات سابقة', 'report30': 'تقرير 30 يوم', 'reportFull': 'التقرير الشامل', 'monthlySales': 'المبيعات الشهرية', 'users': 'إدارة المستخدمين', 'adminReport': 'تقرير الإدارة' };            document.getElementById('page-title').textContent = titles[pageId];
+            const titles = { 'daily': 'البيان اليومي', 'monthly': 'البنود الشهرية', 'history': 'إدخال بيانات سابقة', 'report30': 'تقرير 30 يوم', 'reportFull': 'التقرير الشامل', 'monthlySales': 'المبيعات الشهرية', 'users': 'إدارة المستخدمين', 'adminReport': 'تقرير الإدارة' };
+            document.getElementById('page-title').textContent = titles[pageId];
             toggleMobileMenu(true); 
             renderCurrentPage(); 
         }
@@ -456,14 +447,10 @@
         // =========================================
         // ===        1. البيان اليومي           ===
         // =========================================
-                document.getElementById('daily-form').addEventListener('submit', function(e) {
+        document.getElementById('daily-form').addEventListener('submit', function(e) {
             e.preventDefault();
             let date = normalizeDate(document.getElementById('d-date').value);
             if(!date) return alert('حدد التاريخ');
-            
-            // تحويل الشرطات المائلة إلى شرطات عادية عشان متتقسمش في Firebase
-            date = date.replace(/\//g, '-');
-            
             const entry = {
                 date: date,
                 bankBalance: parseFloat(document.getElementById('d-bank').value) || 0,
@@ -473,7 +460,6 @@
                 customersBilled: parseFloat(document.getElementById('d-billed').value) || 0,
                 collectionBalance: parseFloat(document.getElementById('d-coll').value) || 0,
             };
-            
             set(ref(db, 'dailyStatements/' + date), entry)
                 .then(() => {
                     alert('تم حفظ البيان بنجاح');
@@ -486,7 +472,6 @@
         onValue(ref(db, 'dailyStatements'), (snapshot) => {
             const data = snapshot.val();
             window.dailyStatementsArr = data ? Object.values(data).filter(d => d.date).sort((a, b) => String(b.date).localeCompare(String(a.date))) : [];
-            console.log("Daily Data Loaded:", window.dailyStatementsArr.length, "records");
             renderCurrentPage();
         });
 
@@ -497,7 +482,6 @@
             const name = document.getElementById('m-name').value;
             const type = document.getElementById('m-type').value;
             const total = parseFloat(document.getElementById('m-total').value) || 0;
-            
             if(!name) return alert('أدخل اسم البند');
             const newItemRef = push(ref(db, 'monthlyItems'));
             set(newItemRef, { id: newItemRef.key, name, type, totalAmount: total, paidAmount: 0 }).then(() => {
@@ -517,155 +501,84 @@
             }
         }
 
+        window.editItemAmount = function(id) {
+            const item = window.monthlyItemsArr.find(i => i.id === id);
+            if(!item) return;
+            const newAmountStr = prompt(`تعديل المبلغ المستحق للبند: ${item.name}\nالمبلغ الحالي: ${item.totalAmount}`, item.totalAmount);
+            if (newAmountStr === null) return;
+            const newAmount = parseFloat(newAmountStr);
+            if (isNaN(newAmount) || newAmount < 0) return alert('مبلغ غير صالح');
+            const updates = {}; updates['/monthlyItems/' + id + '/totalAmount'] = newAmount;
+            update(ref(db), updates);
+        }
+
+        window.deleteItem = function(id) {
+            const item = window.monthlyItemsArr.find(i => i.id === id);
+            if(!item) return;
+            if(confirm(`هل أنت متأكد من حذف البند: ${item.name}؟`)) { set(ref(db, 'monthlyItems/' + id), null); }
+        }
+
+        window.startNewMonth = function() {
+            const currentItems = window.monthlyItemsArr || [];
+            const carryOver = confirm('هل تريد نقل البنود الحالية للشهر الجديد كاقتراح؟\n(سيتم تصفير المبالغ المسددة وإعادة إضافتها كالتزامات جديدة)');
+            if (!confirm('تأكيد نهائي: سيتم أرشفة بنود الشهر الحالي وبدء شهر جديد. هل أنت متأكد؟')) return;
+            let updates = {};
+            const now = new Date();
+            const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            if (currentItems.length > 0) { updates[`/monthlyArchive/${monthKey}`] = currentItems; }
+            if (carryOver && currentItems.length > 0) {
+                const newItems = {};
+                currentItems.forEach(item => {
+                    const newItemRef = push(ref(db, 'monthlyItems'));
+                    newItems[newItemRef.key] = { id: newItemRef.key, name: item.name, type: item.type, totalAmount: item.totalAmount, paidAmount: 0 };
+                });
+                updates['/monthlyItems'] = newItems;
+            } else { updates['/monthlyItems'] = null; }
+            update(ref(db), updates).then(() => alert('تم بدء شهر جديد بنجاح!')).catch(err => alert('حدث خطأ: ' + err));
+        }
+
+        window.openArchiveModal = async function() {
+            document.getElementById('archive-modal').classList.remove('hidden');
+            const select = document.getElementById('archive-select');
+            select.innerHTML = '<option value="">-- اختر شهراً من الأرشيف --</option>';
+            try {
+                const snapshot = await get(ref(db, 'monthlyArchive'));
+                if (snapshot.exists()) {
+                    const keys = Object.keys(snapshot.val()).sort().reverse();
+                    keys.forEach(key => { const opt = document.createElement('option'); opt.value = key; opt.textContent = key.replace('-', '/'); select.appendChild(opt); });
+                } else { select.innerHTML = '<option value="">لا يوجد أرشيف بعد</option>'; }
+            } catch(e) { console.error(e); }
+        }
+
+        window.loadArchivedMonth = async function(monthKey) {
+            const container = document.getElementById('archive-table-container');
+            if(!monthKey) { container.innerHTML = '<p class="text-center text-slate-400 text-sm">اختر شهراً لعرض بنوده</p>'; return; }
+            try {
+                const snapshot = await get(ref(db, `monthlyArchive/${monthKey}`));
+                if (snapshot.exists()) {
+                    const items = Object.values(snapshot.val());
+                    let html = `<table class="w-full text-sm text-right border-collapse mt-4"><thead class="bg-slate-100"><tr><th class="p-3 font-medium border border-slate-200">البند</th><th class="p-3 font-medium border border-slate-200">التصنيف</th><th class="p-3 font-medium border border-slate-200">المستحق</th><th class="p-3 font-medium border border-slate-200">المسدد</th><th class="p-3 font-medium border border-slate-200">المتبقي</th></tr></thead><tbody>`;
+                    items.forEach(item => {
+                        const remaining = (item.totalAmount || 0) - (item.paidAmount || 0);
+                        html += `<tr><td class="p-3 border border-slate-200">${item.name}</td><td class="p-3 border border-slate-200">${item.type}</td><td class="p-3 border border-slate-200">${item.totalAmount}</td><td class="p-3 border border-slate-200 text-emerald-600">${item.paidAmount}</td><td class="p-3 border border-slate-200 text-red-600 font-bold">${remaining}</td></tr>`;
+                    });
+                    html += '</tbody></table>'; container.innerHTML = html;
+                } else { container.innerHTML = '<p class="text-center text-red-500 text-sm">لا توجد بيانات لهذا الشهر</p>'; }
+            } catch(e) { container.innerHTML = '<p class="text-center text-red-500 text-sm">خطأ في تحميل البيانات</p>'; }
+        }
+
+        window.closeArchiveModal = function() {
+            document.getElementById('archive-modal').classList.add('hidden');
+            document.getElementById('archive-table-container').innerHTML = '<p class="text-center text-slate-400 text-sm">اختر شهراً لعرض بنوده</p>';
+        }
+
         onValue(ref(db, 'monthlyItems'), (snapshot) => {
             const data = snapshot.val();
             window.monthlyItemsArr = data ? Object.values(data) : [];
             renderCurrentPage();
         });
 
-                // تعديل المبلغ المستحق للبند
-        window.editItemAmount = function(id) {
-            const item = window.monthlyItemsArr.find(i => i.id === id);
-            if(!item) return;
-            
-            const newAmountStr = prompt(`تعديل المبلغ المستحق للبند: ${item.name}\nالمبلغ الحالي: ${item.totalAmount}`, item.totalAmount);
-            if (newAmountStr === null) return; // لو ضغط إلغاء
-            
-            const newAmount = parseFloat(newAmountStr);
-            if (isNaN(newAmount) || newAmount < 0) return alert('مبلغ غير صالح');
-            
-            const updates = {};
-            updates['/monthlyItems/' + id + '/totalAmount'] = newAmount;
-            update(ref(db), updates);
-        }
-
-        // حذف بند شهري
-        window.deleteItem = function(id) {
-            const item = window.monthlyItemsArr.find(i => i.id === id);
-            if(!item) return;
-            
-            if(confirm(`هل أنت متأكد من حذف البند: ${item.name}؟`)) {
-                set(ref(db, 'monthlyItems/' + id), null);
-            }
-        }
-
-        // بدء شهر جديد (مسح جميع البنود)
-                // بدء شهر جديد (أرشفة البيانات القديمة ثم مسح الشاشة)
-                // بدء شهر جديد (أرشفة + اقتراح البنود القديمة)
-        window.startNewMonth = function() {
-            const currentItems = window.monthlyItemsArr || [];
-            
-            // سؤال للمستخدم: هل يريد نقل البنود الحالية للشهر الجديد؟
-            const carryOver = confirm('هل تريد نقل البنود الحالية للشهر الجديد كاقتراح؟\n(سيتم تصفير المبالغ المسددة وإعادة إضافتها كالتزامات جديدة)');
-            
-            if (!confirm('تأكيد نهائي: سيتم أرشفة بنود الشهر الحالي وبدء شهر جديد. هل أنت متأكد؟')) return;
-            
-            let updates = {};
-            const now = new Date();
-            const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            
-            // 1. أرشفة البنود الحالية أولاً
-            if (currentItems.length > 0) {
-                updates[`/monthlyArchive/${monthKey}`] = currentItems;
-            }
-            
-            // 2. التعامل مع الشهر الجديد (نقل أو مسح)
-            if (carryOver && currentItems.length > 0) {
-                const newItems = {};
-                // نقل البنود مع تصفير المسدد وتغيير الـ ID
-                currentItems.forEach(item => {
-                    const newItemRef = push(ref(db, 'monthlyItems'));
-                    newItems[newItemRef.key] = {
-                        id: newItemRef.key,
-                        name: item.name,
-                        type: item.type,
-                        totalAmount: item.totalAmount,
-                        paidAmount: 0 // تصفير المسدد
-                    };
-                });
-                updates['/monthlyItems'] = newItems; // استبدال القديم بالجديد المنقول
-            } else {
-                updates['/monthlyItems'] = null; // مسح خالص لو اختار لا
-            }
-            
-            update(ref(db), updates)
-                .then(() => alert('تم بدء شهر جديد بنجاح!'))
-                .catch(err => alert('حدث خطأ: ' + err));
-        }
-
-        // فتح نافذة الأرشيف
-        window.openArchiveModal = async function() {
-            document.getElementById('archive-modal').classList.remove('hidden');
-            const select = document.getElementById('archive-select');
-            // نمسح الخيارات القديمة ماعدا الأول
-            select.innerHTML = '<option value="">-- اختر شهراً من الأرشيف --</option>';
-            
-            try {
-                const snapshot = await get(ref(db, 'monthlyArchive'));
-                if (snapshot.exists()) {
-                    const keys = Object.keys(snapshot.val()).sort().reverse(); // ترتيب تنازلي (الأحدث أولاً)
-                    keys.forEach(key => {
-                        const opt = document.createElement('option');
-                        opt.value = key;
-                        // تحويل 2026-04 إلى 2026/04 للعرض
-                        opt.textContent = key.replace('-', '/'); 
-                        select.appendChild(opt);
-                    });
-                } else {
-                    select.innerHTML = '<option value="">لا يوجد أرشيف بعد</option>';
-                }
-            } catch(e) { 
-                console.error(e); 
-            }
-        }
-
-        // تحميل بيانات شهر محدد من الأرشيف
-        window.loadArchivedMonth = async function(monthKey) {
-            const container = document.getElementById('archive-table-container');
-            if(!monthKey) { container.innerHTML = '<p class="text-center text-slate-400 text-sm">اختر شهراً لعرض بنوده</p>'; return; }
-            
-            try {
-                const snapshot = await get(ref(db, `monthlyArchive/${monthKey}`));
-                if (snapshot.exists()) {
-                    const items = Object.values(snapshot.val());
-                    let html = `
-                    <table class="w-full text-sm text-right border-collapse mt-4">
-                        <thead class="bg-slate-100"><tr>
-                            <th class="p-3 font-medium border border-slate-200">البند</th>
-                            <th class="p-3 font-medium border border-slate-200">التصنيف</th>
-                            <th class="p-3 font-medium border border-slate-200">المستحق</th>
-                            <th class="p-3 font-medium border border-slate-200">المسدد</th>
-                            <th class="p-3 font-medium border border-slate-200">المتبقي</th>
-                        </tr></thead><tbody>`;
-                    
-                    items.forEach(item => {
-                        const remaining = (item.totalAmount || 0) - (item.paidAmount || 0);
-                        html += `<tr>
-                            <td class="p-3 border border-slate-200">${item.name}</td>
-                            <td class="p-3 border border-slate-200">${item.type}</td>
-                            <td class="p-3 border border-slate-200">${item.totalAmount}</td>
-                            <td class="p-3 border border-slate-200 text-emerald-600">${item.paidAmount}</td>
-                            <td class="p-3 border border-slate-200 text-red-600 font-bold">${remaining}</td>
-                        </tr>`;
-                    });
-                    
-                    html += '</tbody></table>';
-                    container.innerHTML = html;
-                } else {
-                    container.innerHTML = '<p class="text-center text-red-500 text-sm">لا توجد بيانات لهذا الشهر</p>';
-                }
-            } catch(e) {
-                container.innerHTML = '<p class="text-center text-red-500 text-sm">خطأ في تحميل البيانات</p>';
-            }
-        }
-
-        // إغلاق نافذة الأرشيف
-        window.closeArchiveModal = function() {
-            document.getElementById('archive-modal').classList.add('hidden');
-            document.getElementById('archive-table-container').innerHTML = '<p class="text-center text-slate-400 text-sm">اختر شهراً لعرض بنوده</p>';
-        }
-
-                function renderMonthlyItems() {
+        function renderMonthlyItems() {
             const tbody = document.getElementById('monthly-table-body');
             const data = window.monthlyItemsArr || [];
             tbody.innerHTML = '';
@@ -673,128 +586,51 @@
             data.forEach(item => {
                 const remaining = (item.totalAmount || 0) - (item.paidAmount || 0);
                 const typeClass = item.type === 'التزام' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700';
-                
-                // أزرار الإجراءات (سداد، تعديل المبلغ، حذف)
                 const actionBtns = (window.currentUserRole === 'محرر' || window.currentUserRole === 'مدير') ? `
                     <div class="flex gap-2 items-center">
                         <button onclick="payItem('${item.id}')" class="text-indigo-600 hover:text-indigo-800" title="سداد"><i class="fa-solid fa-money-bill-wave"></i></button>
                         <button onclick="editItemAmount('${item.id}')" class="text-amber-600 hover:text-amber-800" title="تعديل المبلغ"><i class="fa-solid fa-pen-to-square"></i></button>
                         <button onclick="deleteItem('${item.id}')" class="text-red-600 hover:text-red-800" title="حذف البند"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                ` : '-';
-
-                tbody.innerHTML += `<tr class="hover:bg-slate-50">
-                    <td class="p-4 font-medium">${item.name}</td>
-                    <td class="p-4"><span class="px-2 py-1 rounded-full text-xs ${typeClass}">${item.type}</span></td>
-                    <td class="p-4">${(item.totalAmount || 0).toLocaleString()} ر.س</td>
-                    <td class="p-4 text-emerald-600">${(item.paidAmount || 0).toLocaleString()} ر.س</td>
-                    <td class="p-4 text-red-600 font-bold">${remaining.toLocaleString()} ر.س</td>
-                    <td class="p-4">${actionBtns}</td>
-                </tr>`;
+                    </div>` : '-';
+                tbody.innerHTML += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${item.name}</td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs ${typeClass}">${item.type}</span></td><td class="p-4">${(item.totalAmount || 0).toLocaleString()} ر.س</td><td class="p-4 text-emerald-600">${(item.paidAmount || 0).toLocaleString()} ر.س</td><td class="p-4 text-red-600 font-bold">${remaining.toLocaleString()} ر.س</td><td class="p-4">${actionBtns}</td></tr>`;
             });
         }
 
         // =========================================
         // ===   3. إدخال بيانات سابقة + إكسيل  ===
         // =========================================
-                let editingDate = null; // متغير يعرفنا إحنا بندخل على أنهي يوم
+        let editingDate = null; 
 
         function renderHistory() {
             const tbody = document.getElementById('history-table-body');
             if(!tbody) return;
-            
             const data = (window.dailyStatementsArr || []).slice(0, 30);
             tbody.innerHTML = '';
-            if(data.length === 0) { 
-                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-400">لا توجد بيانات</td></tr>'; 
-                return; 
-            }
-            
+            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-400">لا توجد بيانات</td></tr>'; return; }
             let rowsHtml = '';
             data.forEach(item => {
                 if (!item || !item.date) return; 
-                
-                // لو اليوم ده هو اللي متفتح للتعديل
                 if (editingDate === item.date) {
-                    rowsHtml += `<tr class="bg-indigo-50">
-                        <td class="p-3 font-medium">${item.date}</td>
-                        <td class="p-2"><input type="number" id="edit-bank" value="${item.bankBalance || 0}" class="w-full p-1 border rounded text-right"></td>
-                        <td class="p-2"><input type="number" id="edit-caravans" value="${item.caravansBalance || 0}" class="w-full p-1 border rounded text-right"></td>
-                        <td class="p-2"><input type="number" id="edit-vendors" value="${item.vendorsBalance || 0}" class="w-full p-1 border rounded text-right"></td>
-                        <td class="p-2"><input type="number" id="edit-due" value="${item.customersDue || 0}" class="w-full p-1 border rounded text-right"></td>
-                        <td class="p-2"><input type="number" id="edit-billed" value="${item.customersBilled || 0}" class="w-full p-1 border rounded text-right"></td>
-                        <td class="p-2"><input type="number" id="edit-coll" value="${item.collectionBalance || 0}" class="w-full p-1 border rounded text-right"></td>
-                        <td class="p-2 flex gap-1">
-                            <button onclick="saveEdit('${item.date}')" class="bg-emerald-500 text-white px-2 py-1 rounded text-xs hover:bg-emerald-600"><i class="fa-solid fa-check ml-1"></i> حفظ</button>
-                            <button onclick="cancelEdit()" class="bg-slate-400 text-white px-2 py-1 rounded text-xs hover:bg-slate-500"><i class="fa-solid fa-xmark"></i></button>
-                        </td>
-                    </tr>`;
+                    rowsHtml += `<tr class="bg-indigo-50"><td class="p-3 font-medium">${item.date}</td><td class="p-2"><input type="number" id="edit-bank" value="${item.bankBalance || 0}" class="w-full p-1 border rounded text-right"></td><td class="p-2"><input type="number" id="edit-caravans" value="${item.caravansBalance || 0}" class="w-full p-1 border rounded text-right"></td><td class="p-2"><input type="number" id="edit-vendors" value="${item.vendorsBalance || 0}" class="w-full p-1 border rounded text-right"></td><td class="p-2"><input type="number" id="edit-due" value="${item.customersDue || 0}" class="w-full p-1 border rounded text-right"></td><td class="p-2"><input type="number" id="edit-billed" value="${item.customersBilled || 0}" class="w-full p-1 border rounded text-right"></td><td class="p-2"><input type="number" id="edit-coll" value="${item.collectionBalance || 0}" class="w-full p-1 border rounded text-right"></td><td class="p-2 flex gap-1"><button onclick="saveEdit('${item.date}')" class="bg-emerald-500 text-white px-2 py-1 rounded text-xs hover:bg-emerald-600"><i class="fa-solid fa-check ml-1"></i> حفظ</button><button onclick="cancelEdit()" class="bg-slate-400 text-white px-2 py-1 rounded text-xs hover:bg-slate-500"><i class="fa-solid fa-xmark"></i></button></td></tr>`;
                 } else {
-                    // العرض العادي
-                    const bank = Number(item.bankBalance) || 0;
-                    const caravans = Number(item.caravansBalance) || 0;
-                    const vendors = Number(item.vendorsBalance) || 0;
-                    const due = Number(item.customersDue) || 0;
-                    const billed = Number(item.customersBilled) || 0;
-                    const coll = Number(item.collectionBalance) || 0;
-
-                    rowsHtml += `<tr class="hover:bg-slate-50">
-                        <td class="p-3 font-medium">${item.date}</td>
-                        <td class="p-3">${bank.toLocaleString()}</td>
-                        <td class="p-3">${caravans.toLocaleString()}</td>
-                        <td class="p-3">${vendors.toLocaleString()}</td>
-                        <td class="p-3">${due.toLocaleString()}</td>
-                        <td class="p-3">${billed.toLocaleString()}</td>
-                        <td class="p-3">${coll.toLocaleString()}</td>
-                        <td class="p-3">
-                            <button onclick="startEdit('${item.date}')" class="text-indigo-600 hover:text-indigo-800 text-sm"><i class="fa-solid fa-pen-to-square ml-1"></i> تعديل</button>
-                        </td>
-                    </tr>`;
+                    const bank = Number(item.bankBalance) || 0; const caravans = Number(item.caravansBalance) || 0; const vendors = Number(item.vendorsBalance) || 0; const due = Number(item.customersDue) || 0; const billed = Number(item.customersBilled) || 0; const coll = Number(item.collectionBalance) || 0;
+                    rowsHtml += `<tr class="hover:bg-slate-50"><td class="p-3 font-medium">${item.date}</td><td class="p-3">${bank.toLocaleString()}</td><td class="p-3">${caravans.toLocaleString()}</td><td class="p-3">${vendors.toLocaleString()}</td><td class="p-3">${due.toLocaleString()}</td><td class="p-3">${billed.toLocaleString()}</td><td class="p-3">${coll.toLocaleString()}</td><td class="p-3"><button onclick="startEdit('${item.date}')" class="text-indigo-600 hover:text-indigo-800 text-sm"><i class="fa-solid fa-pen-to-square ml-1"></i> تعديل</button></td></tr>`;
                 }
             });
             tbody.innerHTML = rowsHtml;
         }
 
-        // دالة فتح التعديل
-        window.startEdit = function(date) {
-            editingDate = date;
-            renderHistory();
-        }
-
-        // دالة إلغاء التعديل
-        window.cancelEdit = function() {
-            editingDate = null;
-            renderHistory();
-        }
-
-        // دالة حفظ التعديل على Firebase
+        window.startEdit = function(date) { editingDate = date; renderHistory(); }
+        window.cancelEdit = function() { editingDate = null; renderHistory(); }
         window.saveEdit = function(date) {
-            const updatedEntry = {
-                date: date,
-                bankBalance: parseFloat(document.getElementById('edit-bank').value) || 0,
-                caravansBalance: parseFloat(document.getElementById('edit-caravans').value) || 0,
-                vendorsBalance: parseFloat(document.getElementById('edit-vendors').value) || 0,
-                customersDue: parseFloat(document.getElementById('edit-due').value) || 0,
-                customersBilled: parseFloat(document.getElementById('edit-billed').value) || 0,
-                collectionBalance: parseFloat(document.getElementById('edit-coll').value) || 0,
-            };
-
-            set(ref(db, 'dailyStatements/' + date), updatedEntry)
-                .then(() => {
-                    editingDate = null; // نقفل التعديل
-                    alert('تم تحديث البيان بنجاح');
-                    renderHistory(); // نحدث الجدول
-                })
-                .catch((error) => alert('حدث خطأ أثناء التحديث: ' + error));
+            const updatedEntry = { date: date, bankBalance: parseFloat(document.getElementById('edit-bank').value) || 0, caravansBalance: parseFloat(document.getElementById('edit-caravans').value) || 0, vendorsBalance: parseFloat(document.getElementById('edit-vendors').value) || 0, customersDue: parseFloat(document.getElementById('edit-due').value) || 0, customersBilled: parseFloat(document.getElementById('edit-billed').value) || 0, collectionBalance: parseFloat(document.getElementById('edit-coll').value) || 0 };
+            set(ref(db, 'dailyStatements/' + date), updatedEntry).then(() => { editingDate = null; alert('تم تحديث البيان بنجاح'); renderHistory(); }).catch((error) => alert('حدث خطأ أثناء التحديث: ' + error));
         }
 
         window.downloadExcelTemplate = function() {
             const headers = [['date', 'bankBalance', 'caravansBalance', 'vendorsBalance', 'customersDue', 'customersBilled', 'collectionBalance']];
-            const ws = XLSX.utils.aoa_to_sheet(headers);
-            ws['!cols'] = [{wch: 12}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}];
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Template");
-            XLSX.writeFile(wb, "Financial_Template.xlsx");
+            const ws = XLSX.utils.aoa_to_sheet(headers); ws['!cols'] = [{wch: 12}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}];
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Template"); XLSX.writeFile(wb, "Financial_Template.xlsx");
         }
 
         window.handleExcelUpload = function(event) {
@@ -804,33 +640,15 @@
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, { type: 'array', cellDates: true });
                 const jsonArr = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: false, dateNF: 'yyyy-mm-dd' });
-                
                 let updates = {}; let count = 0;
-
                 jsonArr.forEach(row => {
                     if (row.date) {
-                        let dateStr = normalizeDate(String(row.date).split('T')[0].split(' ')[0]); // تحويل الشرطات المائلة
-                        updates['/dailyStatements/' + dateStr] = {
-                            date: dateStr,
-                            bankBalance: Number(row.bankBalance)||0,
-                            caravansBalance: Number(row.caravansBalance)||0,
-                            vendorsBalance: Number(row.vendorsBalance)||0,
-                            customersDue: Number(row.customersDue)||0,
-                            customersBilled: Number(row.customersBilled)||0,
-                            collectionBalance: Number(row.collectionBalance)||0
-                        };
+                        let dateStr = normalizeDate(String(row.date).split('T')[0].split(' ')[0]);
+                        updates['/dailyStatements/' + dateStr] = { date: dateStr, bankBalance: Number(row.bankBalance)||0, caravansBalance: Number(row.caravansBalance)||0, vendorsBalance: Number(row.vendorsBalance)||0, customersDue: Number(row.customersDue)||0, customersBilled: Number(row.customersBilled)||0, collectionBalance: Number(row.collectionBalance)||0 };
                         count++;
                     }
                 });
-
-                if(count > 0) {
-                    update(ref(db), updates).then(() => {
-                        alert(`تم رفع وإضافة ${count} سجل بنجاح!`);
-                        showPage('history'); 
-                    });
-                } else {
-                    alert('لم يتم العثور على بيانات صالحة. تأكد أن عمود التاريخ اسمه date');
-                }
+                if(count > 0) { update(ref(db), updates).then(() => { alert(`تم رفع وإضافة ${count} سجل بنجاح!`); showPage('history'); }); } else { alert('لم يتم العثور على بيانات صالحة.'); }
             };
             reader.readAsArrayBuffer(file); event.target.value = '';
         }
@@ -839,11 +657,9 @@
         // ===        4. تقرير 30 يوم            ===
         // =========================================
         window.calcReport30 = function() {
-            const startDate = document.getElementById('r-start').value;
-            const endDate = document.getElementById('r-end').value;
+            const startDate = document.getElementById('r-start').value; const endDate = document.getElementById('r-end').value;
             let data = window.dailyStatementsArr || [];
-            if(startDate) data = data.filter(d => d.date >= startDate);
-            if(endDate) data = data.filter(d => d.date <= endDate);
+            if(startDate) data = data.filter(d => d.date >= startDate); if(endDate) data = data.filter(d => d.date <= endDate);
             const totalBilled = data.reduce((sum, d) => sum + (Number(d.customersBilled)||0), 0);
             const latest = data.length > 0 ? data[0] : null;
             document.getElementById('report30-cards').innerHTML = `
@@ -852,76 +668,31 @@
                 <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">مستحقة العملاء</p><h3 class="text-2xl font-bold">${(Number(latest?.customersDue)||0).toLocaleString()} <span class="text-sm font-normal">ر.س</span></h3></div><div class="p-3 rounded-xl bg-amber-50 text-amber-600"><i class="fa-solid fa-users text-xl"></i></div></div>
                 <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">محررة العملاء (مبيعات)</p><h3 class="text-2xl font-bold text-emerald-700">${totalBilled.toLocaleString()} <span class="text-sm font-normal">ر.س</span></h3></div><div class="p-3 rounded-xl bg-emerald-50 text-emerald-600"><i class="fa-solid fa-file-invoice-dollar text-xl"></i></div></div>
                 <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">رصيد الموردين</p><h3 class="text-2xl font-bold">${(Number(latest?.vendorsBalance)||0).toLocaleString()} <span class="text-sm font-normal">ر.س</span></h3></div><div class="p-3 rounded-xl bg-red-50 text-red-600"><i class="fa-solid fa-wallet text-xl"></i></div></div>
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">رصيد التحصيل</p><h3 class="text-2xl font-bold">${(Number(latest?.collectionBalance)||0).toLocaleString()} <span class="text-sm font-normal">ر.س</span></h3></div><div class="p-3 rounded-xl bg-cyan-50 text-cyan-600"><i class="fa-solid fa-chart-line text-xl"></i></div></div>
-            `;
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">رصيد التحصيل</p><h3 class="text-2xl font-bold">${(Number(latest?.collectionBalance)||0).toLocaleString()} <span class="text-sm font-normal">ر.س</span></h3></div><div class="p-3 rounded-xl bg-cyan-50 text-cyan-600"><i class="fa-solid fa-chart-line text-xl"></i></div></div>`;
         }
 
         // =========================================
         // ===       5. التقرير الشامل           ===
         // =========================================
         window.calcReportFull = function() {
-            const startDate = document.getElementById('rf-start').value;
-            const endDate = document.getElementById('rf-end').value;
+            const startDate = document.getElementById('rf-start').value; const endDate = document.getElementById('rf-end').value;
             let data = window.dailyStatementsArr || [];
-            
-            if(startDate) data = data.filter(d => d.date >= startDate);
-            if(endDate) data = data.filter(d => d.date <= endDate);
-
-            const container = document.getElementById('reportFull-cards');
-            container.innerHTML = '';
+            if(startDate) data = data.filter(d => d.date >= startDate); if(endDate) data = data.filter(d => d.date <= endDate);
+            const container = document.getElementById('reportFull-cards'); container.innerHTML = '';
             const monthlyItems = window.monthlyItemsArr || [];
             const totalDue = monthlyItems.reduce((sum, item) => sum + (item.totalAmount||0), 0);
             const totalPaid = monthlyItems.reduce((sum, item) => sum + (item.paidAmount||0), 0);
             const totalRemaining = totalDue - totalPaid;
             const paymentPercentage = totalDue > 0 ? ((totalPaid / totalDue) * 100).toFixed(1) : 0;
-
-            container.innerHTML += `
-                <div class="col-span-1 md:col-span-2 lg:col-span-3 mb-4">
-                    <h3 class="text-md font-bold text-slate-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-calendar-check text-indigo-600"></i> ملخص الالتزامات والمصروفات الشهرية</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4"><span class="text-xs text-indigo-500 block mb-1">المبلغ المستحق خلال الشهر</span><span class="text-xl font-bold text-indigo-700">${totalDue.toLocaleString()} ر.س</span></div>
-                        <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-4"><span class="text-xs text-emerald-500 block mb-1">المبلغ المسدد خلال الشهر</span><span class="text-xl font-bold text-emerald-700">${totalPaid.toLocaleString()} ر.س</span></div>
-                        <div class="bg-cyan-50 border border-cyan-100 rounded-lg p-4"><span class="text-xs text-cyan-500 block mb-1">نسبة السداد خلال الشهر</span><span class="text-xl font-bold text-cyan-700">${paymentPercentage}%</span><div class="w-full bg-cyan-200 rounded-full h-1.5 mt-2"><div class="bg-cyan-600 h-1.5 rounded-full" style="width: ${paymentPercentage}%"></div></div></div>
-                        <div class="bg-red-50 border border-red-100 rounded-lg p-4"><span class="text-xs text-red-500 block mb-1">المبلغ المتبقي خلال الشهر</span><span class="text-xl font-bold text-red-700">${totalRemaining.toLocaleString()} ر.س</span></div>
-                    </div>
-                </div>`;
-
-                        const fields = [ { key: 'bankBalance', label: 'رصيد البنك' }, { key: 'caravansBalance', label: 'رصيد القوافل' }, { key: 'vendorsBalance', label: 'رصيد الموردين' }, { key: 'customersDue', label: 'مستحقة العملاء' }, { key: 'customersBilled', label: 'محررة العملاء' }, { key: 'collectionBalance', label: 'رصيد التحصيل' } ];
-            
+            container.innerHTML += `<div class="col-span-1 md:col-span-2 lg:col-span-3 mb-4"><h3 class="text-md font-bold text-slate-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-calendar-check text-indigo-600"></i> ملخص الالتزامات والمصروفات الشهرية</h3><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"><div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4"><span class="text-xs text-indigo-500 block mb-1">المبلغ المستحق خلال الشهر</span><span class="text-xl font-bold text-indigo-700">${totalDue.toLocaleString()} ر.س</span></div><div class="bg-emerald-50 border border-emerald-100 rounded-lg p-4"><span class="text-xs text-emerald-500 block mb-1">المبلغ المسدد خلال الشهر</span><span class="text-xl font-bold text-emerald-700">${totalPaid.toLocaleString()} ر.س</span></div><div class="bg-cyan-50 border border-cyan-100 rounded-lg p-4"><span class="text-xs text-cyan-500 block mb-1">نسبة السداد خلال الشهر</span><span class="text-xl font-bold text-cyan-700">${paymentPercentage}%</span><div class="w-full bg-cyan-200 rounded-full h-1.5 mt-2"><div class="bg-cyan-600 h-1.5 rounded-full" style="width: ${paymentPercentage}%"></div></div></div><div class="bg-red-50 border border-red-100 rounded-lg p-4"><span class="text-xs text-red-500 block mb-1">المبلغ المتبقي خلال الشهر</span><span class="text-xl font-bold text-red-700">${totalRemaining.toLocaleString()} ر.س</span></div></div></div>`;
+            const fields = [ { key: 'bankBalance', label: 'رصيد البنك' }, { key: 'caravansBalance', label: 'رصيد القوافل' }, { key: 'vendorsBalance', label: 'رصيد الموردين' }, { key: 'customersDue', label: 'مستحقة العملاء' }, { key: 'customersBilled', label: 'محررة العملاء' }, { key: 'collectionBalance', label: 'رصيد التحصيل' } ];
             fields.forEach(field => {
-                // بنجيب البيانات اللي مش بصفر عشان نتجاهلها زي ما طلبت
-                const filteredData = data.filter(d => Number(d[field.key]) !== 0);
-                
-                let max = 0, min = 0, maxDate = '', minDate = '';
-                
+                const filteredData = data.filter(d => Number(d[field.key]) !== 0); let max = 0, min = 0, maxDate = '', minDate = '';
                 if (filteredData.length > 0) {
-                    // نجيب صف البيان اللي فيه أعلى مبلغ
-                    const maxItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) > Number(current[field.key])) ? prev : current);
-                    max = Number(maxItem[field.key]) || 0;
-                    maxDate = maxItem.date || ''; // نستخرج التاريخ
-                    
-                    // نجيب صف البيان اللي فيه أقل مبلغ
-                    const minItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) < Number(current[field.key])) ? prev : current);
-                    min = Number(minItem[field.key]) || 0;
-                    minDate = minItem.date || ''; // نستخرج التاريخ
+                    const maxItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) > Number(current[field.key])) ? prev : current); max = Number(maxItem[field.key]) || 0; maxDate = maxItem.date || '';
+                    const minItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) < Number(current[field.key])) ? prev : current); min = Number(minItem[field.key]) || 0; minDate = minItem.date || '';
                 }
-
-                container.innerHTML += `
-                <div class="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                    <h4 class="font-bold text-slate-800 mb-3">${field.label}</h4>
-                    <div class="flex justify-between text-sm">
-                        <div class="text-emerald-600">
-                            <span class="block text-slate-500 text-xs">أعلى مبلغ</span>
-                            <span class="font-bold text-lg">${max.toLocaleString()}</span>
-                            ${maxDate ? `<span class="block text-slate-400 text-[10px] mt-1"><i class="fa-regular fa-calendar ml-1"></i>${maxDate}</span>` : ''}
-                        </div>
-                        <div class="text-red-600">
-                            <span class="block text-slate-500 text-xs">أقل مبلغ</span>
-                            <span class="font-bold text-lg">${min.toLocaleString()}</span>
-                            ${minDate ? `<span class="block text-slate-400 text-[10px] mt-1"><i class="fa-regular fa-calendar ml-1"></i>${minDate}</span>` : ''}
-                        </div>
-                    </div>
-                </div>`;
+                container.innerHTML += `<div class="border border-slate-200 rounded-lg p-4 bg-slate-50"><h4 class="font-bold text-slate-800 mb-3">${field.label}</h4><div class="flex justify-between text-sm"><div class="text-emerald-600"><span class="block text-slate-500 text-xs">أعلى مبلغ</span><span class="font-bold text-lg">${max.toLocaleString()}</span>${maxDate ? `<span class="block text-slate-400 text-[10px] mt-1"><i class="fa-regular fa-calendar ml-1"></i>${maxDate}</span>` : ''}</div><div class="text-red-600"><span class="block text-slate-500 text-xs">أقل مبلغ</span><span class="font-bold text-lg">${min.toLocaleString()}</span>${minDate ? `<span class="block text-slate-400 text-[10px] mt-1"><i class="fa-regular fa-calendar ml-1"></i>${minDate}</span>` : ''}</div></div></div>`;
             });
         }
 
@@ -929,33 +700,15 @@
         // ===       5.5 المبيعات الشهرية        ===
         // =========================================
         window.calcMonthlySales = function() {
-            const startDate = document.getElementById('ms-start').value;
-            const endDate = document.getElementById('ms-end').value;
+            const startDate = document.getElementById('ms-start').value; const endDate = document.getElementById('ms-end').value;
             let data = window.dailyStatementsArr || [];
-            
-            if(startDate) data = data.filter(d => d.date >= startDate);
-            if(endDate) data = data.filter(d => d.date <= endDate);
-            
-            let totalBilled = 0;
-            const tbody = document.getElementById('ms-table-body');
-            tbody.innerHTML = '';
-            
-            if(data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="2" class="p-4 text-center text-slate-400">لا توجد بيانات لهذه الفترة</td></tr>';
-                document.getElementById('ms-total-card').classList.add('hidden');
-                return;
-            }
-            
+            if(startDate) data = data.filter(d => d.date >= startDate); if(endDate) data = data.filter(d => d.date <= endDate);
+            let totalBilled = 0; const tbody = document.getElementById('ms-table-body'); tbody.innerHTML = '';
+            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="2" class="p-4 text-center text-slate-400">لا توجد بيانات لهذه الفترة</td></tr>'; document.getElementById('ms-total-card').classList.add('hidden'); return; }
             document.getElementById('ms-total-card').classList.remove('hidden');
-            
             let rowsHtml = '';
-            data.forEach(item => {
-                const billed = Number(item.customersBilled) || 0;
-                totalBilled += billed;
-                rowsHtml += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${item.date}</td><td class="p-4 text-emerald-700 font-bold">${billed.toLocaleString()} ر.س</td></tr>`;
-            });
+            data.forEach(item => { const billed = Number(item.customersBilled) || 0; totalBilled += billed; rowsHtml += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${item.date}</td><td class="p-4 text-emerald-700 font-bold">${billed.toLocaleString()} ر.س</td></tr>`; });
             tbody.innerHTML = rowsHtml;
-            
             document.getElementById('ms-total-val').innerHTML = `${totalBilled.toLocaleString()} <span class="text-sm font-normal">ر.س</span>`;
         }
 
@@ -963,79 +716,68 @@
         // ===       6. إدارة المستخدمين         ===
         // =========================================
         window.addUser = function() {
-            const username = document.getElementById('u-username').value;
-            const displayName = document.getElementById('u-displayname').value;
-            const password = document.getElementById('u-password').value;
-            const role = document.getElementById('u-role').value;
+            const username = document.getElementById('u-username').value; const displayName = document.getElementById('u-displayname').value; const password = document.getElementById('u-password').value; const role = document.getElementById('u-role').value;
             if(!username || !password) return alert('أدخل اسم المستخدم وكلمة المرور');
             const newUserRef = push(ref(db, 'users'));
-            set(newUserRef, { id: newUserRef.key, username, displayName: displayName || username, password, role, isActive: true }).then(() => {
-                document.getElementById('u-username').value = ''; document.getElementById('u-displayname').value = ''; document.getElementById('u-password').value = '';
-            });
+            set(newUserRef, { id: newUserRef.key, username, displayName: displayName || username, password, role, isActive: true }).then(() => { document.getElementById('u-username').value = ''; document.getElementById('u-displayname').value = ''; document.getElementById('u-password').value = ''; });
         }
 
-        window.toggleUserStatus = function(id, currentStatus) {
-            const updates = {}; updates['/users/' + id + '/isActive'] = !currentStatus;
-            update(ref(db), updates);
-        }
+        window.toggleUserStatus = function(id, currentStatus) { const updates = {}; updates['/users/' + id + '/isActive'] = !currentStatus; update(ref(db), updates); }
 
-            onValue(ref(db, 'users'), (snapshot) => {
-            const data = snapshot.val();
-            window.usersArr = data ? Object.values(data) : [];
-            console.log("Users Data Loaded:", window.usersArr.length, "users");
-            
-            // لو مفيش يوزرات، أنشئ المدير الأساسي
-            if(window.usersArr.length === 0) {
-                set(ref(db, 'users/u1'), { id: 'u1', username: 'Reyad', displayName: 'Reyad Hussein', password: '1357', role: 'مدير', isActive: true });
-            }
-            
-            // لو الشاشة المفتوحة هي يوزرات، ارسمها فوراً
-            if(currentActivePage === 'users') {
-                renderUsers();
-            }
-        }, (error) => {
-            console.error("Firebase Users Error:", error);
-            const debugBox = document.getElementById('users-debug');
-            if(debugBox) debugBox.innerHTML = "❌ خطأ في قراءة المستخدمين: " + error.message;
+        onValue(ref(db, 'users'), (snapshot) => {
+            const data = snapshot.val(); window.usersArr = data ? Object.values(data) : [];
+            if(window.usersArr.length === 0) { set(ref(db, 'users/u1'), { id: 'u1', username: 'Reyad', displayName: 'Reyad Hussein', password: '1357', role: 'مدير', isActive: true }); }
+            if(currentActivePage === 'users') { renderUsers(); }
         });
 
-            function renderUsers() {
-            const         function renderUsers() {
+        function renderUsers() {
             const tbody = document.getElementById('users-table-body');
-            if(!tbody) return; // لو الجدول مش موجود في الصفحة، طلع بره
-            
-            const data = window.usersArr || [];
-            tbody.innerHTML = '';
-            
-            if(data.length === 0) { 
-                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">لا يوجد مستخدمين</td></tr>'; 
-                return; 
-            }
-            
+            if(!tbody) return;
+            const data = window.usersArr || []; tbody.innerHTML = '';
+            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">لا يوجد مستخدمين</td></tr>'; return; }
             let rowsHtml = '';
             data.forEach(user => {
                 const roleClass = user.role === 'مدير' ? 'bg-red-100 text-red-700' : user.role === 'محرر' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700';
                 const statusBtnClass = user.isActive ? 'text-red-600 hover:text-red-800' : 'text-emerald-600 hover:text-emerald-800';
-                
-                rowsHtml += `<tr class="hover:bg-slate-50">
-                    <td class="p-4 font-medium">${user.username}</td>
-                    <td class="p-4">${user.displayName}</td>
-                    <td class="p-4"><span class="px-2 py-1 rounded-full text-xs ${roleClass}">${user.role}</span></td>
-                    <td class="p-4"><span class="text-xs ${user.isActive ? 'text-emerald-600' : 'text-red-600'}">${user.isActive ? 'نشط' : 'معطل'}</span></td>
-                    <td class="p-4">
-                        <button onclick="toggleUserStatus('${user.id}', ${user.isActive})" class="${statusBtnClass} text-sm">
-                            <i class="fa-solid ${user.isActive ? 'fa-ban' : 'fa-check-circle'} ml-1"></i> ${user.isActive ? 'تعطيل' : 'تفعيل'}
-                        </button>
-                    </td>
-                </tr>`;
+                rowsHtml += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${user.username}</td><td class="p-4">${user.displayName}</td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs ${roleClass}">${user.role}</span></td><td class="p-4"><span class="text-xs ${user.isActive ? 'text-emerald-600' : 'text-red-600'}">${user.isActive ? 'نشط' : 'معطل'}</span></td><td class="p-4"><button onclick="toggleUserStatus('${user.id}', ${user.isActive})" class="${statusBtnClass} text-sm"><i class="fa-solid ${user.isActive ? 'fa-ban' : 'fa-check-circle'} ml-1"></i> ${user.isActive ? 'تعطيل' : 'تفعيل'}</button></td></tr>`;
             });
             tbody.innerHTML = rowsHtml;
         }
 
         // =========================================
+        // ===       7. تقرير الإدارة            ===
+        // =========================================
+        window.generateAdminReport = function() {
+            const dateInput = document.getElementById('ar-date').value;
+            if(!dateInput) return alert('يرجى اختيار التاريخ أولاً');
+            const date = normalizeDate(dateInput);
+            document.getElementById('ar-date-display').innerText = `التاريخ: ${date}`;
+            const data30 = window.dailyStatementsArr || [];
+            const dayData = data30.find(d => d.date === date); const dailyCards = document.getElementById('ar-daily-cards');
+            const fields = [ { key: 'bankBalance', label: 'الرصيد البنكي', color: 'text-blue-700 bg-blue-50 border-blue-200' }, { key: 'caravansBalance', label: 'رصيد القوافل', color: 'text-purple-700 bg-purple-50 border-purple-200' }, { key: 'vendorsBalance', label: 'رصيد الموردين', color: 'text-red-700 bg-red-50 border-red-200' }, { key: 'customersDue', label: 'مستحقة العملاء', color: 'text-amber-700 bg-amber-50 border-amber-200' }, { key: 'customersBilled', label: 'محررة العملاء', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' }, { key: 'collectionBalance', label: 'رصيد التحصيل', color: 'text-cyan-700 bg-cyan-50 border-cyan-200' } ];
+            let cardsHtml = '';
+            fields.forEach(field => {
+                const currentValue = dayData ? (Number(dayData[field.key]) || 0) : 0;
+                const filteredData = data30.filter(d => Number(d[field.key]) !== 0); let max = 0, min = 0, maxDate = '', minDate = '';
+                if (filteredData.length > 0) { const maxItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) > Number(current[field.key])) ? prev : current); max = Number(maxItem[field.key]) || 0; maxDate = maxItem.date || ''; const minItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) < Number(current[field.key])) ? prev : current); min = Number(minItem[field.key]) || 0; minDate = minItem.date || ''; }
+                cardsHtml += `<div class="p-4 rounded-lg border ${field.color} shadow-sm"><span class="block text-xs font-medium mb-1">${field.label}</span><span class="block text-xl font-extrabold">${currentValue.toLocaleString()} ر.س</span><div class="mt-3 pt-2 border-t border-black/10 grid grid-cols-2 gap-2 text-[10px]"><div><span class="block font-bold text-emerald-800">▲ أعلى مبلغ</span><span class="font-bold">${max.toLocaleString()}</span>${maxDate ? `<span class="block text-slate-600 mt-0.5"><i class="fa-regular fa-calendar ml-0.5"></i>${maxDate}</span>` : ''}</div><div><span class="block font-bold text-red-800">▼ أقل مبلغ</span><span class="font-bold">${min.toLocaleString()}</span>${minDate ? `<span class="block text-slate-600 mt-0.5"><i class="fa-regular fa-calendar ml-0.5"></i>${minDate}</span>` : ''}</div></div></div>`;
+            });
+            dailyCards.innerHTML = cardsHtml;
+            const monthlyData = window.monthlyItemsArr || []; const tbody = document.getElementById('ar-monthly-tbody'); const tfooter = document.getElementById('ar-monthly-footer'); let monthlyHtml = ''; let totalRemaining = 0;
+            monthlyData.forEach(item => { const remaining = (item.totalAmount || 0) - (item.paidAmount || 0); totalRemaining += remaining; const typeClass = item.type === 'التزام' ? 'text-orange-700' : 'text-blue-700'; monthlyHtml += `<tr class="hover:bg-slate-50"><td class="p-3 border border-slate-200 font-medium">${item.name}</td><td class="p-3 border border-slate-200 ${typeClass} text-center text-xs font-bold">${item.type}</td><td class="p-3 border border-slate-200 text-red-700 font-bold text-center">${remaining.toLocaleString()} ر.س</td></tr>`; });
+            tbody.innerHTML = monthlyHtml; tfooter.innerHTML = `<tr><td class="p-3 border border-slate-200" colspan="2">الإجمالي المتبقي من الالتزامات</td><td class="p-3 border border-slate-200 text-red-900 text-center font-extrabold">${totalRemaining.toLocaleString()} ر.س</td></tr>`;
+        }
+        
+        window.exportAdminReportPDF = function() {
+            const element = document.getElementById('admin-report-content'); const dateInput = document.getElementById('ar-date').value || 'report';
+            const opt = { margin: [0.5, 0.5, 0.5, 0.5], filename: `تقرير_الإدارة_${dateInput}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
+            alert('جاري إعداد ملف PDF، يرجى الانتظار...'); html2pdf().set(opt).from(element).save();
+        }
+
+        // =========================================
         // ===          تشغيل النظام             ===
         // =========================================
-                function renderCurrentPage() {
+        function renderCurrentPage() {
             try {
                 if(currentActivePage === 'history') renderHistory();
                 if(currentActivePage === 'monthly') renderMonthlyItems();
@@ -1043,150 +785,17 @@
                 if(currentActivePage === 'reportFull') calcReportFull();
                 if(currentActivePage === 'monthlySales') calcMonthlySales();
                 if(currentActivePage === 'users') renderUsers();
-                if(currentActivePage === 'adminReport') return; // شاشة تقرير الإدارة بتتعمل لما تضغط زرار عرض
-            } catch (error) {
-                console.error("Error rendering page:", error);
-            }
+            } catch (error) { console.error("Error rendering page:", error); }
         }
 
-              // =========================================
-        // ===       7. تقرير الإدارة            ===
-        // =========================================
-                window.generateAdminReport = function() {
-            const dateInput = document.getElementById('ar-date').value;
-            if(!dateInput) return alert('يرجى اختيار التاريخ أولاً');
-            
-            const date = normalizeDate(dateInput); // توحيد التاريخ
-            document.getElementById('ar-date-display').innerText = `التاريخ: ${date}`;
-            
-            const data30 = window.dailyStatementsArr || []; // بيانات 30 يوم
-            
-            // 1. ملء الأرصدة اليومية مع أعلى وأقل رصيد
-            const dayData = data30.find(d => d.date === date);
-            const dailyCards = document.getElementById('ar-daily-cards');
-            
-            const fields = [
-                { key: 'bankBalance', label: 'الرصيد البنكي', color: 'text-blue-700 bg-blue-50 border-blue-200' },
-                { key: 'caravansBalance', label: 'رصيد القوافل', color: 'text-purple-700 bg-purple-50 border-purple-200' },
-                { key: 'vendorsBalance', label: 'رصيد الموردين', color: 'text-red-700 bg-red-50 border-red-200' },
-                { key: 'customersDue', label: 'مستحقة العملاء', color: 'text-amber-700 bg-amber-50 border-amber-200' },
-                { key: 'customersBilled', label: 'محررة العملاء', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
-                { key: 'collectionBalance', label: 'رصيد التحصيل', color: 'text-cyan-700 bg-cyan-50 border-cyan-200' }
-            ];
-            
-            let cardsHtml = '';
-            
-            fields.forEach(field => {
-                // قيمة اليوم الحالي
-                const currentValue = dayData ? (Number(dayData[field.key]) || 0) : 0;
-                
-                // حساب أعلى وأقل مبلغ في آخر 30 يوم
-                const filteredData = data30.filter(d => Number(d[field.key]) !== 0);
-                let max = 0, min = 0, maxDate = '', minDate = '';
-                
-                if (filteredData.length > 0) {
-                    const maxItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) > Number(current[field.key])) ? prev : current);
-                    max = Number(maxItem[field.key]) || 0;
-                    maxDate = maxItem.date || '';
-                    
-                    const minItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) < Number(current[field.key])) ? prev : current);
-                    min = Number(minItem[field.key]) || 0;
-                    minDate = minItem.date || '';
-                }
-
-                cardsHtml += `
-                <div class="p-4 rounded-lg border ${field.color} shadow-sm">
-                    <span class="block text-xs font-medium mb-1">${field.label}</span>
-                    <span class="block text-xl font-extrabold">${currentValue.toLocaleString()} ر.س</span>
-                    
-                    <div class="mt-3 pt-2 border-t border-black/10 grid grid-cols-2 gap-2 text-[10px]">
-                        <div>
-                            <span class="block font-bold text-emerald-800">▲ أعلى مبلغ</span>
-                            <span class="font-bold">${max.toLocaleString()}</span>
-                            ${maxDate ? `<span class="block text-slate-600 mt-0.5"><i class="fa-regular fa-calendar ml-0.5"></i>${maxDate}</span>` : ''}
-                        </div>
-                        <div>
-                            <span class="block font-bold text-red-800">▼ أقل مبلغ</span>
-                            <span class="font-bold">${min.toLocaleString()}</span>
-                            ${minDate ? `<span class="block text-slate-600 mt-0.5"><i class="fa-regular fa-calendar ml-0.5"></i>${minDate}</span>` : ''}
-                        </div>
-                    </div>
-                </div>`;
-            });
-            
-            dailyCards.innerHTML = cardsHtml;
-
-            // 2. ملء البنود الشهرية المتبقية
-            const monthlyData = window.monthlyItemsArr || [];
-            const tbody = document.getElementById('ar-monthly-tbody');
-            const tfooter = document.getElementById('ar-monthly-footer');
-            let monthlyHtml = '';
-            let totalRemaining = 0;
-
-            monthlyData.forEach(item => {
-                const remaining = (item.totalAmount || 0) - (item.paidAmount || 0);
-                totalRemaining += remaining;
-                const typeClass = item.type === 'التزام' ? 'text-orange-700' : 'text-blue-700';
-                monthlyHtml += `<tr class="hover:bg-slate-50">
-                    <td class="p-3 border border-slate-200 font-medium">${item.name}</td>
-                    <td class="p-3 border border-slate-200 ${typeClass} text-center text-xs font-bold">${item.type}</td>
-                    <td class="p-3 border border-slate-200 text-red-700 font-bold text-center">${remaining.toLocaleString()} ر.س</td>
-                </tr>`;
-            });
-
-            tbody.innerHTML = monthlyHtml;
-            tfooter.innerHTML = `<tr>
-                <td class="p-3 border border-slate-200" colspan="2">الإجمالي المتبقي من الالتزامات</td>
-                <td class="p-3 border border-slate-200 text-red-900 text-center font-extrabold">${totalRemaining.toLocaleString()} ر.س</td>
-            </tr>`;
-        }
-        window.exportAdminReportPDF = function() {
-            const element = document.getElementById('admin-report-content');
-            const dateInput = document.getElementById('ar-date').value || 'report';
-            
-            // إعدادات الـ PDF
-            const opt = {
-                margin:       [0.5, 0.5, 0.5, 0.5], // هوامش
-                filename:     `تقرير_الإدارة_${dateInput}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-            };
-
-            // رسالة تحميل
-            alert('جاري إعداد ملف PDF، يرجى الانتظار...');
-
-            // توليد وحفظ الملف
-            html2pdf().set(opt).from(element).save();
-        }  
-        
         function initApp() {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('d-date').value = today;
-            const dateObj = new Date();
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            const dateObj = new Date(); const options = { year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('current-date-header').textContent = dateObj.toLocaleDateString('ar-EG', options);
             showPage('daily');
         }
 
     </script>
-    <!-- نافذة الأرشيف -->
-    <div id="archive-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-box-archive ml-2 text-indigo-600"></i> أرشيف البنود الشهرية</h3>
-                <button onclick="closeArchiveModal()" class="text-slate-400 hover:text-red-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-slate-600 mb-1">اختر الشهر</label>
-                <select id="archive-select" onchange="loadArchivedMonth(this.value)" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
-                    <option value="">-- اختر شهراً من الأرشيف --</option>
-                </select>
-            </div>
-            <div id="archive-table-container" class="text-center text-slate-400 text-sm">
-                اختر شهراً لعرض بنوده
-            </div>
-        </div>
-    </div>
 </body>
 </html>
