@@ -399,7 +399,8 @@
 
         onValue(ref(db, 'dailyStatements'), (snapshot) => {
             const data = snapshot.val();
-            window.dailyStatementsArr = data ? Object.values(data).sort((a, b) => b.date.localeCompare(a.date)) : [];
+            // أضفنا filter عشان نتأكد إننا بنأخذ الصفوف اللي فيها تاريخ فقط عشان ميسبش مشكلة في الترتيب
+            window.dailyStatementsArr = data ? Object.values(data).filter(d => d.date).sort((a, b) => String(b.date).localeCompare(String(a.date))) : [];
             renderCurrentPage();
         });
 
@@ -503,8 +504,12 @@
                     }
                 });
 
-                if(count > 0) {
-                    update(ref(db), updates).then(() => alert(`تم رفع وإضافة ${count} سجل بنجاح!`));
+                                if(count > 0) {
+                    update(ref(db), updates).then(() => {
+                        alert(`تم رفع وإضافة ${count} سجل بنجاح!`);
+                        // تحديث الشاشة فوراً بعد الرفع
+                        renderCurrentPage(); 
+                    });
                 } else {
                     alert('لم يتم العثور على بيانات صالحة. تأكد أن عمود التاريخ اسمه date');
                 }
