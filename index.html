@@ -63,7 +63,7 @@
                         </div>
                     </div>
                     <div id="login-error" class="hidden bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2.5 text-red-400 text-sm">
-                        <i class="fa-solid fa-triangle-exclamation ml-2"></i><span>اسم المستخدم أو كلمة المرور غير صحيحة</span>
+                        <i class="fa-solid fa-triangle-exclamation ml-2"></i><span>اسم المستخدم أو كلمة المرور غير صحيحة أو الحساب معطل</span>
                     </div>
                     <button type="submit" class="w-full h-11 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-semibold rounded-xl shadow-lg shadow-indigo-600/25 transition-all hover:shadow-indigo-500/40 active:scale-95">
                         <i class="fa-solid fa-right-to-bracket ml-2"></i> دخول
@@ -93,8 +93,8 @@
                 </div>
             </div>
             <nav class="flex-1 overflow-y-auto py-3 px-3">
-                              <div class="mt-4 pt-4 border-t border-[#1e293b]">
-                    <button onclick="showPage('users')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1 admin-only" data-page="users">
+                <div class="mt-2 pt-2 border-t border-[#1e293b] mb-2 hidden admin-only">
+                    <button onclick="showPage('users')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="users">
                         <i class="fa-solid fa-shield-halved w-4 h-4"></i><span>إدارة المستخدمين</span>
                     </button>
                 </div>
@@ -117,10 +117,10 @@
             </nav>
             <div class="border-t border-[#1e293b] p-4">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-amber-500/20">R</div>
+                    <div class="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-amber-500/20" id="sidebar-avatar">R</div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-white text-xs font-medium truncate">Reyad Hussein</p>
-                        <p class="text-slate-500 text-[10px]">@Reyad</p>
+                        <p class="text-white text-xs font-medium truncate" id="sidebar-name">Reyad Hussein</p>
+                        <p class="text-slate-500 text-[10px]" id="sidebar-role">مدير</p>
                     </div>
                     <button onclick="logout()" class="text-slate-500 hover:text-red-400 transition-colors p-1" title="تسجيل الخروج">
                         <i class="fa-solid fa-right-from-bracket"></i>
@@ -152,77 +152,33 @@
                         <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-plus-circle text-indigo-600"></i> إدخال بيان يومي</h2>
                         <form id="daily-form" class="space-y-4">
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-600 mb-1">التاريخ</label>
-                                    <input type="date" id="d-date" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-600 mb-1">الرصيد البنكي</label>
-                                    <input type="number" id="d-bank" step="0.01" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-600 mb-1">رصيد القوافل الخمسة</label>
-                                    <input type="number" id="d-caravans" step="0.01" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-600 mb-1">رصيد الموردين</label>
-                                    <input type="number" id="d-vendors" step="0.01" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-600 mb-1">مستحقة العملاء</label>
-                                    <input type="number" id="d-due" step="0.01" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-600 mb-1">محررة العملاء</label>
-                                    <input type="number" id="d-billed" step="0.01" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-600 mb-1">رصيد التحصيل</label>
-                                    <input type="number" id="d-coll" step="0.01" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                                </div>
+                                <div><label class="block text-sm font-medium text-slate-600 mb-1">التاريخ</label><input type="date" id="d-date" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                                <div><label class="block text-sm font-medium text-slate-600 mb-1">الرصيد البنكي</label><input type="number" id="d-bank" step="0.01" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                                <div><label class="block text-sm font-medium text-slate-600 mb-1">رصيد القوافل الخمسة</label><input type="number" id="d-caravans" step="0.01" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                                <div><label class="block text-sm font-medium text-slate-600 mb-1">رصيد الموردين</label><input type="number" id="d-vendors" step="0.01" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                                <div><label class="block text-sm font-medium text-slate-600 mb-1">مستحقة العملاء</label><input type="number" id="d-due" step="0.01" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                                <div><label class="block text-sm font-medium text-slate-600 mb-1">محررة العملاء</label><input type="number" id="d-billed" step="0.01" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                                <div><label class="block text-sm font-medium text-slate-600 mb-1">رصيد التحصيل</label><input type="number" id="d-coll" step="0.01" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
                             </div>
-                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-                                <i class="fa-solid fa-floppy-disk ml-2"></i> حفظ البيان
-                            </button>
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium transition-colors editor-only"><i class="fa-solid fa-floppy-disk ml-2"></i> حفظ البيان</button>
                         </form>
                     </div>
                 </div>
 
                 <!-- 2. البنود الشهرية -->
                 <div id="page-monthly" class="page space-y-6">
-                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6 editor-only-section">
                         <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-plus-circle text-indigo-600"></i> إضافة بند شهري</h2>
                         <div class="flex flex-wrap gap-4 items-end">
-                            <div class="flex-1 min-w-[200px]">
-                                <label class="block text-sm font-medium text-slate-600 mb-1">اسم البند</label>
-                                <input type="text" id="m-name" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                            </div>
-                            <div class="w-40">
-                                <label class="block text-sm font-medium text-slate-600 mb-1">التصنيف</label>
-                                <select id="m-type" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
-                                    <option value="مصروف">مصروف</option>
-                                    <option value="التزام">التزام</option>
-                                </select>
-                            </div>
-                            <div class="w-40">
-                                <label class="block text-sm font-medium text-slate-600 mb-1">المبلغ المستحق</label>
-                                <input type="number" id="m-total" step="0.01" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                            </div>
+                            <div class="flex-1 min-w-[200px]"><label class="block text-sm font-medium text-slate-600 mb-1">اسم البند</label><input type="text" id="m-name" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <div class="w-40"><label class="block text-sm font-medium text-slate-600 mb-1">التصنيف</label><select id="m-type" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"><option value="مصروف">مصروف</option><option value="التزام">التزام</option></select></div>
+                            <div class="w-40"><label class="block text-sm font-medium text-slate-600 mb-1">المبلغ المستحق</label><input type="number" id="m-total" step="0.01" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
                             <button onclick="addMonthlyItem()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium">إضافة</button>
                         </div>
                     </div>
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
                         <table class="w-full text-sm text-right">
-                            <thead class="bg-slate-50 text-slate-600">
-                                <tr>
-                                    <th class="p-4 font-medium">البند</th>
-                                    <th class="p-4 font-medium">التصنيف</th>
-                                    <th class="p-4 font-medium">المستحق</th>
-                                    <th class="p-4 font-medium">المسدد</th>
-                                    <th class="p-4 font-medium">المتبقي</th>
-                                    <th class="p-4 font-medium">إجراء</th>
-                                </tr>
-                            </thead>
+                            <thead class="bg-slate-50 text-slate-600"><tr><th class="p-4 font-medium">البند</th><th class="p-4 font-medium">التصنيف</th><th class="p-4 font-medium">المستحق</th><th class="p-4 font-medium">المسدد</th><th class="p-4 font-medium">المتبقي</th><th class="p-4 font-medium editor-only">إجراء</th></tr></thead>
                             <tbody id="monthly-table-body" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
@@ -233,29 +189,14 @@
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
                         <div class="flex flex-wrap justify-between items-center mb-4 gap-3">
                             <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-indigo-600"></i> بيانات سابقة (آخر 30 يوم)</h2>
-                            <div class="flex gap-2">
-                                <button onclick="downloadExcelTemplate()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                                    <i class="fa-solid fa-download ml-2"></i> تنزيل قالب إكسيل
-                                </button>
-                                <label class="border border-indigo-600 text-indigo-600 hover:bg-indigo-50 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer">
-                                    <i class="fa-solid fa-file-excel ml-2"></i> رفع ملف إكسيل
-                                    <input type="file" id="excel-upload" accept=".xlsx, .xls" class="hidden" onchange="handleExcelUpload(event)">
-                                </label>
+                            <div class="flex gap-2 editor-only">
+                                <button onclick="downloadExcelTemplate()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium"><i class="fa-solid fa-download ml-2"></i> تنزيل قالب إكسيل</button>
+                                <label class="border border-indigo-600 text-indigo-600 hover:bg-indigo-50 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer"><i class="fa-solid fa-file-excel ml-2"></i> رفع ملف إكسيل<input type="file" id="excel-upload" accept=".xlsx, .xls" class="hidden" onchange="handleExcelUpload(event)"></label>
                             </div>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-right">
-                                <thead class="bg-slate-50 text-slate-600">
-                                    <tr>
-                                        <th class="p-3 font-medium">التاريخ</th>
-                                        <th class="p-3 font-medium">البنك</th>
-                                        <th class="p-3 font-medium">القوافل</th>
-                                        <th class="p-3 font-medium">الموردين</th>
-                                        <th class="p-3 font-medium">مستحقة</th>
-                                        <th class="p-3 font-medium">محررة</th>
-                                        <th class="p-3 font-medium">التحصيل</th>
-                                    </tr>
-                                </thead>
+                                <thead class="bg-slate-50 text-slate-600"><tr><th class="p-3 font-medium">التاريخ</th><th class="p-3 font-medium">البنك</th><th class="p-3 font-medium">القوافل</th><th class="p-3 font-medium">الموردين</th><th class="p-3 font-medium">مستحقة</th><th class="p-3 font-medium">محررة</th><th class="p-3 font-medium">التحصيل</th></tr></thead>
                                 <tbody id="history-table-body" class="divide-y divide-slate-100"></tbody>
                             </table>
                         </div>
@@ -265,61 +206,13 @@
                 <!-- 4. تقرير 30 يوم -->
                 <div id="page-report30" class="page space-y-6">
                     <div class="flex flex-wrap gap-4 items-end bg-white p-4 rounded-lg shadow-sm border border-slate-200">
-                        <div>
-                            <label class="block text-sm text-slate-500 mb-1">من تاريخ</label>
-                            <input type="date" id="r-start" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-sm text-slate-500 mb-1">إلى تاريخ</label>
-                            <input type="date" id="r-end" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                        </div>
+                        <div><label class="block text-sm text-slate-500 mb-1">من تاريخ</label><input type="date" id="r-start" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                        <div><label class="block text-sm text-slate-500 mb-1">إلى تاريخ</label><input type="date" id="r-end" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
                         <button onclick="calcReport30()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg h-10">عرض</button>
                     </div>
                     <div id="report30-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 </div>
-                <!-- 6. إدارة المستخدمين -->
-                <div id="page-users" class="page space-y-6">
-                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
-                        <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-user-plus text-indigo-600"></i> إضافة مستخدم جديد</h2>
-                        <div class="flex flex-wrap gap-4 items-end">
-                            <div class="flex-1 min-w-[150px]">
-                                <label class="block text-sm font-medium text-slate-600 mb-1">اسم المستخدم (للدخول)</label>
-                                <input type="text" id="u-username" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                            </div>
-                            <div class="flex-1 min-w-[150px]">
-                                <label class="block text-sm font-medium text-slate-600 mb-1">الاسم المعروض</label>
-                                <input type="text" id="u-displayname" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                            </div>
-                            <div class="w-40">
-                                <label class="block text-sm font-medium text-slate-600 mb-1">كلمة المرور</label>
-                                <input type="password" id="u-password" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                            </div>
-                            <div class="w-40">
-                                <label class="block text-sm font-medium text-slate-600 mb-1">الصلاحية</label>
-                                <select id="u-role" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
-                                    <option value="مشاهد">مشاهد (قراءة فقط)</option>
-                                    <option value="محرر">محرر (إضافة وتعديل)</option>
-                                    <option value="مدير">مدير (كامل)</option>
-                                </select>
-                            </div>
-                            <button onclick="addUser()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium">إضافة</button>
-                        </div>
-                    </div>
-                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
-                        <table class="w-full text-sm text-right">
-                            <thead class="bg-slate-50 text-slate-600">
-                                <tr>
-                                    <th class="p-4 font-medium">اسم المستخدم</th>
-                                    <th class="p-4 font-medium">الاسم المعروض</th>
-                                    <th class="p-4 font-medium">الصلاحية</th>
-                                    <th class="p-4 font-medium">الحالة</th>
-                                    <th class="p-4 font-medium">إجراء</th>
-                                </tr>
-                            </thead>
-                            <tbody id="users-table-body" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
-                </div>
+
                 <!-- 5. التقرير الشامل -->
                 <div id="page-reportFull" class="page space-y-6">
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
@@ -328,136 +221,35 @@
                     </div>
                 </div>
 
+                <!-- 6. إدارة المستخدمين -->
+                <div id="page-users" class="page space-y-6">
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
+                        <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-user-plus text-indigo-600"></i> إضافة مستخدم جديد</h2>
+                        <div class="flex flex-wrap gap-4 items-end">
+                            <div class="flex-1 min-w-[150px]"><label class="block text-sm font-medium text-slate-600 mb-1">اسم المستخدم (للدخول)</label><input type="text" id="u-username" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <div class="flex-1 min-w-[150px]"><label class="block text-sm font-medium text-slate-600 mb-1">الاسم المعروض</label><input type="text" id="u-displayname" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <div class="w-40"><label class="block text-sm font-medium text-slate-600 mb-1">كلمة المرور</label><input type="password" id="u-password" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <div class="w-40"><label class="block text-sm font-medium text-slate-600 mb-1">الصلاحية</label><select id="u-role" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"><option value="مشاهد">مشاهد (قراءة فقط)</option><option value="محرر">محرر (إضافة وتعديل)</option><option value="مدير">مدير (كامل)</option></select></div>
+                            <button onclick="addUser()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium">إضافة</button>
+                        </div>
+                    </div>
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
+                        <table class="w-full text-sm text-right">
+                            <thead class="bg-slate-50 text-slate-600"><tr><th class="p-4 font-medium">اسم المستخدم</th><th class="p-4 font-medium">الاسم المعروض</th><th class="p-4 font-medium">الصلاحية</th><th class="p-4 font-medium">الحالة</th><th class="p-4 font-medium">إجراء</th></tr></thead>
+                            <tbody id="users-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
 
     <!-- Firebase & Core Script -->
-           // =========================================
-        // ===       6. إدارة المستخدمين         ===
-        // =========================================
-        
-        // تعديل نظام تسجيل الدخول ليعمل مع Firebase
-        document.getElementById('login-form').removeEventListener('submit', window.loginHandler);
-        window.loginHandler = async function(e) {
-            e.preventDefault();
-            const u = document.getElementById('login-user').value;
-            const p = document.getElementById('login-pass').value;
-            
-            // التحقق من المستخدمين في قاعدة البيانات
-            const usersArr = window.usersArr || [];
-            const foundUser = usersArr.find(user => user.username.toLowerCase() === u.toLowerCase() && user.password === p && user.isActive);
-
-            if (foundUser) {
-                window.currentUserRole = foundUser.role;
-                window.currentUserName = foundUser.displayName;
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('main-app').classList.remove('hidden');
-                document.getElementById('main-app').classList.add('flex');
-                applyRoleAccess();
-                initApp();
-            } else {
-                document.getElementById('login-error').classList.remove('hidden');
-            }
-        };
-        document.getElementById('login-form').addEventListener('submit', window.loginHandler);
-
-        // تطبيق الصلاحيات على القائمة الجانبية
-        window.applyRoleAccess = function() {
-            const adminOnlyElements = document.querySelectorAll('.admin-only');
-            const editorOnlyElements = document.querySelectorAll('.editor-only');
-            
-            // إخفاء زر إدارة المستخدمين لغير المديرين
-            adminOnlyElements.forEach(el => {
-                el.style.display = window.currentUserRole === 'مدير' ? '' : 'none';
-            });
-        }
-
-        // استماع لبيانات المستخدمين من Firebase
-        onValue(ref(db, 'users'), (snapshot) => {
-            const data = snapshot.val();
-            window.usersArr = data ? Object.values(data) : [];
-            
-            // لو مفيش مستخدمين في الداتابيز (أول مرة)، أضف المستخدم الأساسي
-            if(window.usersArr.length === 0) {
-                set(ref(db, 'users/u1'), {
-                    id: 'u1',
-                    username: 'Reyad',
-                    displayName: 'Reyad Hussein',
-                    password: '1357',
-                    role: 'مدير',
-                    isActive: true
-                });
-            }
-            
-            if(currentActivePage === 'users') renderUsers();
-        });
-
-        window.addUser = function() {
-            const username = document.getElementById('u-username').value;
-            const displayName = document.getElementById('u-displayname').value;
-            const password = document.getElementById('u-password').value;
-            const role = document.getElementById('u-role').value;
-            
-            if(!username || !password) return alert('أدخل اسم المستخدم وكلمة المرور');
-            
-            const newUserRef = push(ref(db, 'users'));
-            set(newUserRef, {
-                id: newUserRef.key,
-                username: username,
-                displayName: displayName || username,
-                password: password,
-                role: role,
-                isActive: true
-            }).then(() => {
-                document.getElementById('u-username').value = '';
-                document.getElementById('u-displayname').value = '';
-                document.getElementById('u-password').value = '';
-            });
-        }
-
-        window.toggleUserStatus = function(id, currentStatus) {
-            const updates = {};
-            updates['/users/' + id + '/isActive'] = !currentStatus;
-            update(ref(db), updates);
-        }
-
-        function renderUsers() {
-            const tbody = document.getElementById('users-table-body');
-            const data = window.usersArr || [];
-            tbody.innerHTML = '';
-            
-            if(data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">لا يوجد مستخدمين</td></tr>';
-                return;
-            }
-
-            data.forEach(user => {
-                const roleClass = user.role === 'مدير' ? 'bg-red-100 text-red-700' : user.role === 'محرر' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700';
-                const statusText = user.isActive ? 'نشط' : 'معطل';
-                const statusBtnClass = user.isActive ? 'text-red-600 hover:text-red-800' : 'text-emerald-600 hover:text-emerald-800';
-                
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50">
-                        <td class="p-4 font-medium">${user.username}</td>
-                        <td class="p-4">${user.displayName}</td>
-                        <td class="p-4"><span class="px-2 py-1 rounded-full text-xs ${roleClass}">${user.role}</span></td>
-                        <td class="p-4"><span class="text-xs ${user.isActive ? 'text-emerald-600' : 'text-red-600'}">${statusText}</span></td>
-                        <td class="p-4">
-                            <button onclick="toggleUserStatus('${user.id}', ${user.isActive})" class="${statusBtnClass} text-sm">
-                                <i class="fa-solid ${user.isActive ? 'fa-ban' : 'fa-check-circle'} ml-1"></i> ${user.isActive ? 'تعطيل' : 'تفعيل'}
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
     <script type="module">
-        // 1. استدعاء مكتبات Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getDatabase, ref, set, push, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-        // 2. إعدادات Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyA9QBzup2EZJtiA291VynvLWtmaRyW9tCU",
             authDomain: "financial-management-ddfcb.firebaseapp.com",
@@ -473,6 +265,8 @@
         const db = getDatabase(app);
 
         let currentActivePage = 'daily';
+        window.currentUserRole = 'مشاهد'; 
+        window.currentUserName = '';
 
         // =========================================
         // ===           تسجيل الدخول           ===
@@ -481,10 +275,17 @@
             e.preventDefault();
             const u = document.getElementById('login-user').value;
             const p = document.getElementById('login-pass').value;
-            if (u.toLowerCase() === 'reyad' && p === '1357') {
+            
+            const usersArr = window.usersArr || [];
+            const foundUser = usersArr.find(user => user.username.toLowerCase() === u.toLowerCase() && user.password === p && user.isActive);
+
+            if (foundUser) {
+                window.currentUserRole = foundUser.role;
+                window.currentUserName = foundUser.displayName;
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
                 document.getElementById('main-app').classList.add('flex');
+                applyRoleAccess();
                 initApp();
             } else {
                 document.getElementById('login-error').classList.remove('hidden');
@@ -500,6 +301,18 @@
             document.getElementById('login-error').classList.add('hidden');
         }
 
+        window.applyRoleAccess = function() {
+            const adminOnlyElements = document.querySelectorAll('.admin-only');
+            const editorOnlyElements = document.querySelectorAll('.editor-only, .editor-only-section');
+
+            document.getElementById('sidebar-avatar').innerText = window.currentUserName.charAt(0);
+            document.getElementById('sidebar-name').innerText = window.currentUserName;
+            document.getElementById('sidebar-role').innerText = window.currentUserRole;
+            
+            adminOnlyElements.forEach(el => el.style.display = window.currentUserRole === 'مدير' ? '' : 'none');
+            editorOnlyElements.forEach(el => el.style.display = (window.currentUserRole === 'محرر' || window.currentUserRole === 'مدير') ? '' : 'none');
+        }
+
         // =========================================
         // ===         التنقل بين الصفحات        ===
         // =========================================
@@ -512,13 +325,7 @@
             const navBtn = document.querySelector(`.nav-item[data-page="${pageId}"]`);
             if(navBtn) navBtn.classList.add('active');
 
-            const titles = {
-                'daily': 'البيان اليومي',
-                'monthly': 'البنود الشهرية',
-                'history': 'إدخال بيانات سابقة',
-                'report30': 'تقرير 30 يوم',
-                'reportFull': 'التقرير الشامل'
-            };
+            const titles = { 'daily': 'البيان اليومي', 'monthly': 'البنود الشهرية', 'history': 'إدخال بيانات سابقة', 'report30': 'تقرير 30 يوم', 'reportFull': 'التقرير الشامل', 'users': 'إدارة المستخدمين' };
             document.getElementById('page-title').textContent = titles[pageId];
             toggleMobileMenu(true); 
         }
@@ -526,11 +333,9 @@
         window.toggleMobileMenu = function(forceClose = false) {
             const sidebar = document.getElementById('sidebar');
             if(forceClose || !sidebar.classList.contains('translate-x-full')) {
-                sidebar.classList.add('translate-x-full');
-                sidebar.classList.remove('translate-x-0');
+                sidebar.classList.add('translate-x-full'); sidebar.classList.remove('translate-x-0');
             } else {
-                sidebar.classList.remove('translate-x-full');
-                sidebar.classList.add('translate-x-0');
+                sidebar.classList.remove('translate-x-full'); sidebar.classList.add('translate-x-0');
             }
         }
 
@@ -552,27 +357,18 @@
                 collectionBalance: parseFloat(document.getElementById('d-coll').value) || 0,
             };
             
-            // حفظ في Firebase باستخدام التاريخ كمفتاح أساسي (عشان يستبدله لو نفس اليوم)
             set(ref(db, 'dailyStatements/' + date), entry)
                 .then(() => {
                     alert('تم حفظ البيان بنجاح');
                     this.reset();
                     document.getElementById('d-date').value = new Date().toISOString().split('T')[0];
-                })
-                .catch((error) => alert('حدث خطأ: ' + error));
+                }).catch((error) => alert('حدث خطأ: ' + error));
         });
 
-        // استماع للبيانات اليومية من Firebase
         onValue(ref(db, 'dailyStatements'), (snapshot) => {
             const data = snapshot.val();
-            if(data) {
-                window.dailyStatementsArr = Object.values(data).sort((a, b) => b.date.localeCompare(a.date));
-            } else {
-                window.dailyStatementsArr = [];
-            }
-            if(currentActivePage === 'history') renderHistory();
-            if(currentActivePage === 'report30') calcReport30();
-            if(currentActivePage === 'reportFull') calcReportFull();
+            window.dailyStatementsArr = data ? Object.values(data).sort((a, b) => b.date.localeCompare(a.date)) : [];
+            renderCurrentPage();
         });
 
         // =========================================
@@ -584,17 +380,9 @@
             const total = parseFloat(document.getElementById('m-total').value) || 0;
             
             if(!name) return alert('أدخل اسم البند');
-            
             const newItemRef = push(ref(db, 'monthlyItems'));
-            set(newItemRef, {
-                id: newItemRef.key,
-                name: name,
-                type: type,
-                totalAmount: total,
-                paidAmount: 0
-            }).then(() => {
-                document.getElementById('m-name').value = '';
-                document.getElementById('m-total').value = '';
+            set(newItemRef, { id: newItemRef.key, name, type, totalAmount: total, paidAmount: 0 }).then(() => {
+                document.getElementById('m-name').value = ''; document.getElementById('m-total').value = '';
             });
         }
 
@@ -603,46 +391,29 @@
             if (!amountStr) return;
             const amount = parseFloat(amountStr);
             if (isNaN(amount) || amount <= 0) return alert('مبلغ غير صالح');
-            
             const item = window.monthlyItemsArr.find(i => i.id === id);
             if (item) {
-                const updates = {};
-                updates['/monthlyItems/' + id + '/paidAmount'] = item.paidAmount + amount;
+                const updates = {}; updates['/monthlyItems/' + id + '/paidAmount'] = item.paidAmount + amount;
                 update(ref(db), updates);
             }
         }
 
-        // استماع للبنود الشهرية من Firebase
         onValue(ref(db, 'monthlyItems'), (snapshot) => {
             const data = snapshot.val();
             window.monthlyItemsArr = data ? Object.values(data) : [];
-            if(currentActivePage === 'monthly') renderMonthlyItems();
-            if(currentActivePage === 'reportFull') calcReportFull();
+            renderCurrentPage();
         });
 
         function renderMonthlyItems() {
             const tbody = document.getElementById('monthly-table-body');
             const data = window.monthlyItemsArr || [];
             tbody.innerHTML = '';
-            
-            if(data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">لا توجد بنود</td></tr>';
-                return;
-            }
-
+            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">لا توجد بنود</td></tr>'; return; }
             data.forEach(item => {
                 const remaining = item.totalAmount - item.paidAmount;
                 const typeClass = item.type === 'التزام' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700';
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50">
-                        <td class="p-4 font-medium">${item.name}</td>
-                        <td class="p-4"><span class="px-2 py-1 rounded-full text-xs ${typeClass}">${item.type}</span></td>
-                        <td class="p-4">${item.totalAmount.toLocaleString()} ر.س</td>
-                        <td class="p-4 text-emerald-600">${item.paidAmount.toLocaleString()} ر.س</td>
-                        <td class="p-4 text-red-600 font-bold">${remaining.toLocaleString()} ر.س</td>
-                        <td class="p-4"><button onclick="payItem('${item.id}')" class="text-indigo-600 hover:text-indigo-800"><i class="fa-solid fa-money-bill-wave ml-1"></i> سداد</button></td>
-                    </tr>
-                `;
+                const payBtn = (window.currentUserRole === 'محرر' || window.currentUserRole === 'مدير') ? `<button onclick="payItem('${item.id}')" class="text-indigo-600 hover:text-indigo-800"><i class="fa-solid fa-money-bill-wave ml-1"></i> سداد</button>` : '-';
+                tbody.innerHTML += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${item.name}</td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs ${typeClass}">${item.type}</span></td><td class="p-4">${item.totalAmount.toLocaleString()} ر.س</td><td class="p-4 text-emerald-600">${item.paidAmount.toLocaleString()} ر.س</td><td class="p-4 text-red-600 font-bold">${remaining.toLocaleString()} ر.س</td><td class="p-4 editor-only">${payBtn}</td></tr>`;
             });
         }
 
@@ -651,87 +422,42 @@
         // =========================================
         function renderHistory() {
             const tbody = document.getElementById('history-table-body');
-            const data = (window.dailyStatementsArr || []).slice(0, 30); // آخر 30 يوم
+            const data = (window.dailyStatementsArr || []).slice(0, 30);
             tbody.innerHTML = '';
-            
-            if(data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">لا توجد بيانات</td></tr>';
-                return;
-            }
-
+            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">لا توجد بيانات</td></tr>'; return; }
             data.forEach(item => {
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50">
-                        <td class="p-3 font-medium">${item.date}</td>
-                        <td class="p-3">${item.bankBalance.toLocaleString()}</td>
-                        <td class="p-3">${item.caravansBalance.toLocaleString()}</td>
-                        <td class="p-3">${item.vendorsBalance.toLocaleString()}</td>
-                        <td class="p-3">${item.customersDue.toLocaleString()}</td>
-                        <td class="p-3">${item.customersBilled.toLocaleString()}</td>
-                        <td class="p-3">${item.collectionBalance.toLocaleString()}</td>
-                    </tr>
-                `;
+                tbody.innerHTML += `<tr class="hover:bg-slate-50"><td class="p-3 font-medium">${item.date}</td><td class="p-3">${item.bankBalance.toLocaleString()}</td><td class="p-3">${item.caravansBalance.toLocaleString()}</td><td class="p-3">${item.vendorsBalance.toLocaleString()}</td><td class="p-3">${item.customersDue.toLocaleString()}</td><td class="p-3">${item.customersBilled.toLocaleString()}</td><td class="p-3">${item.collectionBalance.toLocaleString()}</td></tr>`;
             });
         }
 
-        // تنزيل قالب إكسيل فارغ
         window.downloadExcelTemplate = function() {
             const headers = [['date', 'bankBalance', 'caravansBalance', 'vendorsBalance', 'customersDue', 'customersBilled', 'collectionBalance']];
             const ws = XLSX.utils.aoa_to_sheet(headers);
-            
-            // تعيين عرض الأعمدة
-            const colWidths = [
-                {wch: 12}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}
-            ];
-            ws['!cols'] = colWidths;
-
+            ws['!cols'] = [{wch: 12}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}];
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Template");
             XLSX.writeFile(wb, "Financial_Template.xlsx");
         }
 
-        // رفع ملف الإكسيل
         window.handleExcelUpload = function(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
+            const file = event.target.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                const jsonArr = XLSX.utils.sheet_to_json(worksheet);
-
-                let updates = {};
-                let count = 0;
-
+                const jsonArr = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                let updates = {}; let count = 0;
                 jsonArr.forEach(row => {
                     if (row.date) {
-                        const dateStr = String(row.date).split('T')[0]; // التأكد من صيغة التاريخ
-                        updates['/dailyStatements/' + dateStr] = {
-                            date: dateStr,
-                            bankBalance: Number(row.bankBalance) || 0,
-                            caravansBalance: Number(row.caravansBalance) || 0,
-                            vendorsBalance: Number(row.vendorsBalance) || 0,
-                            customersDue: Number(row.customersDue) || 0,
-                            customersBilled: Number(row.customersBilled) || 0,
-                            collectionBalance: Number(row.collectionBalance) || 0
-                        };
+                        const dateStr = String(row.date).split('T')[0];
+                        updates['/dailyStatements/' + dateStr] = { date: dateStr, bankBalance: Number(row.bankBalance)||0, caravansBalance: Number(row.caravansBalance)||0, vendorsBalance: Number(row.vendorsBalance)||0, customersDue: Number(row.customersDue)||0, customersBilled: Number(row.customersBilled)||0, collectionBalance: Number(row.collectionBalance)||0 };
                         count++;
                     }
                 });
-
-                if(count > 0) {
-                    update(ref(db), updates).then(() => {
-                        alert(`تم رفع وإضافة ${count} سجل بنجاح!`);
-                    });
-                } else {
-                    alert('لم يتم العثور على بيانات صالحة في الملف. تأكد أن عمود التاريخ اسمه date');
-                }
+                if(count > 0) { update(ref(db), updates).then(() => alert(`تم رفع وإضافة ${count} سجل بنجاح!`)); }
+                else { alert('لم يتم العثور على بيانات صالحة.'); }
             };
-            reader.readAsArrayBuffer(file);
-            event.target.value = ''; // تصفير الحقل
+            reader.readAsArrayBuffer(file); event.target.value = '';
         }
 
         // =========================================
@@ -741,40 +467,18 @@
             const startDate = document.getElementById('r-start').value;
             const endDate = document.getElementById('r-end').value;
             let data = window.dailyStatementsArr || [];
-
             if(startDate) data = data.filter(d => d.date >= startDate);
             if(endDate) data = data.filter(d => d.date <= endDate);
-
             const totalBilled = data.reduce((sum, d) => sum + d.customersBilled, 0);
             const latest = data.length > 0 ? data[0] : null;
-
-            const cardsHtml = `
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div><p class="text-sm text-slate-500 mb-1">رصيد البنك</p><h3 class="text-2xl font-bold">${latest?.bankBalance.toLocaleString() || 0} <span class="text-sm font-normal">ر.س</span></h3></div>
-                    <div class="p-3 rounded-xl bg-blue-50 text-blue-600"><i class="fa-solid fa-building-columns text-xl"></i></div>
-                </div>
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div><p class="text-sm text-slate-500 mb-1">رصيد القوافل</p><h3 class="text-2xl font-bold">${latest?.caravansBalance.toLocaleString() || 0} <span class="text-sm font-normal">ر.س</span></h3></div>
-                    <div class="p-3 rounded-xl bg-purple-50 text-purple-600"><i class="fa-solid fa-truck text-xl"></i></div>
-                </div>
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div><p class="text-sm text-slate-500 mb-1">مستحقة العملاء</p><h3 class="text-2xl font-bold">${latest?.customersDue.toLocaleString() || 0} <span class="text-sm font-normal">ر.س</span></h3></div>
-                    <div class="p-3 rounded-xl bg-amber-50 text-amber-600"><i class="fa-solid fa-users text-xl"></i></div>
-                </div>
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div><p class="text-sm text-slate-500 mb-1">محررة العملاء (مبيعات)</p><h3 class="text-2xl font-bold text-emerald-700">${totalBilled.toLocaleString()} <span class="text-sm font-normal">ر.س</span></h3></div>
-                    <div class="p-3 rounded-xl bg-emerald-50 text-emerald-600"><i class="fa-solid fa-file-invoice-dollar text-xl"></i></div>
-                </div>
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div><p class="text-sm text-slate-500 mb-1">رصيد الموردين</p><h3 class="text-2xl font-bold">${latest?.vendorsBalance.toLocaleString() || 0} <span class="text-sm font-normal">ر.س</span></h3></div>
-                    <div class="p-3 rounded-xl bg-red-50 text-red-600"><i class="fa-solid fa-wallet text-xl"></i></div>
-                </div>
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div><p class="text-sm text-slate-500 mb-1">رصيد التحصيل</p><h3 class="text-2xl font-bold">${latest?.collectionBalance.toLocaleString() || 0} <span class="text-sm font-normal">ر.س</span></h3></div>
-                    <div class="p-3 rounded-xl bg-cyan-50 text-cyan-600"><i class="fa-solid fa-chart-line text-xl"></i></div>
-                </div>
+            document.getElementById('report30-cards').innerHTML = `
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">رصيد البنك</p><h3 class="text-2xl font-bold">${latest?.bankBalance.toLocaleString() || 0} <span class="text-sm font-normal">ر.س</span></h3></div><div class="p-3 rounded-xl bg-blue-50 text-blue-600"><i class="fa-solid fa-building-columns text-xl"></i></div></div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">رصيد القوافل</p><h3 class="text-2xl font-bold">${latest?.caravansBalance.toLocaleString() || 0} <span class="text-sm font-normal">ر.س</span></h3></div><div class="p-3 rounded-xl bg-purple-50 text-purple-600"><i class="fa-solid fa-truck text-xl"></i></div></div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">مستحقة العملاء</p><h3 class="text-2xl font-bold">${latest?.customersDue.toLocaleString() || 0} <span class="text-sm font-normal">ر.س</span></h3></div><div class="p-3 rounded-xl bg-amber-50 text-amber-600"><i class="fa-solid fa-users text-xl"></i></div></div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">محررة العملاء (مبيعات)</p><h3 class="text-2xl font-bold text-emerald-700">${totalBilled.toLocaleString()} <span class="text-sm font-normal">ر.س</span></h3></div><div class="p-3 rounded-xl bg-emerald-50 text-emerald-600"><i class="fa-solid fa-file-invoice-dollar text-xl"></i></div></div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">رصيد الموردين</p><h3 class="text-2xl font-bold">${latest?.vendorsBalance.toLocaleString() || 0} <span class="text-sm font-normal">ر.س</span></h3></div><div class="p-3 rounded-xl bg-red-50 text-red-600"><i class="fa-solid fa-wallet text-xl"></i></div></div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">رصيد التحصيل</p><h3 class="text-2xl font-bold">${latest?.collectionBalance.toLocaleString() || 0} <span class="text-sm font-normal">ر.س</span></h3></div><div class="p-3 rounded-xl bg-cyan-50 text-cyan-600"><i class="fa-solid fa-chart-line text-xl"></i></div></div>
             `;
-            document.getElementById('report30-cards').innerHTML = cardsHtml;
         }
 
         // =========================================
@@ -784,8 +488,6 @@
             const data = (window.dailyStatementsArr || []).slice(0, 30);
             const container = document.getElementById('reportFull-cards');
             container.innerHTML = '';
-
-            // ملخص البنود الشهرية
             const monthlyItems = window.monthlyItemsArr || [];
             const totalDue = monthlyItems.reduce((sum, item) => sum + item.totalAmount, 0);
             const totalPaid = monthlyItems.reduce((sum, item) => sum + item.paidAmount, 0);
@@ -794,74 +496,82 @@
 
             container.innerHTML += `
                 <div class="col-span-1 md:col-span-2 lg:col-span-3 mb-4">
-                    <h3 class="text-md font-bold text-slate-700 mb-3 flex items-center gap-2">
-                        <i class="fa-solid fa-calendar-check text-indigo-600"></i> ملخص الالتزامات والمصروفات الشهرية
-                    </h3>
+                    <h3 class="text-md font-bold text-slate-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-calendar-check text-indigo-600"></i> ملخص الالتزامات والمصروفات الشهرية</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
-                            <span class="text-xs text-indigo-500 block mb-1">المبلغ المستحق خلال الشهر</span>
-                            <span class="text-xl font-bold text-indigo-700">${totalDue.toLocaleString()} ر.س</span>
-                        </div>
-                        <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-4">
-                            <span class="text-xs text-emerald-500 block mb-1">المبلغ المسدد خلال الشهر</span>
-                            <span class="text-xl font-bold text-emerald-700">${totalPaid.toLocaleString()} ر.س</span>
-                        </div>
-                        <div class="bg-cyan-50 border border-cyan-100 rounded-lg p-4">
-                            <span class="text-xs text-cyan-500 block mb-1">نسبة السداد خلال الشهر</span>
-                            <span class="text-xl font-bold text-cyan-700">${paymentPercentage}%</span>
-                            <div class="w-full bg-cyan-200 rounded-full h-1.5 mt-2"><div class="bg-cyan-600 h-1.5 rounded-full" style="width: ${paymentPercentage}%"></div></div>
-                        </div>
-                        <div class="bg-red-50 border border-red-100 rounded-lg p-4">
-                            <span class="text-xs text-red-500 block mb-1">المبلغ المتبقي خلال الشهر</span>
-                            <span class="text-xl font-bold text-red-700">${totalRemaining.toLocaleString()} ر.س</span>
-                        </div>
+                        <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4"><span class="text-xs text-indigo-500 block mb-1">المبلغ المستحق خلال الشهر</span><span class="text-xl font-bold text-indigo-700">${totalDue.toLocaleString()} ر.س</span></div>
+                        <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-4"><span class="text-xs text-emerald-500 block mb-1">المبلغ المسدد خلال الشهر</span><span class="text-xl font-bold text-emerald-700">${totalPaid.toLocaleString()} ر.س</span></div>
+                        <div class="bg-cyan-50 border border-cyan-100 rounded-lg p-4"><span class="text-xs text-cyan-500 block mb-1">نسبة السداد خلال الشهر</span><span class="text-xl font-bold text-cyan-700">${paymentPercentage}%</span><div class="w-full bg-cyan-200 rounded-full h-1.5 mt-2"><div class="bg-cyan-600 h-1.5 rounded-full" style="width: ${paymentPercentage}%"></div></div></div>
+                        <div class="bg-red-50 border border-red-100 rounded-lg p-4"><span class="text-xs text-red-500 block mb-1">المبلغ المتبقي خلال الشهر</span><span class="text-xl font-bold text-red-700">${totalRemaining.toLocaleString()} ر.س</span></div>
                     </div>
-                </div>
-            `;
+                </div>`;
 
-            const fields = [
-                { key: 'bankBalance', label: 'رصيد البنك' },
-                { key: 'caravansBalance', label: 'رصيد القوافل' },
-                { key: 'vendorsBalance', label: 'رصيد الموردين' },
-                { key: 'customersDue', label: 'مستحقة العملاء' },
-                { key: 'customersBilled', label: 'محررة العملاء' },
-                { key: 'collectionBalance', label: 'رصيد التحصيل' },
-            ];
-
+            const fields = [ { key: 'bankBalance', label: 'رصيد البنك' }, { key: 'caravansBalance', label: 'رصيد القوافل' }, { key: 'vendorsBalance', label: 'رصيد الموردين' }, { key: 'customersDue', label: 'مستحقة العملاء' }, { key: 'customersBilled', label: 'محررة العملاء' }, { key: 'collectionBalance', label: 'رصيد التحصيل' } ];
             fields.forEach(field => {
                 const values = data.map(d => d[field.key]).filter(v => v > 0);
                 const max = values.length > 0 ? Math.max(...values) : 0;
                 const min = values.length > 0 ? Math.min(...values) : 0;
+                container.innerHTML += `<div class="border border-slate-200 rounded-lg p-4 bg-slate-50"><h4 class="font-bold text-slate-800 mb-3">${field.label}</h4><div class="flex justify-between text-sm"><div class="text-emerald-600"><span class="block text-slate-500 text-xs">أعلى مبلغ</span><span class="font-bold text-lg">${max.toLocaleString()}</span></div><div class="text-red-600"><span class="block text-slate-500 text-xs">أقل مبلغ</span><span class="font-bold text-lg">${min.toLocaleString()}</span></div></div></div>`;
+            });
+        }
 
-                container.innerHTML += `
-                    <div class="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                        <h4 class="font-bold text-slate-800 mb-3">${field.label}</h4>
-                        <div class="flex justify-between text-sm">
-                            <div class="text-emerald-600">
-                                <span class="block text-slate-500 text-xs">أعلى مبلغ</span>
-                                <span class="font-bold text-lg">${max.toLocaleString()}</span>
-                            </div>
-                            <div class="text-red-600">
-                                <span class="block text-slate-500 text-xs">أقل مبلغ</span>
-                                <span class="font-bold text-lg">${min.toLocaleString()}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
+        // =========================================
+        // ===       6. إدارة المستخدمين         ===
+        // =========================================
+        window.addUser = function() {
+            const username = document.getElementById('u-username').value;
+            const displayName = document.getElementById('u-displayname').value;
+            const password = document.getElementById('u-password').value;
+            const role = document.getElementById('u-role').value;
+            if(!username || !password) return alert('أدخل اسم المستخدم وكلمة المرور');
+            const newUserRef = push(ref(db, 'users'));
+            set(newUserRef, { id: newUserRef.key, username, displayName: displayName || username, password, role, isActive: true }).then(() => {
+                document.getElementById('u-username').value = ''; document.getElementById('u-displayname').value = ''; document.getElementById('u-password').value = '';
+            });
+        }
+
+        window.toggleUserStatus = function(id, currentStatus) {
+            const updates = {}; updates['/users/' + id + '/isActive'] = !currentStatus;
+            update(ref(db), updates);
+        }
+
+        onValue(ref(db, 'users'), (snapshot) => {
+            const data = snapshot.val();
+            window.usersArr = data ? Object.values(data) : [];
+            if(window.usersArr.length === 0) {
+                set(ref(db, 'users/u1'), { id: 'u1', username: 'Reyad', displayName: 'Reyad Hussein', password: '1357', role: 'مدير', isActive: true });
+            }
+            renderCurrentPage();
+        });
+
+        function renderUsers() {
+            const tbody = document.getElementById('users-table-body');
+            const data = window.usersArr || [];
+            tbody.innerHTML = '';
+            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">لا يوجد مستخدمين</td></tr>'; return; }
+            data.forEach(user => {
+                const roleClass = user.role === 'مدير' ? 'bg-red-100 text-red-700' : user.role === 'محرر' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700';
+                const statusBtnClass = user.isActive ? 'text-red-600 hover:text-red-800' : 'text-emerald-600 hover:text-emerald-800';
+                tbody.innerHTML += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${user.username}</td><td class="p-4">${user.displayName}</td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs ${roleClass}">${user.role}</span></td><td class="p-4"><span class="text-xs ${user.isActive ? 'text-emerald-600' : 'text-red-600'}">${user.isActive ? 'نشط' : 'معطل'}</span></td><td class="p-4"><button onclick="toggleUserStatus('${user.id}', ${user.isActive})" class="${statusBtnClass} text-sm"><i class="fa-solid ${user.isActive ? 'fa-ban' : 'fa-check-circle'} ml-1"></i> ${user.isActive ? 'تعطيل' : 'تفعيل'}</button></td></tr>`;
             });
         }
 
         // =========================================
         // ===          تشغيل النظام             ===
         // =========================================
+        function renderCurrentPage() {
+            if(currentActivePage === 'history') renderHistory();
+            if(currentActivePage === 'monthly') renderMonthlyItems();
+            if(currentActivePage === 'report30') calcReport30();
+            if(currentActivePage === 'reportFull') calcReportFull();
+            if(currentActivePage === 'users') renderUsers();
+        }
+
         function initApp() {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('d-date').value = today;
-            
             const dateObj = new Date();
             const options = { year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('current-date-header').textContent = dateObj.toLocaleDateString('ar-EG', options);
-            
             showPage('daily');
         }
 
