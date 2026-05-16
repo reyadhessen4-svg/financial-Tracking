@@ -164,7 +164,10 @@
                 <!-- 2. البنود الشهرية -->
                 <div id="page-monthly" class="page space-y-6">
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6 editor-only-section">
-                        <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-plus-circle text-indigo-600"></i> إضافة بند شهري</h2>
+                        <div class="flex justify-between items-center w-full mb-4">
+                            <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-plus-circle text-indigo-600"></i> إضافة بند شهري</h2>
+                            <button onclick="startNewMonth()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm"><i class="fa-solid fa-calendar-plus ml-2"></i> بدء شهر جديد</button>
+                        </div>
                         <div class="flex flex-wrap gap-4 items-end">
                             <div class="flex-1 min-w-[200px]"><label class="block text-sm font-medium text-slate-600 mb-1">اسم البند</label><input type="text" id="m-name" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
                             <div class="w-40"><label class="block text-sm font-medium text-slate-600 mb-1">التصنيف</label><select id="m-type" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"><option value="مصروف">مصروف</option><option value="التزام">التزام</option></select></div>
@@ -492,7 +495,44 @@
             renderCurrentPage();
         });
 
-        function renderMonthlyItems() {
+                // تعديل المبلغ المستحق للبند
+        window.editItemAmount = function(id) {
+            const item = window.monthlyItemsArr.find(i => i.id === id);
+            if(!item) return;
+            
+            const newAmountStr = prompt(`تعديل المبلغ المستحق للبند: ${item.name}\nالمبلغ الحالي: ${item.totalAmount}`, item.totalAmount);
+            if (newAmountStr === null) return; // لو ضغط إلغاء
+            
+            const newAmount = parseFloat(newAmountStr);
+            if (isNaN(newAmount) || newAmount < 0) return alert('مبلغ غير صالح');
+            
+            const updates = {};
+            updates['/monthlyItems/' + id + '/totalAmount'] = newAmount;
+            update(ref(db), updates);
+        }
+
+        // حذف بند شهري
+        window.deleteItem = function(id) {
+            const item = window.monthlyItemsArr.find(i => i.id === id);
+            if(!item) return;
+            
+            if(confirm(`هل أنت متأكد من حذف البند: ${item.name}؟`)) {
+                set(ref(db, 'monthlyItems/' + id), null);
+            }
+        }
+
+        // بدء شهر جديد (مسح جميع البنود)
+        window.startNewMonth = function() {
+            if(confirm('هل أنت متأكد من بدء شهر جديد؟\nسيتم مسح جميع البنود الشهرية الحالية (المستحق والمسدد) نهائياً!')) {
+                if(confirm('تأكيد نهائي: لا يمكن التراجع عن هذا الإجراء!')) {
+                    set(ref(db, 'monthlyItems'), null)
+                        .then(() => alert('تم بدء شهر جديد بنجاح! يمكنك الآن إضافة بنود الشهر الحالي.'))
+                        .catch(err => alert('حدث خطأ: ' + err));
+                }
+            }
+        }
+
+                function renderMonthlyItems() {
             const tbody = document.getElementById('monthly-table-body');
             const data = window.monthlyItemsArr || [];
             tbody.innerHTML = '';
@@ -500,8 +540,24 @@
             data.forEach(item => {
                 const remaining = (item.totalAmount || 0) - (item.paidAmount || 0);
                 const typeClass = item.type === 'التزام' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700';
-                const payBtn = (window.currentUserRole === 'محرر' || window.currentUserRole === 'مدير') ? `<button onclick="payItem('${item.id}')" class="text-indigo-600 hover:text-indigo-800"><i class="fa-solid fa-money-bill-wave ml-1"></i> سداد</button>` : '-';
-                tbody.innerHTML += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${item.name}</td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs ${typeClass}">${item.type}</span></td><td class="p-4">${(item.totalAmount || 0).toLocaleString()} ر.س</td><td class="p-4 text-emerald-600">${(item.paidAmount || 0).toLocaleString()} ر.س</td><td class="p-4 text-red-600 font-bold">${remaining.toLocaleString()} ر.س</td><td class="p-4">${payBtn}</td></tr>`;
+                
+                // أزرار الإجراءات (سداد، تعديل المبلغ، حذف)
+                const actionBtns = (window.currentUserRole === 'محرر' || window.currentUserRole === 'مدير') ? `
+                    <div class="flex gap-2 items-center">
+                        <button onclick="payItem('${item.id}')" class="text-indigo-600 hover:text-indigo-800" title="سداد"><i class="fa-solid fa-money-bill-wave"></i></button>
+                        <button onclick="editItemAmount('${item.id}')" class="text-amber-600 hover:text-amber-800" title="تعديل المبلغ"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteItem('${item.id}')" class="text-red-600 hover:text-red-800" title="حذف البند"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                ` : '-';
+
+                tbody.innerHTML += `<tr class="hover:bg-slate-50">
+                    <td class="p-4 font-medium">${item.name}</td>
+                    <td class="p-4"><span class="px-2 py-1 rounded-full text-xs ${typeClass}">${item.type}</span></td>
+                    <td class="p-4">${(item.totalAmount || 0).toLocaleString()} ر.س</td>
+                    <td class="p-4 text-emerald-600">${(item.paidAmount || 0).toLocaleString()} ر.س</td>
+                    <td class="p-4 text-red-600 font-bold">${remaining.toLocaleString()} ر.س</td>
+                    <td class="p-4">${actionBtns}</td>
+                </tr>`;
             });
         }
 
