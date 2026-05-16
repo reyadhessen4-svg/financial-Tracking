@@ -383,11 +383,13 @@
                     alert('تم حفظ البيان بنجاح');
                     this.reset();
                     document.getElementById('d-date').value = new Date().toISOString().split('T')[0];
+                    showPage('history'); // نقل المستخدم تلقائياً لشاشة البيانات السابقة عشان يشوف الداتا
                 }).catch((error) => alert('حدث خطأ: ' + error));
         });
 
         onValue(ref(db, 'dailyStatements'), (snapshot) => {
             const data = snapshot.val();
+            console.log("Daily Data from Firebase:", data); // عشان تتأكد إن الداتا وصلت
             window.dailyStatementsArr = data ? Object.values(data).filter(d => d.date).sort((a, b) => String(b.date).localeCompare(String(a.date))) : [];
             renderCurrentPage();
         });
@@ -431,10 +433,10 @@
             tbody.innerHTML = '';
             if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">لا توجد بنود</td></tr>'; return; }
             data.forEach(item => {
-                const remaining = item.totalAmount - item.paidAmount;
+                const remaining = (item.totalAmount || 0) - (item.paidAmount || 0);
                 const typeClass = item.type === 'التزام' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700';
                 const payBtn = (window.currentUserRole === 'محرر' || window.currentUserRole === 'مدير') ? `<button onclick="payItem('${item.id}')" class="text-indigo-600 hover:text-indigo-800"><i class="fa-solid fa-money-bill-wave ml-1"></i> سداد</button>` : '-';
-                tbody.innerHTML += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${item.name}</td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs ${typeClass}">${item.type}</span></td><td class="p-4">${item.totalAmount.toLocaleString()} ر.س</td><td class="p-4 text-emerald-600">${item.paidAmount.toLocaleString()} ر.س</td><td class="p-4 text-red-600 font-bold">${remaining.toLocaleString()} ر.س</td><td class="p-4">${payBtn}</td></tr>`;
+                tbody.innerHTML += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${item.name}</td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs ${typeClass}">${item.type}</span></td><td class="p-4">${(item.totalAmount || 0).toLocaleString()} ر.س</td><td class="p-4 text-emerald-600">${(item.paidAmount || 0).toLocaleString()} ر.س</td><td class="p-4 text-red-600 font-bold">${remaining.toLocaleString()} ر.س</td><td class="p-4">${payBtn}</td></tr>`;
             });
         }
 
@@ -552,8 +554,8 @@
             const container = document.getElementById('reportFull-cards');
             container.innerHTML = '';
             const monthlyItems = window.monthlyItemsArr || [];
-            const totalDue = monthlyItems.reduce((sum, item) => sum + item.totalAmount, 0);
-            const totalPaid = monthlyItems.reduce((sum, item) => sum + item.paidAmount, 0);
+            const totalDue = monthlyItems.reduce((sum, item) => sum + (item.totalAmount||0), 0);
+            const totalPaid = monthlyItems.reduce((sum, item) => sum + (item.paidAmount||0), 0);
             const totalRemaining = totalDue - totalPaid;
             const paymentPercentage = totalDue > 0 ? ((totalPaid / totalDue) * 100).toFixed(1) : 0;
 
