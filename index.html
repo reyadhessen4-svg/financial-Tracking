@@ -284,6 +284,17 @@
         const db = getDatabase(app);
 
         let currentActivePage = 'daily';
+                // دالة لتوحيد صيغة التاريخ لتكون YYYY-MM-DD
+        function normalizeDate(dateStr) {
+            if (!dateStr) return '';
+            dateStr = String(dateStr).replace(/\//g, '-'); // تحويل الشرطة المائلة لشرطة عادية
+            // لو التاريخ شكله DD-MM-YYYY (يوم-شهر-سنة) نعملوه Flip
+            if (dateStr.match(/^\d{2}-\d{2}-\d{4}$/)) {
+                const parts = dateStr.split('-');
+                return `${parts[2]}-${parts[1]}-${parts[0]}`; // يرجعه YYYY-MM-DD
+            }
+            return dateStr; // لو已经是 صح يسيبه زي ما هو
+        }
         window.currentUserRole = 'مشاهد'; 
         window.currentUserName = '';
         
@@ -369,7 +380,7 @@
         // =========================================
                 document.getElementById('daily-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            let date = document.getElementById('d-date').value;
+            let date = normalizeDate(document.getElementById('d-date').value);
             if(!date) return alert('حدد التاريخ');
             
             // تحويل الشرطات المائلة إلى شرطات عادية عشان متتقسمش في Firebase
@@ -562,8 +573,7 @@
 
                 jsonArr.forEach(row => {
                     if (row.date) {
-                        let dateStr = String(row.date).split('T')[0].split(' ')[0];
-                        dateStr = dateStr.replace(/\//g, '-'); // تحويل الشرطات المائلة
+                        let dateStr = normalizeDate(String(row.date).split('T')[0].split(' ')[0]); // تحويل الشرطات المائلة
                         updates['/dailyStatements/' + dateStr] = {
                             date: dateStr,
                             bankBalance: Number(row.bankBalance)||0,
