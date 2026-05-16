@@ -362,13 +362,35 @@
         // =========================================
         // ===           تسجيل الدخول           ===
         // =========================================
-        document.getElementById('login-form').addEventListener('submit', function(e) {
+                // =========================================
+        // ===           تسجيل الدخول           ===
+        // =========================================
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             const u = document.getElementById('login-user').value;
             const p = document.getElementById('login-pass').value;
             
-            const usersArr = window.usersArr || [];
-            const foundUser = usersArr.find(user => user.username.toLowerCase() === u.toLowerCase() && user.password === p && user.isActive);
+            let usersArr = window.usersArr || [];
+
+            // لو القائمة فاضية (يعني لسه ماتنزلتش)، انزلها دلوقتي من Firebase
+            if (usersArr.length === 0) {
+                try {
+                    const snapshot = await get(ref(db, 'users'));
+                    if (snapshot.exists()) {
+                        usersArr = Object.values(snapshot.val());
+                        window.usersArr = usersArr; // احفظها في الذاكرة
+                    }
+                } catch (error) {
+                    console.error("Error fetching users:", error);
+                }
+            }
+
+            // البحث عن المستخدم وتسجيل الدخول
+            const foundUser = usersArr.find(user => 
+                user.username.toLowerCase() === u.toLowerCase() && 
+                String(user.password) === String(p) && // تحويل الاتنين لنص عشان يقارنهم صح
+                user.isActive // لازم يكون الحساب مفعل
+            );
 
             if (foundUser) {
                 window.currentUserRole = foundUser.role;
@@ -380,6 +402,7 @@
                 initApp();
             } else {
                 document.getElementById('login-error').classList.remove('hidden');
+                console.log("Login failed. Users loaded:", usersArr); // عشان نعرف إيه السبب لو اتعطل
             }
         });
 
