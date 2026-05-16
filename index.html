@@ -123,10 +123,6 @@
 
         <!-- المحتوى الرئيسي -->
         <main class="flex-1 min-h-screen flex flex-col">
-                        <!-- صندوق الكشف عن المشكلة -->
-            <div id="debug-box" class="bg-yellow-100 text-yellow-800 p-2 text-center text-xs font-bold">
-                جاري الاتصال بقاعدة البيانات...
-            </div>
             <header class="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 lg:px-6 py-3">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
@@ -291,6 +287,11 @@
         let currentActivePage = 'daily';
         window.currentUserRole = 'مشاهد'; 
         window.currentUserName = '';
+        
+        // تعريف المتغيرات بشكل صحيح لتكون متاحة في الـ Console
+        window.dailyStatementsArr = [];
+        window.monthlyItemsArr = [];
+        window.usersArr = [];
 
         // =========================================
         // ===           تسجيل الدخول           ===
@@ -391,27 +392,11 @@
                 }).catch((error) => alert('حدث خطأ: ' + error));
         });
 
-                onValue(ref(db, 'dailyStatements'), (snapshot) => {
+        onValue(ref(db, 'dailyStatements'), (snapshot) => {
             const data = snapshot.val();
-            const debugBox = document.getElementById('debug-box');
-            
-            if(data) {
-                const count = Object.keys(data).length;
-                debugBox.innerHTML = `✅ تم الاتصال بنجاح! عدد السجلات في الداتابيز: ${count}`;
-                debugBox.className = "bg-emerald-100 text-emerald-800 p-2 text-center text-xs font-bold";
-            } else {
-                debugBox.innerHTML = "⚠️ الاتصال تمام، لكن لا توجد بيانات في قاعدة البيانات";
-                debugBox.className = "bg-orange-100 text-orange-800 p-2 text-center text-xs font-bold";
-            }
-            
             window.dailyStatementsArr = data ? Object.values(data).filter(d => d.date).sort((a, b) => String(b.date).localeCompare(String(a.date))) : [];
+            console.log("Daily Data Loaded:", window.dailyStatementsArr.length, "records");
             renderCurrentPage();
-            
-        }, (error) => {
-            const debugBox = document.getElementById('debug-box');
-            debugBox.innerHTML = `❌ خطأ في الاتصال بقاعدة البيانات: ${error.message}`;
-            debugBox.className = "bg-red-100 text-red-800 p-2 text-center text-xs font-bold";
-            console.error("Firebase Error:", error);
         });
 
         // =========================================
@@ -465,13 +450,18 @@
         // =========================================
         function renderHistory() {
             const tbody = document.getElementById('history-table-body');
+            if(!tbody) return; // حماية إضافية
+            
             const data = (window.dailyStatementsArr || []).slice(0, 30);
             tbody.innerHTML = '';
-            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">لا توجد بيانات</td></tr>'; return; }
+            if(data.length === 0) { 
+                tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">لا توجد بيانات</td></tr>'; 
+                return; 
+            }
             
             let rowsHtml = '';
             data.forEach(item => {
-                if (!item.date) return;
+                if (!item || !item.date) return; // تجاهل أي صف فاضي تماماً
                 const bank = Number(item.bankBalance) || 0;
                 const caravans = Number(item.caravansBalance) || 0;
                 const vendors = Number(item.vendorsBalance) || 0;
@@ -678,12 +668,16 @@
         // ===          تشغيل النظام             ===
         // =========================================
         function renderCurrentPage() {
-            if(currentActivePage === 'history') renderHistory();
-            if(currentActivePage === 'monthly') renderMonthlyItems();
-            if(currentActivePage === 'report30') calcReport30();
-            if(currentActivePage === 'reportFull') calcReportFull();
-            if(currentActivePage === 'monthlySales') calcMonthlySales();
-            if(currentActivePage === 'users') renderUsers();
+            try {
+                if(currentActivePage === 'history') renderHistory();
+                if(currentActivePage === 'monthly') renderMonthlyItems();
+                if(currentActivePage === 'report30') calcReport30();
+                if(currentActivePage === 'reportFull') calcReportFull();
+                if(currentActivePage === 'monthlySales') calcMonthlySales();
+                if(currentActivePage === 'users') renderUsers();
+            } catch (error) {
+                console.error("Error rendering page:", error);
+            }
         }
 
         function initApp() {
