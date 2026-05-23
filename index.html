@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         tailwind.config = { theme: { extend: { fontFamily: { sans: ['Tajawal', 'sans-serif'] } } } }
     </script>
@@ -19,7 +20,8 @@
         .nav-item.active { background-color: #4f46e5; color: white; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.5); }
         .sidebar { transition: transform 0.3s ease-in-out; }
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; display: flex; align-items: center; justify-content: center; }
-        .modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 800px; width: 90%; max-height: 80vh; overflow-y: auto; }
+        .modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 900px; width: 90%; max-height: 85vh; overflow-y: auto; }
+        .tab-btn.active-tab { border-color: #4f46e5; color: #4f46e5; background-color: #eef2ff; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
@@ -28,7 +30,7 @@
     <div id="login-screen" class="min-h-screen w-full bg-gradient-to-br from-[#0c1222] via-[#141b2d] to-[#0f1535] flex items-center justify-center relative overflow-hidden">
         <div class="absolute inset-0 overflow-hidden">
             <div class="absolute -top-40 -right-40 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl animate-pulse"></div>
-            <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl animate-pulse" style="animationDelay: '1s'"></div>
+            <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl animate-pulse"></div>
         </div>
         <div class="relative z-10 flex flex-col items-center gap-6 w-full max-w-md px-4">
             <div class="flex flex-col items-center gap-3">
@@ -91,27 +93,18 @@
                     </button>
                 </div>
                 <p class="px-3 py-2 text-slate-500 text-xs font-bold">المتابعة اليومية</p>
-                <button onclick="showPage('daily')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="daily">
-                    <i class="fa-solid fa-pen-to-square w-4 h-4"></i><span>البيان اليومي</span>
-                </button>
-                <button onclick="showPage('monthly')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="monthly">
-                    <i class="fa-solid fa-list-check w-4 h-4"></i><span>البنود الشهرية</span>
-                </button>
-                <button onclick="showPage('history')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="history">
-                    <i class="fa-solid fa-clock-rotate-left w-4 h-4"></i><span>إدخال بيانات سابقة</span>
-                </button>
-                <button onclick="showPage('report30')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="report30">
-                    <i class="fa-solid fa-chart-line w-4 h-4"></i><span>تقرير 30 يوم</span>
-                </button>
-                <button onclick="showPage('reportFull')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="reportFull">
-                    <i class="fa-solid fa-chart-pie w-4 h-4"></i><span>التقرير الشامل</span>
-                </button>
-                <button onclick="showPage('monthlySales')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="monthlySales">
-                    <i class="fa-solid fa-cart-shopping w-4 h-4"></i><span>المبيعات الشهرية</span>
-                </button>
-                <button onclick="showPage('adminReport')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="adminReport">
-                    <i class="fa-solid fa-file-pdf w-4 h-4"></i><span>تقرير الإدارة</span>
-                </button>
+                <button onclick="showPage('daily')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="daily"><i class="fa-solid fa-pen-to-square w-4 h-4"></i><span>البيان اليومي</span></button>
+                <button onclick="showPage('monthly')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="monthly"><i class="fa-solid fa-list-check w-4 h-4"></i><span>البنود الشهرية</span></button>
+                <button onclick="showPage('history')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="history"><i class="fa-solid fa-clock-rotate-left w-4 h-4"></i><span>إدخال بيانات سابقة</span></button>
+                <button onclick="showPage('report30')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="report30"><i class="fa-solid fa-chart-line w-4 h-4"></i><span>تقرير 30 يوم</span></button>
+                <button onclick="showPage('reportFull')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="reportFull"><i class="fa-solid fa-chart-pie w-4 h-4"></i><span>التقرير الشامل</span></button>
+                <button onclick="showPage('monthlySales')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="monthlySales"><i class="fa-solid fa-cart-shopping w-4 h-4"></i><span>المبيعات الشهرية</span></button>
+                <button onclick="showPage('adminReport')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="adminReport"><i class="fa-solid fa-file-pdf w-4 h-4"></i><span>تقرير الإدارة</span></button>
+
+                <p class="px-3 py-2 text-slate-500 text-xs font-bold mt-4">التدفق النقدي والعهد</p>
+                <button onclick="showPage('cashFlow')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="cashFlow"><i class="fa-solid fa-money-bill-transfer w-4 h-4"></i><span>التدفق النقدي</span></button>
+                <button onclick="showPage('custody')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="custody"><i class="fa-solid fa-hand-holding-dollar w-4 h-4"></i><span>إدارة العهد</span></button>
+                <button onclick="showPage('analytics')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="analytics"><i class="fa-solid fa-chart-column w-4 h-4"></i><span>لوحة التحليلات</span></button>
             </nav>
             <div class="border-t border-[#1e293b] p-4">
                 <div class="flex items-center gap-3">
@@ -120,9 +113,7 @@
                         <p class="text-white text-xs font-medium truncate" id="sidebar-name">Reyad Hussein</p>
                         <p class="text-slate-500 text-[10px]" id="sidebar-role">مدير</p>
                     </div>
-                    <button onclick="logout()" class="text-slate-500 hover:text-red-400 transition-colors p-1" title="تسجيل الخروج">
-                        <i class="fa-solid fa-right-from-bracket"></i>
-                    </button>
+                    <button onclick="logout()" class="text-slate-500 hover:text-red-400 transition-colors p-1" title="تسجيل الخروج"><i class="fa-solid fa-right-from-bracket"></i></button>
                 </div>
             </div>
         </aside>
@@ -142,7 +133,7 @@
                 </div>
             </header>
 
-            <div class="flex-1 p-4 lg:p-6">
+            <div class="flex-1 p-4 lg:p-6 overflow-y-auto">
                 
                 <!-- 1. البيان اليومي -->
                 <div id="page-daily" class="page active space-y-6">
@@ -276,7 +267,6 @@
                         <button onclick="generateAdminReport()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg h-10">عرض التقرير</button>
                         <button onclick="exportAdminReportPDF()" class="bg-red-600 text-white px-4 py-2 rounded-lg h-10 flex items-center gap-2"><i class="fa-solid fa-file-pdf"></i> تصدير PDF</button>
                     </div>
-
                     <div id="admin-report-content" class="bg-white border border-slate-200 shadow-sm rounded-xl p-8">
                         <div class="text-center border-b-2 border-slate-800 pb-4 mb-8">
                             <h2 class="text-xl font-extrabold text-slate-800">زاد الجود للوجبات السريعة</h2>
@@ -305,6 +295,103 @@
                     </div>
                 </div>
 
+                <!-- 8. التدفق النقدي (جديد) -->
+                <div id="page-cashFlow" class="page space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                            <p class="text-xs text-slate-500 mb-1">رصيد بداية اليوم</p>
+                            <h3 id="cf-opening" class="text-xl font-bold text-slate-800">0 ر.س</h3>
+                            <input type="date" id="cf-date" class="mt-2 w-full text-center text-xs p-1 border rounded" onchange="renderCashFlow()">
+                        </div>
+                        <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100 shadow-sm text-center">
+                            <p class="text-xs text-emerald-600 mb-1">إجمالي التدفقات الداخلة</p>
+                            <h3 id="cf-in" class="text-xl font-bold text-emerald-700">0 ر.س</h3>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded-xl border border-red-100 shadow-sm text-center">
+                            <p class="text-xs text-red-600 mb-1">إجمالي التدفقات الخارجة</p>
+                            <h3 id="cf-out" class="text-xl font-bold text-red-700">0 ر.س</h3>
+                        </div>
+                        <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 shadow-sm text-center">
+                            <p class="text-xs text-indigo-600 mb-1">رصيد نهاية اليوم</p>
+                            <h3 id="cf-closing" class="text-xl font-bold text-indigo-700">0 ر.س</h3>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- تدفق داخل -->
+                        <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-4">
+                            <h3 class="font-bold text-emerald-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-arrow-down"></i> تدفق نقدي داخل</h3>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <select id="cf-in-cat" class="flex-1 p-2 border rounded-lg text-sm bg-white">
+                                    <option value="">اختر البند</option>
+                                </select>
+                                <button onclick="openCatModal('in')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 rounded-lg"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div class="flex gap-2 mb-3">
+                                <input type="number" id="cf-in-amt" placeholder="المبلغ" class="w-32 p-2 border rounded-lg text-sm">
+                                <input type="text" id="cf-in-note" placeholder="ملاحظات" class="flex-1 p-2 border rounded-lg text-sm">
+                                <button onclick="addCashTransaction('in')" class="bg-emerald-600 text-white px-3 rounded-lg text-sm">إضافة</button>
+                            </div>
+                            <div id="cf-in-list" class="max-h-60 overflow-y-auto text-sm"></div>
+                        </div>
+
+                        <!-- تدفق خارج -->
+                        <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-4">
+                            <h3 class="font-bold text-red-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-arrow-up"></i> تدفق نقدي خارج</h3>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <select id="cf-out-cat" class="flex-1 p-2 border rounded-lg text-sm bg-white">
+                                    <option value="">اختر البند</option>
+                                </select>
+                                <button onclick="openCatModal('out')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 rounded-lg"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div class="flex gap-2 mb-3">
+                                <input type="number" id="cf-out-amt" placeholder="المبلغ" class="w-32 p-2 border rounded-lg text-sm">
+                                <input type="text" id="cf-out-note" placeholder="ملاحظات" class="flex-1 p-2 border rounded-lg text-sm">
+                                <button onclick="addCashTransaction('out')" class="bg-red-600 text-white px-3 rounded-lg text-sm">إضافة</button>
+                            </div>
+                            <div id="cf-out-list" class="max-h-60 overflow-y-auto text-sm"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 9. إدارة العهد (جديد) -->
+                <div id="page-custody" class="page space-y-6">
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6 editor-only-section">
+                        <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-hand-holding-dollar text-indigo-600"></i> صرف عهدة جديدة / تعزيز عهدة</h2>
+                        <div class="flex flex-wrap gap-4 items-end">
+                            <div class="flex-1 min-w-[200px]"><label class="block text-sm font-medium text-slate-600 mb-1">اسم الموظف</label><input type="text" id="cus-emp" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <div class="w-40"><label class="block text-sm font-medium text-slate-600 mb-1">المبلغ</label><input type="number" id="cus-amt" step="0.01" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <div class="flex-1 min-w-[200px]"><label class="block text-sm font-medium text-slate-600 mb-1">ملاحظات</label><input type="text" id="cus-note" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <button onclick="addCustody()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium">صرف / تعزيز</button>
+                        </div>
+                    </div>
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
+                        <table class="w-full text-sm text-right">
+                            <thead class="bg-slate-50 text-slate-600"><tr><th class="p-4 font-medium">الموظف</th><th class="p-4 font-medium">إجمالي المصروف</th><th class="p-4 font-medium">المصروفات المسجلة</th><th class="p-4 font-medium">المتبقي مع الموظف</th><th class="p-4 font-medium">الحالة</th><th class="p-4 font-medium">إجراء</th></tr></thead>
+                            <tbody id="custody-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 10. لوحة التحليلات (جديد) -->
+                <div id="page-analytics" class="page space-y-6">
+                    <div class="flex flex-wrap gap-4 items-end bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                        <div><label class="block text-sm text-slate-500 mb-1">من تاريخ</label><input type="date" id="an-start" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                        <div><label class="block text-sm text-slate-500 mb-1">إلى تاريخ</label><input type="date" id="an-end" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                        <button onclick="renderAnalytics()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg h-10">تحليل البيانات</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><h3 class="font-bold mb-4 text-slate-700">تطور الرصيد النقدي</h3><canvas id="chartBalance"></canvas></div>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><h3 class="font-bold mb-4 text-slate-700">مقارنة التدفقات (داخل / خارج)</h3><canvas id="chartInOut"></canvas></div>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><h3 class="font-bold mb-4 text-slate-700">توزيع التدفقات الداخلة</h3><canvas id="chartInCat"></canvas></div>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><h3 class="font-bold mb-4 text-slate-700">توزيع التدفقات الخارجة</h3><canvas id="chartOutCat"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h3 class="font-bold mb-4 text-slate-700">تقرير العهد المفتوحة</h3>
+                        <div id="an-custody-report" class="space-y-4"></div>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
@@ -316,20 +403,43 @@
                 <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-box-archive ml-2 text-indigo-600"></i> أرشيف البنود الشهرية</h3>
                 <button onclick="closeArchiveModal()" class="text-slate-400 hover:text-red-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-slate-600 mb-1">اختر الشهر</label>
-                <select id="archive-select" onchange="loadArchivedMonth(this.value)" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
-                    <option value="">-- اختر شهراً من الأرشيف --</option>
-                </select>
-            </div>
+            <div class="mb-4"><label class="block text-sm font-medium text-slate-600 mb-1">اختر الشهر</label><select id="archive-select" onchange="loadArchivedMonth(this.value)" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"><option value="">-- اختر شهراً من الأرشيف --</option></select></div>
             <div id="archive-table-container" class="text-center text-slate-400 text-sm">اختر شهراً لعرض بنوده</div>
+        </div>
+    </div>
+
+    <!-- نافذة إضافة بند تدفق -->
+    <div id="cat-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800">إضافة بند تدفق جديد</h3>
+                <button onclick="closeCatModal()" class="text-slate-400 hover:text-red-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <input type="hidden" id="cat-type-modal">
+            <input type="text" id="cat-name-modal" class="w-full p-2 border rounded-lg mb-3" placeholder="اسم البند (مثل: بيع كراتين)">
+            <button onclick="addCashCategory()" class="w-full bg-indigo-600 text-white p-2 rounded-lg">حفظ البند</button>
+        </div>
+    </div>
+
+    <!-- نافذة تسوية عهدة -->
+    <div id="expense-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800">تسجيل مصروف من العهدة</h3>
+                <button onclick="closeExpenseModal()" class="text-slate-400 hover:text-red-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <input type="hidden" id="exp-cus-id">
+            <div class="mb-3"><label class="block text-sm mb-1">البند</label><select id="exp-cus-cat" class="w-full p-2 border rounded-lg bg-white"></select></div>
+            <div class="mb-3"><label class="block text-sm mb-1">المبلغ</label><input type="number" id="exp-cus-amt" class="w-full p-2 border rounded-lg"></div>
+            <div class="mb-3"><label class="block text-sm mb-1">ملاحظات</label><input type="text" id="exp-cus-note" class="w-full p-2 border rounded-lg"></div>
+            <button onclick="addCustodyExpense()" class="w-full bg-red-600 text-white p-2 rounded-lg">تسجيل المصروف</button>
         </div>
     </div>
 
     <!-- Firebase & Core Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getDatabase, ref, set, push, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        import { getDatabase, ref, set, push, onValue, update, get, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyA9QBzup2EZJtiA291VynvLWtmaRyW9tCU",
@@ -351,6 +461,15 @@
         window.dailyStatementsArr = [];
         window.monthlyItemsArr = [];
         window.usersArr = [];
+        window.cashTransactionsArr = [];
+        window.cashCategoriesArr = [];
+        window.custodiesArr = [];
+        window.cashBalancesArr = [];
+
+        let chartBalanceInstance = null;
+        let chartInOutInstance = null;
+        let chartInCatInstance = null;
+        let chartOutCatInstance = null;
 
         function normalizeDate(dateStr) {
             if (!dateStr) return '';
@@ -429,7 +548,7 @@
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             const navBtn = document.querySelector(`.nav-item[data-page="${pageId}"]`);
             if(navBtn) navBtn.classList.add('active');
-            const titles = { 'daily': 'البيان اليومي', 'monthly': 'البنود الشهرية', 'history': 'إدخال بيانات سابقة', 'report30': 'تقرير 30 يوم', 'reportFull': 'التقرير الشامل', 'monthlySales': 'المبيعات الشهرية', 'users': 'إدارة المستخدمين', 'adminReport': 'تقرير الإدارة' };
+            const titles = { 'daily': 'البيان اليومي', 'monthly': 'البنود الشهرية', 'history': 'إدخال بيانات سابقة', 'report30': 'تقرير 30 يوم', 'reportFull': 'التقرير الشامل', 'monthlySales': 'المبيعات الشهرية', 'users': 'إدارة المستخدمين', 'adminReport': 'تقرير الإدارة', 'cashFlow': 'التدفق النقدي', 'custody': 'إدارة العهد', 'analytics': 'لوحة التحليلات' };
             document.getElementById('page-title').textContent = titles[pageId];
             toggleMobileMenu(true); 
             renderCurrentPage(); 
@@ -775,6 +894,392 @@
         }
 
         // =========================================
+        // ===    8. التدفق النقدي (جديد)       ===
+        // =========================================
+        onValue(ref(db, 'cashCategories'), (snapshot) => {
+            const data = snapshot.val();
+            window.cashCategoriesArr = data ? Object.values(data) : [];
+            if(window.cashCategoriesArr.length === 0) {
+                // بنود افتراضية
+                const defIn = ['تحصيل عملاء', 'بيع كراتين', 'رد مبالغ', 'توزيع أرباح'];
+                const defOut = ['سداد موردين', 'سداد رواتب', 'شراء أصول', 'مصروفات تشغيلية', 'عهد موظفين'];
+                let updates = {};
+                defIn.forEach(name => { const newRef = push(ref(db, 'cashCategories')); updates[`/cashCategories/${newRef.key}`] = { id: newRef.key, name, type: 'in' }; });
+                defOut.forEach(name => { const newRef = push(ref(db, 'cashCategories')); updates[`/cashCategories/${newRef.key}`] = { id: newRef.key, name, type: 'out' }; });
+                update(ref(db), updates);
+            }
+            renderCashCats();
+        });
+
+        onValue(ref(db, 'cashTransactions'), (snapshot) => {
+            const data = snapshot.val();
+            window.cashTransactionsArr = data ? Object.values(data).sort((a,b) => String(b.date).localeCompare(String(a.date))) : [];
+            renderCashFlow();
+        });
+
+        onValue(ref(db, 'cashBalances'), (snapshot) => {
+            const data = snapshot.val();
+            window.cashBalancesArr = data ? Object.values(data) : [];
+            renderCashFlow();
+        });
+
+        window.openCatModal = function(type) {
+            document.getElementById('cat-modal').classList.remove('hidden');
+            document.getElementById('cat-type-modal').value = type;
+            document.getElementById('cat-name-modal').value = '';
+        }
+        window.closeCatModal = function() { document.getElementById('cat-modal').classList.add('hidden'); }
+
+        window.addCashCategory = function() {
+            const type = document.getElementById('cat-type-modal').value;
+            const name = document.getElementById('cat-name-modal').value;
+            if(!name) return alert('أدخل اسم البند');
+            const newRef = push(ref(db, 'cashCategories'));
+            set(newRef, { id: newRef.key, name, type }).then(() => closeCatModal());
+        }
+
+        window.deleteCashCategory = function(id) {
+            if(confirm('هل أنت متأكد من حذف هذا البند؟')) set(ref(db, 'cashCategories/' + id), null);
+        }
+
+        function renderCashCats() {
+            const inSelect = document.getElementById('cf-in-cat');
+            const outSelect = document.getElementById('cf-out-cat');
+            const expSelect = document.getElementById('exp-cus-cat');
+            if(!inSelect || !outSelect) return;
+
+            inSelect.innerHTML = '<option value="">اختر البند</option>';
+            outSelect.innerHTML = '<option value="">اختر البند</option>';
+            expSelect.innerHTML = '';
+
+            window.cashCategoriesArr.forEach(cat => {
+                const opt = `<option value="${cat.id}">${cat.name}</option>`;
+                if(cat.type === 'in') inSelect.innerHTML += opt;
+                if(cat.type === 'out') { outSelect.innerHTML += opt; expSelect.innerHTML += opt; }
+            });
+        }
+
+        window.addCashTransaction = function(type) {
+            const date = document.getElementById('cf-date').value;
+            const catId = document.getElementById(`cf-${type}-cat`).value;
+            const amount = parseFloat(document.getElementById(`cf-${type}-amt`).value) || 0;
+            const notes = document.getElementById(`cf-${type}-note`).value;
+
+            if(!date || !catId || amount <= 0) return alert('تأكد من التاريخ والبند والمبلغ');
+
+            const catObj = window.cashCategoriesArr.find(c => c.id === catId);
+            const newRef = push(ref(db, 'cashTransactions'));
+            set(newRef, {
+                id: newRef.key,
+                date: normalizeDate(date),
+                type: type,
+                categoryId: catId,
+                categoryName: catObj?.name || 'غير معروف',
+                amount: amount,
+                notes: notes
+            }).then(() => {
+                document.getElementById(`cf-${type}-amt`).value = '';
+                document.getElementById(`cf-${type}-note`).value = '';
+                
+                // تحديث رصيد البداية لليوم التالي تلقائياً
+                updateNextDayOpening(normalizeDate(date));
+            });
+        }
+
+        window.deleteCashTransaction = function(id) {
+            if(confirm('هل تريد حذف هذه الحركة؟')) {
+                set(ref(db, 'cashTransactions/' + id), null);
+            }
+        }
+
+        function getDayBalance(date) {
+            const balObj = window.cashBalancesArr.find(b => b.date === date);
+            return balObj ? (balObj.amount || 0) : 0;
+        }
+
+        function calcDayFlow(date) {
+            const dayTx = window.cashTransactionsArr.filter(t => t.date === date);
+            const totalIn = dayTx.filter(t => t.type === 'in').reduce((sum, t) => sum + t.amount, 0);
+            const totalOut = dayTx.filter(t => t.type === 'out').reduce((sum, t) => sum + t.amount, 0);
+            return { totalIn, totalOut };
+        }
+
+        window.renderCashFlow = function() {
+            const date = document.getElementById('cf-date')?.value;
+            if(!date) return;
+
+            const normDate = normalizeDate(date);
+            const opening = getDayBalance(normDate);
+            const { totalIn, totalOut } = calcDayFlow(normDate);
+            const closing = opening + totalIn - totalOut;
+
+            if(document.getElementById('cf-opening')) document.getElementById('cf-opening').innerText = opening.toLocaleString() + ' ر.س';
+            if(document.getElementById('cf-in')) document.getElementById('cf-in').innerText = totalIn.toLocaleString() + ' ر.س';
+            if(document.getElementById('cf-out')) document.getElementById('cf-out').innerText = totalOut.toLocaleString() + ' ر.س';
+            if(document.getElementById('cf-closing')) document.getElementById('cf-closing').innerText = closing.toLocaleString() + ' ر.س';
+
+            // قائمة الحركات
+            const dayTx = window.cashTransactionsArr.filter(t => t.date === normDate);
+            const inList = document.getElementById('cf-in-list');
+            const outList = document.getElementById('cf-out-list');
+            if(inList) inList.innerHTML = dayTx.filter(t => t.type === 'in').map(t => `<div class="flex justify-between items-center p-2 border-b"><div><span class="text-emerald-700 font-bold">${t.amount.toLocaleString()}</span> - ${t.categoryName} ${t.notes ? `<span class="text-slate-400">(${t.notes})</span>` : ''}</div><button onclick="deleteCashTransaction('${t.id}')" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-trash text-xs"></i></button></div>`).join('');
+            if(outList) outList.innerHTML = dayTx.filter(t => t.type === 'out').map(t => `<div class="flex justify-between items-center p-2 border-b"><div><span class="text-red-700 font-bold">${t.amount.toLocaleString()}</span> - ${t.categoryName} ${t.notes ? `<span class="text-slate-400">(${t.notes})</span>` : ''}</div><button onclick="deleteCashTransaction('${t.id}')" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-trash text-xs"></i></button></div>`).join('');
+        }
+
+        function updateNextDayOpening(currentDate) {
+            const d = new Date(currentDate);
+            d.setDate(d.getDate() + 1);
+            const nextDate = d.toISOString().split('T')[0];
+            
+            const { totalIn, totalOut } = calcDayFlow(currentDate);
+            const currentOpening = getDayBalance(currentDate);
+            const currentClosing = currentOpening + totalIn - totalOut;
+
+            // تحديث أو إنشاء رصيد بداية اليوم التالي
+            const existingNextBal = window.cashBalancesArr.find(b => b.date === nextDate);
+            if (existingNextBal) {
+                update(ref(db, 'cashBalances/' + existingNextBal.id), { amount: currentClosing });
+            } else {
+                const newRef = push(ref(db, 'cashBalances'));
+                set(newRef, { id: newRef.key, date: nextDate, amount: currentClosing });
+            }
+        }
+
+        window.setOpeningBalance = function() {
+            const date = document.getElementById('cf-date').value;
+            const amountStr = prompt("أدخل رصيد بداية اليوم:");
+            if(amountStr === null) return;
+            const amount = parseFloat(amountStr);
+            if(isNaN(amount)) return alert('مبلغ غير صالح');
+
+            const normDate = normalizeDate(date);
+            const existing = window.cashBalancesArr.find(b => b.date === normDate);
+            if(existing) {
+                update(ref(db, 'cashBalances/' + existing.id), { amount });
+            } else {
+                const newRef = push(ref(db, 'cashBalances'));
+                set(newRef, { id: newRef.key, date: normDate, amount });
+            }
+        }
+
+        // =========================================
+        // ===       9. إدارة العهد (جديد)       ===
+        // =========================================
+        onValue(ref(db, 'custodies'), (snapshot) => {
+            const data = snapshot.val();
+            window.custodiesArr = data ? Object.values(data) : [];
+            renderCustodies();
+        });
+
+        window.addCustody = function() {
+            const empName = document.getElementById('cus-emp').value.trim();
+            const amount = parseFloat(document.getElementById('cus-amt').value) || 0;
+            const notes = document.getElementById('cus-note').value;
+
+            if(!empName || amount <= 0) return alert('أدخل اسم الموظف والمبلغ بشكل صحيح');
+
+            // هل يوجد عهدة مفتوحة لنفس الموظف؟
+            const existingOpen = window.custodiesArr.find(c => c.employeeName === empName && c.status === 'open');
+            
+            if(existingOpen) {
+                // تعزيز العهدة
+                const updates = {
+                    [`/custodies/${existingOpen.id}/totalIssued`]: (existingOpen.totalIssued || 0) + amount,
+                    [`/custodies/${existingOpen.id}/remaining`]: (existingOpen.remaining || 0) + amount
+                };
+                update(ref(db), updates).then(() => {
+                    // إضافة كتدفق خارج
+                    const today = new Date().toISOString().split('T')[0];
+                    const catObj = window.cashCategoriesArr.find(c => c.name === 'عهد موظفين');
+                    if(catObj) {
+                        const txRef = push(ref(db, 'cashTransactions'));
+                        set(txRef, { id: txRef.key, date: normalizeDate(today), type: 'out', categoryId: catObj.id, categoryName: 'تعزيز عهدة - ' + empName, amount: amount, notes: notes, custodyId: existingOpen.id });
+                    }
+                });
+            } else {
+                // عهدة جديدة
+                const newRef = push(ref(db, 'custodies'));
+                set(newRef, {
+                    id: newRef.key,
+                    employeeName: empName,
+                    totalIssued: amount,
+                    totalSpent: 0,
+                    remaining: amount,
+                    status: 'open',
+                    createdAt: new Date().toISOString(),
+                    notes: notes
+                }).then(() => {
+                    const today = new Date().toISOString().split('T')[0];
+                    const catObj = window.cashCategoriesArr.find(c => c.name === 'عهد موظفين');
+                    if(catObj) {
+                        const txRef = push(ref(db, 'cashTransactions'));
+                        set(txRef, { id: txRef.key, date: normalizeDate(today), type: 'out', categoryId: catObj.id, categoryName: 'عهدة جديدة - ' + empName, amount: amount, notes: notes, custodyId: newRef.key });
+                    }
+                });
+            }
+            document.getElementById('cus-emp').value = '';
+            document.getElementById('cus-amt').value = '';
+            document.getElementById('cus-note').value = '';
+        }
+
+        window.openExpenseModal = function(id) {
+            document.getElementById('expense-modal').classList.remove('hidden');
+            document.getElementById('exp-cus-id').value = id;
+        }
+        window.closeExpenseModal = function() { document.getElementById('expense-modal').classList.add('hidden'); }
+
+        window.addCustodyExpense = function() {
+            const cusId = document.getElementById('exp-cus-id').value;
+            const catId = document.getElementById('exp-cus-cat').value;
+            const amount = parseFloat(document.getElementById('exp-cus-amt').value) || 0;
+            const notes = document.getElementById('exp-cus-note').value;
+
+            if(!catId || amount <= 0) return alert('اختر البند والمبلغ');
+
+            const cus = window.custodiesArr.find(c => c.id === cusId);
+            if(!cus) return;
+
+            if(amount > cus.remaining) return alert('المبلغ أكبر من الرصيد المتبقي مع الموظف!');
+
+            const catObj = window.cashCategoriesArr.find(c => c.id === catId);
+            const today = new Date().toISOString().split('T')[0];
+
+            // تحديث العهدة (زيادة المصروفات، نقص المتبقي)
+            const updates = {
+                [`/custodies/${cusId}/totalSpent`]: (cus.totalSpent || 0) + amount,
+                [`/custodies/${cusId}/remaining`]: (cus.remaining || 0) - amount
+            };
+            update(ref(db), updates).then(() => {
+                // إضافة كتدفق خارج حقيقي (لأنه تم صرفه فعلياً من العهدة التي خرجت مسبقاً)
+                // انتظار: العهدة خرجت كأموال من قبل. الآن هي مصروف فعلي.
+                // في التدفق النقدي العام، لا نضيفها كتدفق خارج مرة أخرى لكي لا تُحسب مرتين.
+                // لكن يمكن تسجيلها في حركات العهد فقط لتوزيع البنود.
+                closeExpenseModal();
+            });
+        }
+
+        window.closeCustody = function(id) {
+            if(confirm('هل تريد إقفال هذه العهدة نهائياً؟')) {
+                update(ref(db), { [`/custodies/${id}/status`]: 'closed' });
+            }
+        }
+
+        function renderCustodies() {
+            const tbody = document.getElementById('custody-table-body');
+            if(!tbody) return;
+            const data = window.custodiesArr || [];
+            tbody.innerHTML = '';
+            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">لا توجد عهد مسجلة</td></tr>'; return; }
+            
+            data.forEach(item => {
+                const statusClass = item.status === 'open' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700';
+                const isEditor = window.currentUserRole === 'محرر' || window.currentUserRole === 'مدير';
+                const actions = item.status === 'open' && isEditor ? `
+                    <button onclick="openExpenseModal('${item.id}')" class="text-blue-600 hover:text-blue-800 text-sm ml-2"><i class="fa-solid fa-receipt ml-1"></i> تسوية مصروف</button>
+                    <button onclick="closeCustody('${item.id}')" class="text-red-600 hover:text-red-800 text-sm"><i class="fa-solid fa-lock ml-1"></i> إقفال</button>
+                ` : '';
+                tbody.innerHTML += `<tr class="hover:bg-slate-50">
+                    <td class="p-4 font-medium">${item.employeeName}</td>
+                    <td class="p-4">${(item.totalIssued||0).toLocaleString()} ر.س</td>
+                    <td class="p-4 text-red-600">${(item.totalSpent||0).toLocaleString()} ر.س</td>
+                    <td class="p-4 font-bold text-indigo-700">${(item.remaining||0).toLocaleString()} ر.س</td>
+                    <td class="p-4"><span class="px-2 py-1 rounded-full text-xs ${statusClass}">${item.status === 'open' ? 'مفتوحة' : 'مقفلة'}</span></td>
+                    <td class="p-4">${actions}</td>
+                </tr>`;
+            });
+        }
+
+        // =========================================
+        // ===   10. لوحة التحليلات (جديد)      ===
+        // =========================================
+        window.renderAnalytics = function() {
+            const startDate = document.getElementById('an-start').value;
+            const endDate = document.getElementById('an-end').value;
+            
+            if(!startDate || !endDate) return alert('حدد فترة التحليل');
+
+            let data = window.cashTransactionsArr.filter(t => t.date >= startDate && t.date <= endDate);
+            let balances = window.cashBalancesArr.filter(b => b.date >= startDate && b.date <= endDate).sort((a,b) => a.date.localeCompare(b.date));
+
+            // البيانات للرسوم البيانية
+            const dates = [...new Set(data.map(t => t.date))].sort();
+            
+            const inData = dates.map(d => data.filter(t => t.date === d && t.type === 'in').reduce((s,t) => s + t.amount, 0));
+            const outData = dates.map(d => data.filter(t => t.date === d && t.type === 'out').reduce((s,t) => s + t.amount, 0));
+            
+            // تجميع حسب البنود
+            const inCats = {};
+            const outCats = {};
+            data.filter(t => t.type === 'in').forEach(t => { inCats[t.categoryName] = (inCats[t.categoryName]||0) + t.amount; });
+            data.filter(t => t.type === 'out').forEach(t => { outCats[t.categoryName] = (outCats[t.categoryName]||0) + t.amount; });
+
+            // تدمير الرسوم القديمة
+            if(chartBalanceInstance) chartBalanceInstance.destroy();
+            if(chartInOutInstance) chartInOutInstance.destroy();
+            if(chartInCatInstance) chartInCatInstance.destroy();
+            if(chartOutCatInstance) chartOutCatInstance.destroy();
+
+            // 1. تطور الرصيد
+            const balDates = balances.map(b => b.date);
+            const balAmounts = balances.map(b => b.amount);
+            chartBalanceInstance = new Chart(document.getElementById('chartBalance'), {
+                type: 'line',
+                data: {
+                    labels: balDates,
+                    datasets: [{
+                        label: 'الرصيد النقدي',
+                        data: balAmounts,
+                        borderColor: '#4f46e5',
+                        backgroundColor: '#eef2ff',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                }
+            });
+
+            // 2. مقارنة تدفقات
+            chartInOutInstance = new Chart(document.getElementById('chartInOut'), {
+                type: 'bar',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        { label: 'تدفقات داخلة', data: inData, backgroundColor: '#10b981' },
+                        { label: 'تدفقات خارجة', data: outData, backgroundColor: '#ef4444' }
+                    ]
+                }
+            });
+
+            // 3. توزيع البنود الداخلة
+            chartInCatInstance = new Chart(document.getElementById('chartInCat'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(inCats),
+                    datasets: [{ label: 'تدفقات داخلة', data: Object.values(inCats), backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#6366f1', '#ec4899'] }]
+                }
+            });
+
+            // 4. توزيع البنود الخارجة
+            chartOutCatInstance = new Chart(document.getElementById('chartOutCat'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(outCats),
+                    datasets: [{ label: 'تدفقات خارجة', data: Object.values(outCats), backgroundColor: ['#ef4444', '#f97316', '#8b5cf6', '#14b8a6', '#64748b'] }]
+                }
+            });
+
+            // تقرير العهد
+            const openCustodies = window.custodiesArr.filter(c => c.status === 'open');
+            const anCustRep = document.getElementById('an-custody-report');
+            anCustRep.innerHTML = openCustodies.length === 0 ? '<p class="text-slate-400 text-sm">لا توجد عهد مفتوحة</p>' : '';
+            openCustodies.forEach(c => {
+                anCustRep.innerHTML += `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg border">
+                    <div><span class="font-bold">${c.employeeName}</span> <span class="text-xs text-slate-500">(إجمالي مصروف: ${c.totalIssued?.toLocaleString()} ر.س)</span></div>
+                    <div class="text-indigo-700 font-bold">المتبقي: ${c.remaining?.toLocaleString()} ر.س</div>
+                </div>`;
+            });
+        }
+
+        // =========================================
         // ===          تشغيل النظام             ===
         // =========================================
         function renderCurrentPage() {
@@ -785,12 +1290,15 @@
                 if(currentActivePage === 'reportFull') calcReportFull();
                 if(currentActivePage === 'monthlySales') calcMonthlySales();
                 if(currentActivePage === 'users') renderUsers();
+                if(currentActivePage === 'cashFlow') renderCashFlow();
+                if(currentActivePage === 'custody') renderCustodies();
             } catch (error) { console.error("Error rendering page:", error); }
         }
 
         function initApp() {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('d-date').value = today;
+            if(document.getElementById('cf-date')) document.getElementById('cf-date').value = today;
             const dateObj = new Date(); const options = { year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('current-date-header').textContent = dateObj.toLocaleDateString('ar-EG', options);
             showPage('daily');
