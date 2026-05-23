@@ -295,10 +295,11 @@
                     </div>
                 </div>
 
-                <!-- 8. التدفق النقدي (جديد) -->
+                <!-- 8. التدفق النقدي -->
                 <div id="page-cashFlow" class="page space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center relative">
+                            <button onclick="setOpeningBalance()" class="absolute top-2 left-2 text-xs text-indigo-500 hover:text-indigo-700" title="تعديل رصيد البداية"><i class="fa-solid fa-pen"></i></button>
                             <p class="text-xs text-slate-500 mb-1">رصيد بداية اليوم</p>
                             <h3 id="cf-opening" class="text-xl font-bold text-slate-800">0 ر.س</h3>
                             <input type="date" id="cf-date" class="mt-2 w-full text-center text-xs p-1 border rounded" onchange="renderCashFlow()">
@@ -320,12 +321,12 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- تدفق داخل -->
                         <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-4">
-                            <h3 class="font-bold text-emerald-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-arrow-down"></i> تدفق نقدي داخل</h3>
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="font-bold text-emerald-700 flex items-center gap-2"><i class="fa-solid fa-arrow-down"></i> تدفق نقدي داخل</h3>
+                                <button onclick="openManageCatsModal()" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg" title="إدارة البنود"><i class="fa-solid fa-gear ml-1"></i> إدارة البنود</button>
+                            </div>
                             <div class="flex flex-wrap gap-2 mb-3">
-                                <select id="cf-in-cat" class="flex-1 p-2 border rounded-lg text-sm bg-white">
-                                    <option value="">اختر البند</option>
-                                </select>
-                                <button onclick="openCatModal('in')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 rounded-lg"><i class="fa-solid fa-plus"></i></button>
+                                <select id="cf-in-cat" class="flex-1 p-2 border rounded-lg text-sm bg-white"><option value="">اختر البند</option></select>
                             </div>
                             <div class="flex gap-2 mb-3">
                                 <input type="number" id="cf-in-amt" placeholder="المبلغ" class="w-32 p-2 border rounded-lg text-sm">
@@ -337,12 +338,11 @@
 
                         <!-- تدفق خارج -->
                         <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-4">
-                            <h3 class="font-bold text-red-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-arrow-up"></i> تدفق نقدي خارج</h3>
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="font-bold text-red-700 flex items-center gap-2"><i class="fa-solid fa-arrow-up"></i> تدفق نقدي خارج</h3>
+                            </div>
                             <div class="flex flex-wrap gap-2 mb-3">
-                                <select id="cf-out-cat" class="flex-1 p-2 border rounded-lg text-sm bg-white">
-                                    <option value="">اختر البند</option>
-                                </select>
-                                <button onclick="openCatModal('out')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 rounded-lg"><i class="fa-solid fa-plus"></i></button>
+                                <select id="cf-out-cat" class="flex-1 p-2 border rounded-lg text-sm bg-white"><option value="">اختر البند</option></select>
                             </div>
                             <div class="flex gap-2 mb-3">
                                 <input type="number" id="cf-out-amt" placeholder="المبلغ" class="w-32 p-2 border rounded-lg text-sm">
@@ -354,7 +354,7 @@
                     </div>
                 </div>
 
-                <!-- 9. إدارة العهد (جديد) -->
+                <!-- 9. إدارة العهد -->
                 <div id="page-custody" class="page space-y-6">
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6 editor-only-section">
                         <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-hand-holding-dollar text-indigo-600"></i> صرف عهدة جديدة / تعزيز عهدة</h2>
@@ -373,7 +373,7 @@
                     </div>
                 </div>
 
-                <!-- 10. لوحة التحليلات (جديد) -->
+                <!-- 10. لوحة التحليلات -->
                 <div id="page-analytics" class="page space-y-6">
                     <div class="flex flex-wrap gap-4 items-end bg-white p-4 rounded-lg shadow-sm border border-slate-200">
                         <div><label class="block text-sm text-slate-500 mb-1">من تاريخ</label><input type="date" id="an-start" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
@@ -396,6 +396,8 @@
         </main>
     </div>
 
+    <!-- نوافذ منبثقة (Modals) -->
+    
     <!-- نافذة الأرشيف -->
     <div id="archive-modal" class="modal-overlay hidden">
         <div class="modal-content">
@@ -408,16 +410,31 @@
         </div>
     </div>
 
-    <!-- نافذة إضافة بند تدفق -->
-    <div id="cat-modal" class="modal-overlay hidden">
-        <div class="modal-content" style="max-width: 400px;">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-slate-800">إضافة بند تدفق جديد</h3>
-                <button onclick="closeCatModal()" class="text-slate-400 hover:text-red-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
+    <!-- نافذة إدارة بنود التدفق النقدي -->
+    <div id="manage-cats-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-layer-group ml-2 text-indigo-600"></i> إدارة بنود التدفق النقدي</h3>
+                <button onclick="closeManageCatsModal()" class="text-slate-400 hover:text-red-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <input type="hidden" id="cat-type-modal">
-            <input type="text" id="cat-name-modal" class="w-full p-2 border rounded-lg mb-3" placeholder="اسم البند (مثل: بيع كراتين)">
-            <button onclick="addCashCategory()" class="w-full bg-indigo-600 text-white p-2 rounded-lg">حفظ البند</button>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="font-bold text-emerald-700 mb-2 border-b pb-2">بنود التدفق الداخل</h4>
+                    <div id="manage-in-cats" class="space-y-2 max-h-60 overflow-y-auto mb-3"></div>
+                    <div class="flex gap-2">
+                        <input type="text" id="new-in-cat-name" placeholder="بند جديد" class="flex-1 p-2 border rounded-lg text-sm">
+                        <button onclick="addCatFromManager('in')" class="bg-emerald-600 text-white px-3 rounded-lg text-sm">إضافة</button>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-bold text-red-700 mb-2 border-b pb-2">بنود التدفق الخارج</h4>
+                    <div id="manage-out-cats" class="space-y-2 max-h-60 overflow-y-auto mb-3"></div>
+                    <div class="flex gap-2">
+                        <input type="text" id="new-out-cat-name" placeholder="بند جديد" class="flex-1 p-2 border rounded-lg text-sm">
+                        <button onclick="addCatFromManager('out')" class="bg-red-600 text-white px-3 rounded-lg text-sm">إضافة</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -634,7 +651,7 @@
         window.deleteItem = function(id) {
             const item = window.monthlyItemsArr.find(i => i.id === id);
             if(!item) return;
-            if(confirm(`هل أنت متأكد من حذف البند: ${item.name}؟`)) { set(ref(db, 'monthlyItems/' + id), null); }
+            if(confirm(`هل أنت متأكد من حذف البند: ${item.name}؟`)) { remove(ref(db, 'monthlyItems/' + id)); }
         }
 
         window.startNewMonth = function() {
@@ -688,7 +705,6 @@
 
         window.closeArchiveModal = function() {
             document.getElementById('archive-modal').classList.add('hidden');
-            document.getElementById('archive-table-container').innerHTML = '<p class="text-center text-slate-400 text-sm">اختر شهراً لعرض بنوده</p>';
         }
 
         onValue(ref(db, 'monthlyItems'), (snapshot) => {
@@ -773,7 +789,7 @@
         }
 
         // =========================================
-        // ===        4. تقرير 30 يوم            ===
+        // ===        4-6 تقارير النظام          ===
         // =========================================
         window.calcReport30 = function() {
             const startDate = document.getElementById('r-start').value; const endDate = document.getElementById('r-end').value;
@@ -790,9 +806,6 @@
                 <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">رصيد التحصيل</p><h3 class="text-2xl font-bold">${(Number(latest?.collectionBalance)||0).toLocaleString()} <span class="text-sm font-normal">ر.س</span></h3></div><div class="p-3 rounded-xl bg-cyan-50 text-cyan-600"><i class="fa-solid fa-chart-line text-xl"></i></div></div>`;
         }
 
-        // =========================================
-        // ===       5. التقرير الشامل           ===
-        // =========================================
         window.calcReportFull = function() {
             const startDate = document.getElementById('rf-start').value; const endDate = document.getElementById('rf-end').value;
             let data = window.dailyStatementsArr || [];
@@ -815,9 +828,6 @@
             });
         }
 
-        // =========================================
-        // ===       5.5 المبيعات الشهرية        ===
-        // =========================================
         window.calcMonthlySales = function() {
             const startDate = document.getElementById('ms-start').value; const endDate = document.getElementById('ms-end').value;
             let data = window.dailyStatementsArr || [];
@@ -831,9 +841,6 @@
             document.getElementById('ms-total-val').innerHTML = `${totalBilled.toLocaleString()} <span class="text-sm font-normal">ر.س</span>`;
         }
 
-        // =========================================
-        // ===       6. إدارة المستخدمين         ===
-        // =========================================
         window.addUser = function() {
             const username = document.getElementById('u-username').value; const displayName = document.getElementById('u-displayname').value; const password = document.getElementById('u-password').value; const role = document.getElementById('u-role').value;
             if(!username || !password) return alert('أدخل اسم المستخدم وكلمة المرور');
@@ -863,9 +870,6 @@
             tbody.innerHTML = rowsHtml;
         }
 
-        // =========================================
-        // ===       7. تقرير الإدارة            ===
-        // =========================================
         window.generateAdminReport = function() {
             const dateInput = document.getElementById('ar-date').value;
             if(!dateInput) return alert('يرجى اختيار التاريخ أولاً');
@@ -894,13 +898,12 @@
         }
 
         // =========================================
-        // ===    8. التدفق النقدي (جديد)       ===
+        // ===    8. التدفق النقدي               ===
         // =========================================
         onValue(ref(db, 'cashCategories'), (snapshot) => {
             const data = snapshot.val();
             window.cashCategoriesArr = data ? Object.values(data) : [];
             if(window.cashCategoriesArr.length === 0) {
-                // بنود افتراضية
                 const defIn = ['تحصيل عملاء', 'بيع كراتين', 'رد مبالغ', 'توزيع أرباح'];
                 const defOut = ['سداد موردين', 'سداد رواتب', 'شراء أصول', 'مصروفات تشغيلية', 'عهد موظفين'];
                 let updates = {};
@@ -909,6 +912,7 @@
                 update(ref(db), updates);
             }
             renderCashCats();
+            renderManageCats();
         });
 
         onValue(ref(db, 'cashTransactions'), (snapshot) => {
@@ -923,23 +927,46 @@
             renderCashFlow();
         });
 
-        window.openCatModal = function(type) {
-            document.getElementById('cat-modal').classList.remove('hidden');
-            document.getElementById('cat-type-modal').value = type;
-            document.getElementById('cat-name-modal').value = '';
-        }
-        window.closeCatModal = function() { document.getElementById('cat-modal').classList.add('hidden'); }
+        window.openManageCatsModal = function() { document.getElementById('manage-cats-modal').classList.remove('hidden'); }
+        window.closeManageCatsModal = function() { document.getElementById('manage-cats-modal').classList.add('hidden'); }
 
-        window.addCashCategory = function() {
-            const type = document.getElementById('cat-type-modal').value;
-            const name = document.getElementById('cat-name-modal').value;
+        window.addCatFromManager = function(type) {
+            const name = document.getElementById(`new-${type}-cat-name`).value.trim();
             if(!name) return alert('أدخل اسم البند');
             const newRef = push(ref(db, 'cashCategories'));
-            set(newRef, { id: newRef.key, name, type }).then(() => closeCatModal());
+            set(newRef, { id: newRef.key, name, type }).then(() => { document.getElementById(`new-${type}-cat-name`).value = ''; });
+        }
+
+        window.editCashCategory = function(id, oldName) {
+            const newName = prompt('تعديل اسم البند:', oldName);
+            if(newName && newName.trim() !== '' && newName.trim() !== oldName) {
+                update(ref(db, 'cashCategories/' + id), { name: newName.trim() });
+            }
         }
 
         window.deleteCashCategory = function(id) {
-            if(confirm('هل أنت متأكد من حذف هذا البند؟')) set(ref(db, 'cashCategories/' + id), null);
+            if(confirm('هل أنت متأكد من حذف هذا البند؟')) remove(ref(db, 'cashCategories/' + id));
+        }
+
+        function renderManageCats() {
+            const inList = document.getElementById('manage-in-cats');
+            const outList = document.getElementById('manage-out-cats');
+            if(!inList || !outList) return;
+
+            inList.innerHTML = '';
+            outList.innerHTML = '';
+
+            window.cashCategoriesArr.forEach(cat => {
+                const html = `<div class="flex justify-between items-center p-2 bg-slate-50 rounded border">
+                    <span class="text-sm font-medium">${cat.name}</span>
+                    <div class="flex gap-2">
+                        <button onclick="editCashCategory('${cat.id}', '${cat.name}')" class="text-blue-500 hover:text-blue-700"><i class="fa-solid fa-pen text-xs"></i></button>
+                        <button onclick="deleteCashCategory('${cat.id}')" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash text-xs"></i></button>
+                    </div>
+                </div>`;
+                if(cat.type === 'in') inList.innerHTML += html;
+                if(cat.type === 'out') outList.innerHTML += html;
+            });
         }
 
         function renderCashCats() {
@@ -950,12 +977,12 @@
 
             inSelect.innerHTML = '<option value="">اختر البند</option>';
             outSelect.innerHTML = '<option value="">اختر البند</option>';
-            expSelect.innerHTML = '';
+            if(expSelect) expSelect.innerHTML = '';
 
             window.cashCategoriesArr.forEach(cat => {
                 const opt = `<option value="${cat.id}">${cat.name}</option>`;
                 if(cat.type === 'in') inSelect.innerHTML += opt;
-                if(cat.type === 'out') { outSelect.innerHTML += opt; expSelect.innerHTML += opt; }
+                if(cat.type === 'out') { outSelect.innerHTML += opt; if(expSelect) expSelect.innerHTML += opt; }
             });
         }
 
@@ -980,16 +1007,12 @@
             }).then(() => {
                 document.getElementById(`cf-${type}-amt`).value = '';
                 document.getElementById(`cf-${type}-note`).value = '';
-                
-                // تحديث رصيد البداية لليوم التالي تلقائياً
                 updateNextDayOpening(normalizeDate(date));
             });
         }
 
         window.deleteCashTransaction = function(id) {
-            if(confirm('هل تريد حذف هذه الحركة؟')) {
-                set(ref(db, 'cashTransactions/' + id), null);
-            }
+            if(confirm('هل تريد حذف هذه الحركة؟')) remove(ref(db, 'cashTransactions/' + id));
         }
 
         function getDayBalance(date) {
@@ -1018,7 +1041,6 @@
             if(document.getElementById('cf-out')) document.getElementById('cf-out').innerText = totalOut.toLocaleString() + ' ر.س';
             if(document.getElementById('cf-closing')) document.getElementById('cf-closing').innerText = closing.toLocaleString() + ' ر.س';
 
-            // قائمة الحركات
             const dayTx = window.cashTransactionsArr.filter(t => t.date === normDate);
             const inList = document.getElementById('cf-in-list');
             const outList = document.getElementById('cf-out-list');
@@ -1035,7 +1057,6 @@
             const currentOpening = getDayBalance(currentDate);
             const currentClosing = currentOpening + totalIn - totalOut;
 
-            // تحديث أو إنشاء رصيد بداية اليوم التالي
             const existingNextBal = window.cashBalancesArr.find(b => b.date === nextDate);
             if (existingNextBal) {
                 update(ref(db, 'cashBalances/' + existingNextBal.id), { amount: currentClosing });
@@ -1063,7 +1084,7 @@
         }
 
         // =========================================
-        // ===       9. إدارة العهد (جديد)       ===
+        // ===       9. إدارة العهد              ===
         // =========================================
         onValue(ref(db, 'custodies'), (snapshot) => {
             const data = snapshot.val();
@@ -1078,17 +1099,14 @@
 
             if(!empName || amount <= 0) return alert('أدخل اسم الموظف والمبلغ بشكل صحيح');
 
-            // هل يوجد عهدة مفتوحة لنفس الموظف؟
             const existingOpen = window.custodiesArr.find(c => c.employeeName === empName && c.status === 'open');
             
             if(existingOpen) {
-                // تعزيز العهدة
                 const updates = {
                     [`/custodies/${existingOpen.id}/totalIssued`]: (existingOpen.totalIssued || 0) + amount,
                     [`/custodies/${existingOpen.id}/remaining`]: (existingOpen.remaining || 0) + amount
                 };
                 update(ref(db), updates).then(() => {
-                    // إضافة كتدفق خارج
                     const today = new Date().toISOString().split('T')[0];
                     const catObj = window.cashCategoriesArr.find(c => c.name === 'عهد موظفين');
                     if(catObj) {
@@ -1097,7 +1115,6 @@
                     }
                 });
             } else {
-                // عهدة جديدة
                 const newRef = push(ref(db, 'custodies'));
                 set(newRef, {
                     id: newRef.key,
@@ -1141,19 +1158,11 @@
 
             if(amount > cus.remaining) return alert('المبلغ أكبر من الرصيد المتبقي مع الموظف!');
 
-            const catObj = window.cashCategoriesArr.find(c => c.id === catId);
-            const today = new Date().toISOString().split('T')[0];
-
-            // تحديث العهدة (زيادة المصروفات، نقص المتبقي)
             const updates = {
                 [`/custodies/${cusId}/totalSpent`]: (cus.totalSpent || 0) + amount,
                 [`/custodies/${cusId}/remaining`]: (cus.remaining || 0) - amount
             };
             update(ref(db), updates).then(() => {
-                // إضافة كتدفق خارج حقيقي (لأنه تم صرفه فعلياً من العهدة التي خرجت مسبقاً)
-                // انتظار: العهدة خرجت كأموال من قبل. الآن هي مصروف فعلي.
-                // في التدفق النقدي العام، لا نضيفها كتدفق خارج مرة أخرى لكي لا تُحسب مرتين.
-                // لكن يمكن تسجيلها في حركات العهد فقط لتوزيع البنود.
                 closeExpenseModal();
             });
         }
@@ -1161,6 +1170,25 @@
         window.closeCustody = function(id) {
             if(confirm('هل تريد إقفال هذه العهدة نهائياً؟')) {
                 update(ref(db), { [`/custodies/${id}/status`]: 'closed' });
+            }
+        }
+
+        window.editCustody = function(id) {
+            const item = window.custodiesArr.find(c => c.id === id);
+            if(!item) return;
+            const newName = prompt('تعديل اسم الموظف:', item.employeeName);
+            if(newName !== null && newName.trim() !== '') {
+                update(ref(db, 'custodies/' + id), { employeeName: newName.trim() });
+            }
+            const newNotes = prompt('تعديل الملاحظات:', item.notes || '');
+            if(newNotes !== null) {
+                update(ref(db, 'custodies/' + id), { notes: newNotes });
+            }
+        }
+
+        window.deleteCustody = function(id) {
+            if(confirm('هل أنت متأكد من حذف هذه العهدة بالكامل؟ سيتم حذف سجل العهدة ولن يتم حذف حركات التدفق النقدي المرتبطة بها.')) {
+                remove(ref(db, 'custodies/' + id));
             }
         }
 
@@ -1174,23 +1202,33 @@
             data.forEach(item => {
                 const statusClass = item.status === 'open' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700';
                 const isEditor = window.currentUserRole === 'محرر' || window.currentUserRole === 'مدير';
-                const actions = item.status === 'open' && isEditor ? `
-                    <button onclick="openExpenseModal('${item.id}')" class="text-blue-600 hover:text-blue-800 text-sm ml-2"><i class="fa-solid fa-receipt ml-1"></i> تسوية مصروف</button>
-                    <button onclick="closeCustody('${item.id}')" class="text-red-600 hover:text-red-800 text-sm"><i class="fa-solid fa-lock ml-1"></i> إقفال</button>
-                ` : '';
+                let actions = '';
+                if(item.status === 'open' && isEditor) {
+                    actions = `
+                        <button onclick="openExpenseModal('${item.id}')" class="text-blue-600 hover:text-blue-800 text-sm ml-2" title="تسوية مصروف"><i class="fa-solid fa-receipt"></i></button>
+                        <button onclick="editCustody('${item.id}')" class="text-amber-600 hover:text-amber-800 text-sm ml-2" title="تعديل"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="closeCustody('${item.id}')" class="text-slate-500 hover:text-slate-700 text-sm ml-2" title="إقفال"><i class="fa-solid fa-lock"></i></button>
+                        <button onclick="deleteCustody('${item.id}')" class="text-red-600 hover:text-red-800 text-sm" title="حذف"><i class="fa-solid fa-trash"></i></button>
+                    `;
+                } else if (isEditor) {
+                    actions = `
+                        <button onclick="editCustody('${item.id}')" class="text-amber-600 hover:text-amber-800 text-sm ml-2" title="تعديل"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteCustody('${item.id}')" class="text-red-600 hover:text-red-800 text-sm" title="حذف"><i class="fa-solid fa-trash"></i></button>
+                    `;
+                }
                 tbody.innerHTML += `<tr class="hover:bg-slate-50">
-                    <td class="p-4 font-medium">${item.employeeName}</td>
+                    <td class="p-4 font-medium">${item.employeeName} ${item.notes ? `<br><span class="text-xs text-slate-400">(${item.notes})</span>` : ''}</td>
                     <td class="p-4">${(item.totalIssued||0).toLocaleString()} ر.س</td>
                     <td class="p-4 text-red-600">${(item.totalSpent||0).toLocaleString()} ر.س</td>
                     <td class="p-4 font-bold text-indigo-700">${(item.remaining||0).toLocaleString()} ر.س</td>
                     <td class="p-4"><span class="px-2 py-1 rounded-full text-xs ${statusClass}">${item.status === 'open' ? 'مفتوحة' : 'مقفلة'}</span></td>
-                    <td class="p-4">${actions}</td>
+                    <td class="p-4 flex gap-2 items-center">${actions}</td>
                 </tr>`;
             });
         }
 
         // =========================================
-        // ===   10. لوحة التحليلات (جديد)      ===
+        // ===   10. لوحة التحليلات              ===
         // =========================================
         window.renderAnalytics = function() {
             const startDate = document.getElementById('an-start').value;
@@ -1201,73 +1239,43 @@
             let data = window.cashTransactionsArr.filter(t => t.date >= startDate && t.date <= endDate);
             let balances = window.cashBalancesArr.filter(b => b.date >= startDate && b.date <= endDate).sort((a,b) => a.date.localeCompare(b.date));
 
-            // البيانات للرسوم البيانية
             const dates = [...new Set(data.map(t => t.date))].sort();
             
             const inData = dates.map(d => data.filter(t => t.date === d && t.type === 'in').reduce((s,t) => s + t.amount, 0));
             const outData = dates.map(d => data.filter(t => t.date === d && t.type === 'out').reduce((s,t) => s + t.amount, 0));
             
-            // تجميع حسب البنود
             const inCats = {};
             const outCats = {};
             data.filter(t => t.type === 'in').forEach(t => { inCats[t.categoryName] = (inCats[t.categoryName]||0) + t.amount; });
             data.filter(t => t.type === 'out').forEach(t => { outCats[t.categoryName] = (outCats[t.categoryName]||0) + t.amount; });
 
-            // تدمير الرسوم القديمة
             if(chartBalanceInstance) chartBalanceInstance.destroy();
             if(chartInOutInstance) chartInOutInstance.destroy();
             if(chartInCatInstance) chartInCatInstance.destroy();
             if(chartOutCatInstance) chartOutCatInstance.destroy();
 
-            // 1. تطور الرصيد
             const balDates = balances.map(b => b.date);
             const balAmounts = balances.map(b => b.amount);
             chartBalanceInstance = new Chart(document.getElementById('chartBalance'), {
                 type: 'line',
-                data: {
-                    labels: balDates,
-                    datasets: [{
-                        label: 'الرصيد النقدي',
-                        data: balAmounts,
-                        borderColor: '#4f46e5',
-                        backgroundColor: '#eef2ff',
-                        fill: true,
-                        tension: 0.3
-                    }]
-                }
+                data: { labels: balDates, datasets: [{ label: 'الرصيد النقدي', data: balAmounts, borderColor: '#4f46e5', backgroundColor: '#eef2ff', fill: true, tension: 0.3 }] }
             });
 
-            // 2. مقارنة تدفقات
             chartInOutInstance = new Chart(document.getElementById('chartInOut'), {
                 type: 'bar',
-                data: {
-                    labels: dates,
-                    datasets: [
-                        { label: 'تدفقات داخلة', data: inData, backgroundColor: '#10b981' },
-                        { label: 'تدفقات خارجة', data: outData, backgroundColor: '#ef4444' }
-                    ]
-                }
+                data: { labels: dates, datasets: [ { label: 'تدفقات داخلة', data: inData, backgroundColor: '#10b981' }, { label: 'تدفقات خارجة', data: outData, backgroundColor: '#ef4444' } ] }
             });
 
-            // 3. توزيع البنود الداخلة
             chartInCatInstance = new Chart(document.getElementById('chartInCat'), {
                 type: 'doughnut',
-                data: {
-                    labels: Object.keys(inCats),
-                    datasets: [{ label: 'تدفقات داخلة', data: Object.values(inCats), backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#6366f1', '#ec4899'] }]
-                }
+                data: { labels: Object.keys(inCats), datasets: [{ label: 'تدفقات داخلة', data: Object.values(inCats), backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#6366f1', '#ec4899'] }] }
             });
 
-            // 4. توزيع البنود الخارجة
             chartOutCatInstance = new Chart(document.getElementById('chartOutCat'), {
                 type: 'doughnut',
-                data: {
-                    labels: Object.keys(outCats),
-                    datasets: [{ label: 'تدفقات خارجة', data: Object.values(outCats), backgroundColor: ['#ef4444', '#f97316', '#8b5cf6', '#14b8a6', '#64748b'] }]
-                }
+                data: { labels: Object.keys(outCats), datasets: [{ label: 'تدفقات خارجة', data: Object.values(outCats), backgroundColor: ['#ef4444', '#f97316', '#8b5cf6', '#14b8a6', '#64748b'] }] }
             });
 
-            // تقرير العهد
             const openCustodies = window.custodiesArr.filter(c => c.status === 'open');
             const anCustRep = document.getElementById('an-custody-report');
             anCustRep.innerHTML = openCustodies.length === 0 ? '<p class="text-slate-400 text-sm">لا توجد عهد مفتوحة</p>' : '';
