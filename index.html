@@ -297,11 +297,128 @@
                 </div>
 
                 <!-- باقي الصفحات ستكون في الجزء الثاني من الكود -->
-                <div id="page-cashFlow" class="page space-y-6"></div>
-                <div id="page-cashFlowStatement" class="page space-y-6"></div>
-                <div id="page-custody" class="page space-y-6"></div>
-                <div id="page-analytics" class="page space-y-6"></div>
+                                <!-- 8. التدفق النقدي -->
+                <div id="page-cashFlow" class="page space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center relative">
+                            <button onclick="setOpeningBalance()" class="absolute top-2 left-2 text-xs text-indigo-500 hover:text-indigo-700" title="تعديل رصيد البداية"><i class="fa-solid fa-pen"></i></button>
+                            <p class="text-xs text-slate-500 mb-1">رصيد بداية اليوم</p>
+                            <h3 id="cf-opening" class="text-xl font-bold text-slate-800">0 ر.س</h3>
+                            <input type="date" id="cf-date" class="mt-2 w-full text-center text-xs p-1 border rounded" onchange="renderCashFlow()">
+                        </div>
+                        <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100 shadow-sm text-center">
+                            <p class="text-xs text-emerald-600 mb-1">إجمالي التدفقات الداخلة</p>
+                            <h3 id="cf-in" class="text-xl font-bold text-emerald-700">0 ر.س</h3>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded-xl border border-red-100 shadow-sm text-center">
+                            <p class="text-xs text-red-600 mb-1">إجمالي التدفقات الخارجة</p>
+                            <h3 id="cf-out" class="text-xl font-bold text-red-700">0 ر.س</h3>
+                        </div>
+                        <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 shadow-sm text-center">
+                            <p class="text-xs text-indigo-600 mb-1">رصيد نهاية اليوم</p>
+                            <h3 id="cf-closing" class="text-xl font-bold text-indigo-700">0 ر.س</h3>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-4">
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="font-bold text-emerald-700 flex items-center gap-2"><i class="fa-solid fa-arrow-down"></i> تدفق نقدي داخل</h3>
+                                <button onclick="openManageCatsModal()" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg"><i class="fa-solid fa-gear ml-1"></i> إدارة البنود</button>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <select id="cf-in-cat" class="flex-1 p-2 border rounded-lg text-sm bg-white"><option value="">اختر البند</option></select>
+                            </div>
+                            <div class="flex gap-2 mb-3">
+                                <input type="number" id="cf-in-amt" placeholder="المبلغ" class="w-32 p-2 border rounded-lg text-sm">
+                                <input type="text" id="cf-in-note" placeholder="ملاحظات" class="flex-1 p-2 border rounded-lg text-sm">
+                                <button onclick="addCashTransaction('in')" class="bg-emerald-600 text-white px-3 rounded-lg text-sm">إضافة</button>
+                            </div>
+                            <div id="cf-in-list" class="max-h-60 overflow-y-auto text-sm"></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-4">
+                            <h3 class="font-bold text-red-700 flex items-center gap-2 mb-3"><i class="fa-solid fa-arrow-up"></i> تدفق نقدي خارج</h3>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <select id="cf-out-cat" class="flex-1 p-2 border rounded-lg text-sm bg-white"><option value="">اختر البند</option></select>
+                            </div>
+                            <div class="flex gap-2 mb-3">
+                                <input type="number" id="cf-out-amt" placeholder="المبلغ" class="w-32 p-2 border rounded-lg text-sm">
+                                <input type="text" id="cf-out-note" placeholder="ملاحظات" class="flex-1 p-2 border rounded-lg text-sm">
+                                <button onclick="addCashTransaction('out')" class="bg-red-600 text-white px-3 rounded-lg text-sm">إضافة</button>
+                            </div>
+                            <div id="cf-out-list" class="max-h-60 overflow-y-auto text-sm"></div>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- 8.5 تقرير التدفقات النقدية -->
+                <div id="page-cashFlowStatement" class="page space-y-6">
+                    <div class="flex flex-wrap gap-4 items-end bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                        <div><label class="block text-sm text-slate-500 mb-1">من تاريخ</label><input type="date" id="cfs-start" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                        <div><label class="block text-sm text-slate-500 mb-1">إلى تاريخ</label><input type="date" id="cfs-end" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                        <button onclick="calcCashFlowStatement()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg h-10">عرض التقرير</button>
+                        <button onclick="exportCashFlowStatementPDF()" class="bg-red-600 text-white px-4 py-2 rounded-lg h-10"><i class="fa-solid fa-file-pdf ml-1"></i> PDF</button>
+                        <button onclick="exportCashFlowStatementExcel()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg h-10"><i class="fa-solid fa-file-excel ml-1"></i> Excel</button>
+                    </div>
+                    <div id="cfs-report-container" class="bg-white border border-slate-200 shadow-sm rounded-xl p-8">
+                        <div class="text-center border-b-2 border-slate-800 pb-4 mb-6">
+                            <h2 class="text-xl font-extrabold text-slate-800">زاد الجود للوجبات السريعة</h2>
+                            <h3 class="text-lg font-bold text-indigo-700 mt-1">قائمة التدفقات النقدية</h3>
+                            <p id="cfs-date-display" class="text-slate-500 text-sm mt-2 font-medium">للفترة من: -- إلى: --</p>
+                        </div>
+                        <div id="cfs-table-container" class="text-center text-slate-400 py-8">اختر الفترة واضغط عرض التقرير</div>
+                    </div>
+                </div>
+
+                <!-- 9. إدارة العهد -->
+                <div id="page-custody" class="page space-y-6">
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6 editor-only-section">
+                        <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-hand-holding-dollar text-indigo-600"></i> صرف عهدة / تعزيز</h2>
+                        <div class="flex flex-wrap gap-4 items-end">
+                            <div class="flex-1 min-w-[200px]"><label class="block text-sm font-medium text-slate-600 mb-1">اسم الموظف</label><input type="text" id="cus-emp" list="employees-list" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"><datalist id="employees-list"></datalist></div>
+                            <div class="w-40"><label class="block text-sm font-medium text-slate-600 mb-1">المبلغ</label><input type="number" id="cus-amt" step="0.01" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <div class="flex-1 min-w-[200px]"><label class="block text-sm font-medium text-slate-600 mb-1">ملاحظات</label><input type="text" id="cus-note" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <button onclick="addCustody()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium">صرف</button>
+                        </div>
+                    </div>
+
+                    <!-- استعلام عهدة موظف -->
+                    <div class="bg-indigo-50 border border-indigo-200 shadow-sm rounded-xl p-6">
+                        <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-indigo-800"><i class="fa-solid fa-magnifying-glass-dollar"></i> استعلام عهدة موظف</h2>
+                        <div class="flex flex-wrap gap-4 items-end">
+                            <div class="flex-1 min-w-[200px]"><label class="block text-sm font-medium text-indigo-700 mb-1">اسم الموظف</label><select id="q-emp" class="w-full p-2 border border-indigo-300 rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"><option value="">-- اختر --</option></select></div>
+                            <div class="w-44"><label class="block text-sm font-medium text-indigo-700 mb-1">من تاريخ</label><input type="date" id="q-start" class="w-full p-2 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <div class="w-44"><label class="block text-sm font-medium text-indigo-700 mb-1">إلى تاريخ</label><input type="date" id="q-end" class="w-full p-2 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <button onclick="queryCustody()" class="bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium h-10">عرض</button>
+                        </div>
+                        <div id="custody-query-result" class="mt-4 hidden"></div>
+                    </div>
+
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
+                        <table class="w-full text-sm text-right">
+                            <thead class="bg-slate-50 text-slate-600"><tr><th class="p-4 font-medium">الموظف</th><th class="p-4 font-medium">إجمالي المصروف</th><th class="p-4 font-medium">المصروفات المسجلة</th><th class="p-4 font-medium">المتبقي</th><th class="p-4 font-medium">الحالة</th><th class="p-4 font-medium">إجراء</th></tr></thead>
+                            <tbody id="custody-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 10. لوحة التحليلات -->
+                <div id="page-analytics" class="page space-y-6">
+                    <div class="flex flex-wrap gap-4 items-end bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                        <div><label class="block text-sm text-slate-500 mb-1">من تاريخ</label><input type="date" id="an-start" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                        <div><label class="block text-sm text-slate-500 mb-1">إلى تاريخ</label><input type="date" id="an-end" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                        <button onclick="renderAnalytics()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg h-10">تحليل</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><h3 class="font-bold mb-4 text-slate-700">تطور الرصيد النقدي</h3><canvas id="chartBalance"></canvas></div>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><h3 class="font-bold mb-4 text-slate-700">مقارنة التدفقات</h3><canvas id="chartInOut"></canvas></div>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><h3 class="font-bold mb-4 text-slate-700">توزيع التدفقات الداخلة</h3><canvas id="chartInCat"></canvas></div>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><h3 class="font-bold mb-4 text-slate-700">توزيع التدفقات الخارجة</h3><canvas id="chartOutCat"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h3 class="font-bold mb-4 text-slate-700">تقرير العهد المفتوحة</h3>
+                        <div id="an-custody-report" class="space-y-4"></div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
