@@ -561,44 +561,53 @@
             return dateStr;
         }
 
-        // === تسجيل الدخول ===
+                // === تسجيل الدخول (محدث) ===
         document.getElementById('login-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             const u = document.getElementById('login-user').value;
             const p = document.getElementById('login-pass').value;
             
+            // إخفاء رسالة الخطأ السابقة إن وجدت
+            document.getElementById('login-error').classList.add('hidden');
+
             let usersArr = window.usersArr || [];
+            
+            // إذا لم يتم تحميل المستخدمين بعد، نحاول جلبهم مباشرة من قاعدة البيانات
             if (usersArr.length === 0) {
                 try {
                     const snapshot = await get(ref(db, 'users'));
-                    if (snapshot.exists()) { usersArr = Object.values(snapshot.val()); window.usersArr = usersArr; }
-                } catch (error) { console.error(error); }
+                    if (snapshot.exists()) { 
+                        usersArr = Object.values(snapshot.val()); 
+                        window.usersArr = usersArr; 
+                    }
+                } catch (error) { 
+                    console.error("Firebase Read Error:", error);
+                    alert("خطأ في الاتصال بقاعدة البيانات! تأكد من أن قواعد الأمان (Rules) في Firebase تسمح بالقراءة والكتابة.");
+                    return; // إيقاف العملية هنا لعدم الاتصال
+                }
             }
-            const foundUser = usersArr.find(user => user.username.toLowerCase() === u.toLowerCase() && String(user.password) === String(p) && user.isActive);
+            
+            // البحث عن المستخدم
+            const foundUser = usersArr.find(user => 
+                user.username.toLowerCase() === u.toLowerCase() && 
+                String(user.password) === String(p) && 
+                user.isActive
+            );
+            
             if (foundUser) {
-                window.currentUserRole = foundUser.role; window.currentUserName = foundUser.displayName;
+                window.currentUserRole = foundUser.role; 
+                window.currentUserName = foundUser.displayName;
                 document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('main-app').classList.remove('hidden');
-                document.getElementById('main-app').classList.add('flex');
-                applyRoleAccess(); initApp();
-            } else { document.getElementById('login-error').classList.remove('hidden'); }
+                
+                // إصلاح مشكلة إظهار الشاشة الرئيسية باستخدام className بدلاً من classList لتجنب تعارض hidden و flex
+                document.getElementById('main-app').className = 'min-h-screen flex';
+                
+                applyRoleAccess(); 
+                initApp();
+            } else { 
+                document.getElementById('login-error').classList.remove('hidden'); 
+            }
         });
-
-        window.logout = function() {
-            document.getElementById('main-app').classList.add('hidden'); document.getElementById('main-app').classList.remove('flex');
-            document.getElementById('login-screen').classList.remove('hidden');
-            document.getElementById('login-user').value = ''; document.getElementById('login-pass').value = '';
-            document.getElementById('login-error').classList.add('hidden');
-        }
-
-        window.applyRoleAccess = function() {
-            document.getElementById('sidebar-avatar').innerText = window.currentUserName.charAt(0);
-            document.getElementById('sidebar-name').innerText = window.currentUserName;
-            document.getElementById('sidebar-role').innerText = window.currentUserRole;
-            document.querySelectorAll('.admin-only').forEach(el => el.style.display = window.currentUserRole === 'مدير' ? 'block' : 'none');
-            document.querySelectorAll('.editor-only, .editor-only-section').forEach(el => el.style.display = (window.currentUserRole === 'محرر' || window.currentUserRole === 'مدير') ? 'block' : 'none');
-        }
-
         // === التنقل بين الصفحات ===
         window.showPage = function(pageId) {
             currentActivePage = pageId;
