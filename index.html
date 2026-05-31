@@ -234,7 +234,7 @@
                     </div>
                 </div>
 
-                <!-- 5.5 المبيعات الشهرية - تم تطويرها -->
+                <!-- 5.5 المبيعات الشهرية -->
                 <div id="page-monthlySales" class="page space-y-6">
                     <div class="flex flex-wrap gap-4 items-end bg-white p-4 rounded-lg shadow-sm border border-slate-200">
                         <div><label class="block text-sm text-slate-500 mb-1">من تاريخ</label><input type="date" id="ms-start" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
@@ -257,7 +257,7 @@
                         </div>
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
                             <div class="p-3 rounded-xl bg-amber-50 text-amber-600"><i class="fa-solid fa-arrow-down text-lg"></i></div>
-                            <div><p class="text-xs text-slate-500">أقل مبيعات يومية</p><p id="ms-min-val" class="text-lg font-bold text-amber-700">0 ر.س</p><p id="ms-min-date" class="text-[10px] text-slate-400"></p></div>
+                            <div><p class="text-xs text-slate-500">أقل مبيعات يومية (أيام العمل)</p><p id="ms-min-val" class="text-lg font-bold text-amber-700">0 ر.س</p><p id="ms-min-date" class="text-[10px] text-slate-400"></p></div>
                         </div>
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
                             <div class="p-3 rounded-xl bg-violet-50 text-violet-600"><i class="fa-solid fa-calculator text-lg"></i></div>
@@ -747,14 +747,12 @@
         // تغيير نوع الرسم البياني
         window.setChartType = function(type) {
             msCurrentChartType = type;
-            // تحديث أزرار التبديل
             document.getElementById('btn-chart-bar').className = type === 'bar' 
                 ? 'px-3 py-1 text-xs rounded-lg bg-indigo-100 text-indigo-700 font-medium transition-colors' 
                 : 'px-3 py-1 text-xs rounded-lg bg-slate-100 text-slate-600 font-medium transition-colors';
             document.getElementById('btn-chart-line').className = type === 'line' 
                 ? 'px-3 py-1 text-xs rounded-lg bg-indigo-100 text-indigo-700 font-medium transition-colors' 
                 : 'px-3 py-1 text-xs rounded-lg bg-slate-100 text-slate-600 font-medium transition-colors';
-            // إعادة رسم الرسم البياني
             if (msChartData.labels.length > 0) {
                 buildChart(msChartData.labels, msChartData.values);
             }
@@ -766,12 +764,10 @@
 
             const ctx = document.getElementById('ms-chart').getContext('2d');
 
-            // تدرج لوني للأعمدة
             const barGradient = ctx.createLinearGradient(0, 0, 0, 380);
             barGradient.addColorStop(0, 'rgba(16, 185, 129, 0.85)');
             barGradient.addColorStop(1, 'rgba(16, 185, 129, 0.15)');
 
-            // تدرج لوني للخط
             const lineGradient = ctx.createLinearGradient(0, 0, 0, 380);
             lineGradient.addColorStop(0, 'rgba(99, 102, 241, 0.3)');
             lineGradient.addColorStop(1, 'rgba(99, 102, 241, 0.01)');
@@ -843,10 +839,7 @@
                             }
                         }
                     },
-                    animation: {
-                        duration: 800,
-                        easing: 'easeOutQuart'
-                    }
+                    animation: { duration: 800, easing: 'easeOutQuart' }
                 }
             });
         }
@@ -858,7 +851,6 @@
             if(startDate) data = data.filter(d => d.date >= startDate);
             if(endDate) data = data.filter(d => d.date <= endDate);
 
-            // ترتيب تصاعدي للرسم البياني
             const sortedData = [...data].sort((a, b) => String(a.date).localeCompare(String(b.date)));
 
             let totalBilled = 0;
@@ -874,7 +866,6 @@
                 return;
             }
 
-            // إظهار العناصر
             document.getElementById('ms-total-card').classList.remove('hidden');
             document.getElementById('ms-chart-container').classList.remove('hidden');
             document.getElementById('ms-stats-cards').classList.remove('hidden');
@@ -883,6 +874,7 @@
             const labels = [];
             const values = [];
             let maxVal = 0, minVal = Infinity, maxDate = '', minDate = '';
+            let operatingDaysCount = 0; // عدد أيام العمل الفعلية لحساب المتوسط
 
             let rowsHtml = '';
             sortedData.forEach(item => {
@@ -891,22 +883,32 @@
                 rowsHtml += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${item.date}</td><td class="p-4 text-emerald-700 font-bold">${billed.toLocaleString()} ر.س</td></tr>`;
                 labels.push(item.date);
                 values.push(billed);
+                
+                // حساب أعلى مبيعات
                 if (billed > maxVal) { maxVal = billed; maxDate = item.date; }
-                if (billed < minVal) { minVal = billed; minDate = item.date; }
+                
+                // حساب أقل مبيعات (تجنب القيمة صفر لأنها تعنى إجازة وليس مبيعات ضعيفة)
+                if (billed > 0 && billed < minVal) { minVal = billed; minDate = item.date; }
+                
+                // حساب أيام العمل الفعلية
+                if (billed > 0) operatingDaysCount++;
             });
 
             tbody.innerHTML = rowsHtml;
             document.getElementById('ms-total-val').innerHTML = `${totalBilled.toLocaleString()} <span class="text-sm font-normal">ر.س</span>`;
 
-            // تحديث البطاقات الإحصائية
-            const avg = sortedData.length > 0 ? Math.round(totalBilled / sortedData.length) : 0;
+            // في حال كانت كل القيم صفر (لا يوجد أيام عمل)
+            if (minVal === Infinity) { minVal = 0; }
+
+            // حساب المتوسط بناءً على أيام العمل فقط
+            const avg = operatingDaysCount > 0 ? Math.round(totalBilled / operatingDaysCount) : 0;
+
             document.getElementById('ms-max-val').textContent = maxVal.toLocaleString() + ' ر.س';
             document.getElementById('ms-max-date').innerHTML = maxDate ? `<i class="fa-regular fa-calendar ml-1"></i>${maxDate}` : '';
             document.getElementById('ms-min-val').textContent = minVal.toLocaleString() + ' ر.س';
             document.getElementById('ms-min-date').innerHTML = minDate ? `<i class="fa-regular fa-calendar ml-1"></i>${minDate}` : '';
             document.getElementById('ms-avg-val').textContent = avg.toLocaleString() + ' ر.س';
 
-            // حفظ البيانات وإعادة بناء الرسم البياني
             msChartData = { labels, values };
             buildChart(labels, values);
         }
@@ -924,18 +926,21 @@
                 : endDate ? `إلى ${endDate}` 
                 : 'كل الفترة المتاحة';
 
-            // الحصول على صورة الرسم البياني
             const chartImage = msChartInstance ? msChartInstance.toBase64Image('image/png', 1) : '';
 
-            // حساب الإحصائيات
             const totalBilled = msChartData.values.reduce((s, v) => s + v, 0);
             const maxVal = Math.max(...msChartData.values);
-            const minVal = Math.min(...msChartData.values);
-            const avgVal = Math.round(totalBilled / msChartData.values.length);
+            
+            // تجاهل القيمة صفر عند حساب أقل مبيعات في PDF
+            const positiveValues = msChartData.values.filter(v => v > 0);
+            const minVal = positiveValues.length > 0 ? Math.min(...positiveValues) : 0;
+            
+            // المتوسط بناء على أيام العمل
+            const avgVal = positiveValues.length > 0 ? Math.round(totalBilled / positiveValues.length) : 0;
+            
             const maxIdx = msChartData.values.indexOf(maxVal);
             const minIdx = msChartData.values.indexOf(minVal);
 
-            // بناء صفوف الجدول
             let tableRows = '';
             msChartData.labels.forEach((label, i) => {
                 const val = msChartData.values[i];
@@ -945,19 +950,16 @@
                 tableRows += `<tr style="${rowBg}"><td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-size: 12px; font-weight: 500;">${label}</td><td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-size: 12px; font-weight: 700; color: #047857; text-align: right;">${val.toLocaleString()} ر.س${isMax ? ' ▲' : ''}${isMin ? ' ▼' : ''}</td></tr>`;
             });
 
-            // إنشاء عنصر مؤقت للتصدير
             const pdfContent = document.createElement('div');
             pdfContent.style.cssText = 'direction: rtl; font-family: Tajawal, sans-serif; padding: 24px; background: white; color: #1e293b; max-width: 800px;';
             pdfContent.innerHTML = `
-                <!-- رأس التقرير -->
                 <div style="text-align: center; border-bottom: 3px solid #1e293b; padding-bottom: 20px; margin-bottom: 24px;">
                     <h2 style="font-size: 22px; font-weight: 800; color: #1e293b; margin: 0 0 4px;">زاد الجود للوجبات السريعة</h2>
                     <h3 style="font-size: 17px; font-weight: 700; color: #4f46e5; margin: 8px 0 4px;">تقرير المبيعات الشهرية</h3>
                     <p style="font-size: 13px; color: #64748b; margin: 0; font-weight: 500;">الفترة: ${periodText}</p>
                 </div>
 
-                <!-- بطاقة الإجمالي -->
-                <div style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); border: 2px solid #a7f3d0; border-radius: 12px; padding: 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+                <div style="background: linear-gradient(135deg, #ecfdf5, #d1fae4); border: 2px solid #a7f3d0; border-radius: 12px; padding: 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
                     <div>
                         <p style="font-size: 13px; color: #059669; margin: 0 0 6px; font-weight: 500;">إجمالي المبيعات خلال الفترة</p>
                         <p style="font-size: 28px; font-weight: 800; color: #047857; margin: 0;">${totalBilled.toLocaleString()} ر.س</p>
@@ -965,7 +967,6 @@
                     <div style="background: #059669; color: white; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;">💰</div>
                 </div>
 
-                <!-- بطاقات إحصائية -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 24px;">
                     <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 14px; text-align: center;">
                         <p style="font-size: 10px; color: #2563eb; margin: 0 0 4px; font-weight: 600;">أعلى مبيعات يومية</p>
@@ -973,17 +974,16 @@
                         <p style="font-size: 10px; color: #64748b; margin: 4px 0 0;">${msChartData.labels[maxIdx] || ''}</p>
                     </div>
                     <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px; text-align: center;">
-                        <p style="font-size: 10px; color: #d97706; margin: 0 0 4px; font-weight: 600;">أقل مبيعات يومية</p>
+                        <p style="font-size: 10px; color: #d97706; margin: 0 0 4px; font-weight: 600;">أقل مبيعات يومية (أيام العمل)</p>
                         <p style="font-size: 18px; font-weight: 800; color: #b45309; margin: 0;">${minVal.toLocaleString()} ر.س</p>
                         <p style="font-size: 10px; color: #64748b; margin: 4px 0 0;">${msChartData.labels[minIdx] || ''}</p>
                     </div>
                     <div style="background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 8px; padding: 14px; text-align: center;">
-                        <p style="font-size: 10px; color: #7c3aed; margin: 0 0 4px; font-weight: 600;">متوسط المبيعات اليومية</p>
+                        <p style="font-size: 10px; color: #7c3aed; margin: 0 0 4px; font-weight: 600;">متوسط المبيعات (لأيام العمل)</p>
                         <p style="font-size: 18px; font-weight: 800; color: #6d28d9; margin: 0;">${avgVal.toLocaleString()} ر.س</p>
                     </div>
                 </div>
 
-                <!-- الرسم البياني -->
                 ${chartImage ? `
                 <div style="margin-bottom: 24px;">
                     <h4 style="font-size: 14px; font-weight: 700; color: #334155; margin: 0 0 12px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">الرسم البياني للمبيعات</h4>
@@ -993,7 +993,6 @@
                 </div>
                 ` : ''}
 
-                <!-- جدول البيانات -->
                 <div style="margin-bottom: 24px;">
                     <h4 style="font-size: 14px; font-weight: 700; color: #334155; margin: 0 0 12px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">تفاصيل المبيعات اليومية</h4>
                     <table style="width: 100%; border-collapse: collapse;">
@@ -1013,7 +1012,6 @@
                     </table>
                 </div>
 
-                <!-- تذييل التقرير -->
                 <div style="margin-top: 48px; padding-top: 24px; border-top: 2px solid #e2e8f0; text-align: center;">
                     <div style="display: inline-block; width: 33%;">
                         <p style="font-size: 12px; color: #64748b; margin: 0 0 40px;">المدير المالى</p>
@@ -1023,7 +1021,6 @@
                 </div>
             `;
 
-            // إضافة العنصر مؤقتاً للـ DOM
             pdfContent.style.position = 'fixed';
             pdfContent.style.left = '-9999px';
             pdfContent.style.top = '0';
