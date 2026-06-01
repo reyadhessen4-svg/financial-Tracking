@@ -739,7 +739,6 @@
             const container = document.getElementById('reportFull-cards'); 
             container.innerHTML = '';
             
-            // تحديد الشهر المختار لجلب البنود الشهرية الصحيحة
             const now = new Date();
             const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             let monthlyItems = [];
@@ -1101,18 +1100,24 @@
         }
 
         // =========================================
-        // ===  7. تقرير الإدارة (تم إصلاحه وتطويره) ===
+        // ===  7. تقرير الإدارة (تم إصلاح حساب الـ30 يوم) ===
         // =========================================
         window.generateAdminReport = async function() {
             const dateInput = document.getElementById('ar-date').value;
             if(!dateInput) return alert('يرجى اختيار التاريخ أولاً');
             const date = normalizeDate(dateInput);
             document.getElementById('ar-date-display').innerText = `التاريخ: ${date}`;
-            const data30 = window.dailyStatementsArr || [];
+            const allData = window.dailyStatementsArr || [];
             
-            const selectedMonthKey = date.substring(0, 7); 
-            const monthData = data30.filter(d => d.date && d.date.startsWith(selectedMonthKey));
-            const dayData = data30.find(d => d.date === date);
+            // تحديد فترة 30 يوم المنتهية بالتاريخ المختار
+            const selectedDateObj = new Date(date);
+            const startDateObj = new Date(selectedDateObj);
+            startDateObj.setDate(startDateObj.getDate() - 29);
+            const startDateStr = startDateObj.toISOString().split('T')[0];
+            
+            // فلترة البيانات لتشمل آخر 30 يوم من تاريخ الاستعلام
+            const data30 = allData.filter(d => d.date >= startDateStr && d.date <= date);
+            const dayData = allData.find(d => d.date === date);
             
             const dailyCards = document.getElementById('ar-daily-cards');
             const fields = [
@@ -1126,7 +1131,7 @@
             let cardsHtml = '';
             fields.forEach(field => {
                 const currentValue = dayData ? (Number(dayData[field.key]) || 0) : 0;
-                const filteredData = monthData.filter(d => Number(d[field.key]) !== 0);
+                const filteredData = data30.filter(d => Number(d[field.key]) !== 0);
                 let max = 0, min = 0, maxDate = '', minDate = '';
                 if (filteredData.length > 0) {
                     const maxItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) > Number(current[field.key])) ? prev : current);
@@ -1145,8 +1150,10 @@
             });
             dailyCards.innerHTML = cardsHtml;
 
+            // جلب البنود الشهرية بناءً على الشهر المختار
             const now = new Date();
             const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const selectedMonthKey = date.substring(0, 7);
             let monthlyData = [];
 
             if (selectedMonthKey === currentMonthKey) {
