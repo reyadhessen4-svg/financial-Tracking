@@ -339,44 +339,163 @@
                     </div>
                 </div>
 
-                <!-- 7. تقرير الإدارة -->
-                <div id="page-adminReport" class="page space-y-6">
-                    <div class="flex flex-wrap gap-4 items-end bg-white p-4 rounded-lg shadow-sm border border-slate-200">
-                        <div><label class="block text-sm text-slate-500 mb-1">اختر يوم التقرير</label><input type="date" id="ar-date" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
-                        <button onclick="generateAdminReport()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg h-10">عرض التقرير</button>
-                        <button onclick="exportAdminReportPDF()" class="bg-red-600 text-white px-4 py-2 rounded-lg h-10 flex items-center gap-2"><i class="fa-solid fa-file-pdf"></i> تصدير PDF</button>
+        // =========================================
+        // ===       7. تقرير الإدارة            ===
+        // =========================================
+        window.generateAdminReport = async function() {
+            const dateInput = document.getElementById('ar-date').value;
+            if(!dateInput) return alert('يرجى اختيار التاريخ أولاً');
+            const date = normalizeDate(dateInput);
+            document.getElementById('ar-date-display').innerText = `التاريخ: ${date}`;
+            const data30 = window.dailyStatementsArr || [];
+            
+            // فلترة البيانات اليومية حسب الشهر المختار
+            const selectedMonthKey = date.substring(0, 7); // مثال: "2025-05"
+            const monthData = data30.filter(d => d.date && d.date.startsWith(selectedMonthKey));
+            const dayData = data30.find(d => d.date === date);
+            
+            const dailyCards = document.getElementById('ar-daily-cards');
+            const fields = [
+                { key: 'bankBalance', label: 'الرصيد البنكي', color: 'text-blue-700 bg-blue-50 border-blue-200' },
+                { key: 'caravansBalance', label: 'رصيد القوافل', color: 'text-purple-700 bg-purple-50 border-purple-200' },
+                { key: 'vendorsBalance', label: 'رصيد الموردين', color: 'text-red-700 bg-red-50 border-red-200' },
+                { key: 'customersDue', label: 'مستحقة العملاء', color: 'text-amber-700 bg-amber-50 border-amber-200' },
+                { key: 'customersBilled', label: 'محررة العملاء', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+                { key: 'collectionBalance', label: 'رصيد التحصيل', color: 'text-cyan-700 bg-cyan-50 border-cyan-200' }
+            ];
+            let cardsHtml = '';
+            fields.forEach(field => {
+                const currentValue = dayData ? (Number(dayData[field.key]) || 0) : 0;
+                // استخدام بيانات الشهر المختار فقط لحساب أعلى وأقل مبلغ
+                const filteredData = monthData.filter(d => Number(d[field.key]) !== 0);
+                let max = 0, min = 0, maxDate = '', minDate = '';
+                if (filteredData.length > 0) {
+                    const maxItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) > Number(current[field.key])) ? prev : current);
+                    max = Number(maxItem[field.key]) || 0; maxDate = maxItem.date || '';
+                    const minItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) < Number(current[field.key])) ? prev : current);
+                    min = Number(minItem[field.key]) || 0; minDate = minItem.date || '';
+                }
+                cardsHtml += `<div class="p-4 rounded-lg border ${field.color} shadow-sm">
+                    <span class="block text-xs font-medium mb-1">${field.label}</span>
+                    <span class="block text-xl font-extrabold">${currentValue.toLocaleString()} ر.س</span>
+                    <div class="mt-3 pt-2 border-t border-black/10 grid grid-cols-2 gap-2 text-[10px]">
+                        <div><span class="block font-bold text-emerald-800">▲ أعلى مبلغ</span><span class="font-bold">${max.toLocaleString()}</span>${maxDate ? `<span class="block text-slate-600 mt-0.5"><i class="fa-regular fa-calendar ml-0.5"></i>${maxDate}</span>` : ''}</div>
+                        <div><span class="block font-bold text-red-800">▼ أقل مبلغ</span><span class="font-bold">${min.toLocaleString()}</span>${minDate ? `<span class="block text-slate-600 mt-0.5"><i class="fa-regular fa-calendar ml-0.5"></i>${minDate}</span>` : ''}</div>
                     </div>
-                    <div id="admin-report-content" class="bg-white border border-slate-200 shadow-sm rounded-xl p-8">
-                        <div class="text-center border-b-2 border-slate-800 pb-4 mb-8">
-                            <h2 class="text-xl font-extrabold text-slate-800">زاد الجود للوجبات السريعة</h2>
-                            <h3 class="text-lg font-bold text-indigo-700 mt-1">التقرير المالي اليومي</h3>
-                            <p id="ar-date-display" class="text-slate-500 text-sm mt-2 font-medium">التاريخ: --</p>
-                        </div>
-                        <div class="mb-8">
-                            <h4 class="font-bold text-slate-700 mb-4 text-md border-b border-slate-200 pb-2">أولاً: الأرصدة والبيان اليومي</h4>
-                            <div id="ar-daily-cards" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-slate-700 mb-4 text-md border-b border-slate-200 pb-2">ثانياً: المتبقي من الالتزامات والمصروفات الشهرية</h4>
-                            <table class="w-full text-sm text-right border-collapse">
-                                <thead class="bg-slate-100"><tr><th class="p-3 font-medium border border-slate-200">البند</th><th class="p-3 font-medium border border-slate-200">التصنيف</th><th class="p-3 font-medium border border-slate-200">المتبقي</th></tr></thead>
-                                <tbody id="ar-monthly-tbody" class="divide-y divide-slate-100"></tbody>
-                                <tfoot id="ar-monthly-footer" class="bg-slate-50 font-bold"></tfoot>
-                            </table>
-                        </div>
-                        <div class="mt-12 pt-8 border-t-2 border-slate-200 flex justify-center text-center">
-                            <div class="w-1/2 md:w-1/3">
-                                <p class="text-sm text-slate-500 mb-8">المدير المالى</p>
-                                <div class="border-b border-slate-400 w-3/4 mx-auto"></div>
-                                <p class="text-sm font-bold text-slate-700 mt-2">Reyad Hussein</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                </div>`;
+            });
+            dailyCards.innerHTML = cardsHtml;
 
-            </div>
-        </main>
-    </div>
+            // === تحميل البنود الشهرية بناءً على الشهر المختار ===
+            const now = new Date();
+            const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            let monthlyData = [];
+
+            if (selectedMonthKey === currentMonthKey) {
+                // الشهر الحالي: استخدام البنود النشطة
+                monthlyData = window.monthlyItemsArr || [];
+            } else {
+                // شهر سابق: تحميل من الأرشيف
+                try {
+                    const snapshot = await get(ref(db, `monthlyArchive/${selectedMonthKey}`));
+                    if (snapshot.exists()) {
+                        monthlyData = Object.values(snapshot.val());
+                    } else {
+                        monthlyData = [];
+                    }
+                } catch(e) {
+                    console.error('خطأ في تحميل الأرشيف:', e);
+                    monthlyData = [];
+                }
+            }
+
+            const tbody = document.getElementById('ar-monthly-tbody');
+            const tfooter = document.getElementById('ar-monthly-footer');
+            let monthlyHtml = '';
+            let totalRemaining = 0;
+
+            if (monthlyData.length === 0) {
+                monthlyHtml = `<tr><td colspan="3" class="p-4 text-center text-slate-400">لا توجد بنود شهرية لهذا الشهر</td></tr>`;
+            } else {
+                monthlyData.forEach(item => {
+                    const remaining = (item.totalAmount || 0) - (item.paidAmount || 0);
+                    totalRemaining += remaining;
+                    const typeClass = item.type === 'التزام' ? 'text-orange-700' : 'text-blue-700';
+                    monthlyHtml += `<tr class="hover:bg-slate-50">
+                        <td class="p-3 border border-slate-200 font-medium">${item.name}</td>
+                        <td class="p-3 border border-slate-200 ${typeClass} text-center text-xs font-bold">${item.type}</td>
+                        <td class="p-3 border border-slate-200 text-red-700 font-bold text-center">${remaining.toLocaleString()} ر.س</td>
+                    </tr>`;
+                });
+            }
+
+            tbody.innerHTML = monthlyHtml;
+            tfooter.innerHTML = monthlyData.length > 0 
+                ? `<tr><td class="p-3 border border-slate-200" colspan="2">الإجمالي المتبقي من الالتزامات</td><td class="p-3 border border-slate-200 text-red-900 text-center font-extrabold">${totalRemaining.toLocaleString()} ر.س</td></tr>`
+                : '';
+        }
+
+        window.exportAdminReportPDF = async function() {
+            const dateInput = document.getElementById('ar-date').value;
+            if(!dateInput) return alert('يرجى اختيار التاريخ وعرض التقرير أولاً');
+
+            const element = document.getElementById('admin-report-content');
+            
+            // التأكد من أن التقرير تم توليده
+            if(!element.querySelector('#ar-daily-cards').children.length) {
+                return alert('يرجى عرض التقرير أولاً قبل التصدير');
+            }
+
+            // إظهار شاشة التحميل
+            const loadingEl = document.getElementById('pdf-loading-overlay');
+            loadingEl.style.display = 'flex';
+
+            try {
+                // إعطاء وقت للمحتوى أن يرسم
+                await new Promise(r => setTimeout(r, 500));
+
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    width: element.scrollWidth,
+                    height: element.scrollHeight
+                });
+
+                const { jsPDF } = window.jspdf;
+                const imgWidth = 210; // عرض A4 بالملم
+                const pageHeight = 297; // ارتفاع A4 بالملم
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                const pdf = new jsPDF('p', 'mm', 'a4');
+
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                // الصفحة الأولى
+                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                // صفحات إضافية إذا كان المحتوى طويلاً
+                while (heightLeft > 0) {
+                    position = -(imgHeight - heightLeft);
+                    pdf.addPage();
+                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                const fileName = `تقرير_الإدارة_${dateInput}.pdf`;
+                pdf.save(fileName);
+
+            } catch(err) {
+                console.error('PDF Export Error:', err);
+                alert('حدث خطأ أثناء تصدير PDF: ' + err.message);
+            }
+
+            // إخفاء شاشة التحميل
+            loadingEl.style.display = 'none';
+        }
 
     <!-- نافذة الأرشيف -->
     <div id="archive-modal" class="modal-overlay hidden">
