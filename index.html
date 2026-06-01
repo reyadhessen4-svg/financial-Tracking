@@ -727,7 +727,7 @@
         }
 
         // =========================================
-        // ===   5. التقرير الشامل (تم إصلاحه)  ===
+        // ===   5. التقرير الشامل (تم إصلاح حساب القيم السالبة) ===
         // =========================================
         window.calcReportFull = async function() {
             const startDate = document.getElementById('rf-start').value; 
@@ -775,8 +775,11 @@
             fields.forEach(field => {
                 const filteredData = data.filter(d => Number(d[field.key]) !== 0); let max = 0, min = 0, maxDate = '', minDate = '';
                 if (filteredData.length > 0) {
-                    const maxItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) > Number(current[field.key])) ? prev : current); max = Number(maxItem[field.key]) || 0; maxDate = maxItem.date || '';
-                    const minItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) < Number(current[field.key])) ? prev : current); min = Number(minItem[field.key]) || 0; minDate = minItem.date || '';
+                    // استخدام القيمة المطلقة للمقارنة لتحديد أعلى وأقل مبلغ (لحل مشكلة الأرقام السالبة)
+                    const maxItem = filteredData.reduce((prev, current) => (Math.abs(Number(prev[field.key])) > Math.abs(Number(current[field.key]))) ? prev : current); 
+                    max = Number(maxItem[field.key]) || 0; maxDate = maxItem.date || '';
+                    const minItem = filteredData.reduce((prev, current) => (Math.abs(Number(prev[field.key])) < Math.abs(Number(current[field.key]))) ? prev : current); 
+                    min = Number(minItem[field.key]) || 0; minDate = minItem.date || '';
                 }
                 container.innerHTML += `<div class="border border-slate-200 rounded-lg p-4 bg-slate-50"><h4 class="font-bold text-slate-800 mb-3">${field.label}</h4><div class="flex justify-between text-sm"><div class="text-emerald-600"><span class="block text-slate-500 text-xs">أعلى مبلغ</span><span class="font-bold text-lg">${max.toLocaleString()}</span>${maxDate ? `<span class="block text-slate-400 text-[10px] mt-1"><i class="fa-regular fa-calendar ml-1"></i>${maxDate}</span>` : ''}</div><div class="text-red-600"><span class="block text-slate-500 text-xs">أقل مبلغ</span><span class="font-bold text-lg">${min.toLocaleString()}</span>${minDate ? `<span class="block text-slate-400 text-[10px] mt-1"><i class="fa-regular fa-calendar ml-1"></i>${minDate}</span>` : ''}</div></div></div>`;
             });
@@ -1100,7 +1103,7 @@
         }
 
         // =========================================
-        // ===  7. تقرير الإدارة (تم إصلاح حساب الـ30 يوم) ===
+        // ===  7. تقرير الإدارة (تم إصلاح حساب القيم السالبة والـ 30 يوم) ===
         // =========================================
         window.generateAdminReport = async function() {
             const dateInput = document.getElementById('ar-date').value;
@@ -1134,9 +1137,10 @@
                 const filteredData = data30.filter(d => Number(d[field.key]) !== 0);
                 let max = 0, min = 0, maxDate = '', minDate = '';
                 if (filteredData.length > 0) {
-                    const maxItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) > Number(current[field.key])) ? prev : current);
+                    // استخدام القيمة المطلقة للمقارنة لتحديد أعلى وأقل مبلغ (لحل مشكلة الأرقام السالبة)
+                    const maxItem = filteredData.reduce((prev, current) => (Math.abs(Number(prev[field.key])) > Math.abs(Number(current[field.key]))) ? prev : current);
                     max = Number(maxItem[field.key]) || 0; maxDate = maxItem.date || '';
-                    const minItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) < Number(current[field.key])) ? prev : current);
+                    const minItem = filteredData.reduce((prev, current) => (Math.abs(Number(prev[field.key])) < Math.abs(Number(current[field.key]))) ? prev : current);
                     min = Number(minItem[field.key]) || 0; minDate = minItem.date || '';
                 }
                 cardsHtml += `<div class="p-4 rounded-lg border ${field.color} shadow-sm">
