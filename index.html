@@ -29,7 +29,6 @@
         .pdf-spinner { animation: pdfSpin 1s linear infinite; }
         #pdf-workspace { display: none; position: fixed; top: 0; right: 0; width: 100%; height: 100%; z-index: 99999; background: white; overflow-y: auto; padding: 30px; direction: rtl; font-family: 'Tajawal', sans-serif; color: #1e293b; }
         #pdf-loading-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 999999; flex-direction: column; align-items: center; justify-content: center; gap: 16px; font-family: 'Tajawal', sans-serif; }
-        /* تنسيق علامة الريال لتكون أكبر ومناسبة للقيم */
         .currency { font-weight: 800; font-size: 0.85em; display: inline-block; margin-right: 4px; vertical-align: baseline; }
     </style>
 </head>
@@ -305,7 +304,7 @@
                     </div>
                 </div>
 
-                <!-- 7. تقرير الإدارة (تم تعديل الجدول) -->
+                <!-- 7. تقرير الإدارة -->
                 <div id="page-adminReport" class="page space-y-6">
                     <div class="flex flex-wrap gap-4 items-end bg-white p-4 rounded-lg shadow-sm border border-slate-200">
                         <div><label class="block text-sm text-slate-500 mb-1">اختر يوم التقرير</label><input type="date" id="ar-date" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
@@ -728,19 +727,51 @@
         }
 
         // =========================================
-        // ===       5. التقرير الشامل           ===
+        // ===   5. التقرير الشامل (تم إصلاحه)  ===
         // =========================================
-        window.calcReportFull = function() {
-            const startDate = document.getElementById('rf-start').value; const endDate = document.getElementById('rf-end').value;
+        window.calcReportFull = async function() {
+            const startDate = document.getElementById('rf-start').value; 
+            const endDate = document.getElementById('rf-end').value;
             let data = window.dailyStatementsArr || [];
-            if(startDate) data = data.filter(d => d.date >= startDate); if(endDate) data = data.filter(d => d.date <= endDate);
-            const container = document.getElementById('reportFull-cards'); container.innerHTML = '';
-            const monthlyItems = window.monthlyItemsArr || [];
+            if(startDate) data = data.filter(d => d.date >= startDate); 
+            if(endDate) data = data.filter(d => d.date <= endDate);
+            
+            const container = document.getElementById('reportFull-cards'); 
+            container.innerHTML = '';
+            
+            // تحديد الشهر المختار لجلب البنود الشهرية الصحيحة
+            const now = new Date();
+            const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            let monthlyItems = [];
+            
+            if (startDate) {
+                const selectedMonthKey = startDate.substring(0, 7);
+                if (selectedMonthKey === currentMonthKey) {
+                    monthlyItems = window.monthlyItemsArr || [];
+                } else {
+                    try {
+                        const snapshot = await get(ref(db, `monthlyArchive/${selectedMonthKey}`));
+                        if (snapshot.exists()) {
+                            monthlyItems = Object.values(snapshot.val());
+                        } else {
+                            monthlyItems = [];
+                        }
+                    } catch(e) {
+                        console.error('خطأ في تحميل الأرشيف:', e);
+                        monthlyItems = [];
+                    }
+                }
+            } else {
+                monthlyItems = window.monthlyItemsArr || [];
+            }
+
             const totalDue = monthlyItems.reduce((sum, item) => sum + (item.totalAmount||0), 0);
             const totalPaid = monthlyItems.reduce((sum, item) => sum + (item.paidAmount||0), 0);
             const totalRemaining = totalDue - totalPaid;
             const paymentPercentage = totalDue > 0 ? ((totalPaid / totalDue) * 100).toFixed(1) : 0;
+            
             container.innerHTML += `<div class="col-span-1 md:col-span-2 lg:col-span-3 mb-4"><h3 class="text-md font-bold text-slate-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-calendar-check text-indigo-600"></i> ملخص الالتزامات والمصروفات الشهرية</h3><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"><div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4"><span class="text-xs text-indigo-500 block mb-1">المبلغ المستحق خلال الشهر</span><span class="text-xl font-bold text-indigo-700">${totalDue.toLocaleString()} <span class="currency">﷼</span></span></div><div class="bg-emerald-50 border border-emerald-100 rounded-lg p-4"><span class="text-xs text-emerald-500 block mb-1">المبلغ المسدد خلال الشهر</span><span class="text-xl font-bold text-emerald-700">${totalPaid.toLocaleString()} <span class="currency">﷼</span></span></div><div class="bg-cyan-50 border border-cyan-100 rounded-lg p-4"><span class="text-xs text-cyan-500 block mb-1">نسبة السداد خلال الشهر</span><span class="text-xl font-bold text-cyan-700">${paymentPercentage}%</span><div class="w-full bg-cyan-200 rounded-full h-1.5 mt-2"><div class="bg-cyan-600 h-1.5 rounded-full" style="width: ${paymentPercentage}%"></div></div></div><div class="bg-red-50 border border-red-100 rounded-lg p-4"><span class="text-xs text-red-500 block mb-1">المبلغ المتبقي خلال الشهر</span><span class="text-xl font-bold text-red-700">${totalRemaining.toLocaleString()} <span class="currency">﷼</span></span></div></div></div>`;
+            
             const fields = [ { key: 'bankBalance', label: 'رصيد البنك' }, { key: 'caravansBalance', label: 'رصيد القوافل' }, { key: 'vendorsBalance', label: 'رصيد الموردين' }, { key: 'customersDue', label: 'مستحقة العملاء' }, { key: 'customersBilled', label: 'محررة العملاء' }, { key: 'collectionBalance', label: 'رصيد التحصيل' } ];
             fields.forEach(field => {
                 const filteredData = data.filter(d => Number(d[field.key]) !== 0); let max = 0, min = 0, maxDate = '', minDate = '';
