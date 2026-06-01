@@ -27,34 +27,8 @@
         .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
         @keyframes pdfSpin { to { transform: rotate(360deg); } }
         .pdf-spinner { animation: pdfSpin 1s linear infinite; }
-        /* حاوية تصدير PDF */
-        #pdf-workspace {
-            display: none;
-            position: fixed;
-            top: 0;
-            right: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 99999;
-            background: white;
-            overflow-y: auto;
-            padding: 30px;
-            direction: rtl;
-            font-family: 'Tajawal', sans-serif;
-            color: #1e293b;
-        }
-        #pdf-loading-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.95);
-            z-index: 999999;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 16px;
-            font-family: 'Tajawal', sans-serif;
-        }
+        #pdf-workspace { display: none; position: fixed; top: 0; right: 0; width: 100%; height: 100%; z-index: 99999; background: white; overflow-y: auto; padding: 30px; direction: rtl; font-family: 'Tajawal', sans-serif; color: #1e293b; }
+        #pdf-loading-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 999999; flex-direction: column; align-items: center; justify-content: center; gap: 16px; font-family: 'Tajawal', sans-serif; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
@@ -273,14 +247,10 @@
                         <button onclick="calcMonthlySales()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg h-10 font-medium transition-colors"><i class="fa-solid fa-magnifying-glass ml-1"></i> عرض المبيعات</button>
                         <button id="ms-pdf-btn" onclick="exportMonthlySalesPDF()" class="hidden bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg h-10 font-medium transition-colors items-center gap-2"><i class="fa-solid fa-file-pdf"></i> تصدير PDF</button>
                     </div>
-
-                    <!-- بطاقة الإجمالي -->
                     <div id="ms-total-card" class="hidden animate-fade-in-up bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                         <div><p class="text-sm text-slate-500 mb-1">إجمالي المبيعات (المبالغ المحررة) خلال الفترة</p><h3 id="ms-total-val" class="text-2xl font-bold text-emerald-700">0 <span class="text-sm font-normal">ر.س</span></h3></div>
                         <div class="p-3 rounded-xl bg-emerald-50 text-emerald-600"><i class="fa-solid fa-file-invoice-dollar text-xl"></i></div>
                     </div>
-
-                    <!-- بطاقات إحصائية سريعة -->
                     <div id="ms-stats-cards" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in-up">
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
                             <div class="p-3 rounded-xl bg-blue-50 text-blue-600"><i class="fa-solid fa-arrow-up text-lg"></i></div>
@@ -295,8 +265,6 @@
                             <div><p class="text-xs text-slate-500">متوسط المبيعات اليومية</p><p id="ms-avg-val" class="text-lg font-bold text-violet-700">0 ر.س</p></div>
                         </div>
                     </div>
-
-                    <!-- الرسم البياني -->
                     <div id="ms-chart-container" class="hidden animate-fade-in-up bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-md font-bold text-slate-700"><i class="fa-solid fa-chart-column text-indigo-600 ml-2"></i> الرسم البياني للمبيعات</h3>
@@ -305,12 +273,8 @@
                                 <button onclick="setChartType('line')" id="btn-chart-line" class="px-3 py-1 text-xs rounded-lg bg-slate-100 text-slate-600 font-medium transition-colors">خطي</button>
                             </div>
                         </div>
-                        <div class="chart-container-wrap">
-                            <canvas id="ms-chart"></canvas>
-                        </div>
+                        <div class="chart-container-wrap"><canvas id="ms-chart"></canvas></div>
                     </div>
-
-                    <!-- الجدول -->
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
                         <table class="w-full text-sm text-right">
                             <thead class="bg-slate-50 text-slate-600"><tr><th class="p-4 font-medium">التاريخ</th><th class="p-4 font-medium">إجمالي المبالغ المحررة للعملاء</th></tr></thead>
@@ -339,163 +303,44 @@
                     </div>
                 </div>
 
-        // =========================================
-        // ===       7. تقرير الإدارة            ===
-        // =========================================
-        window.generateAdminReport = async function() {
-            const dateInput = document.getElementById('ar-date').value;
-            if(!dateInput) return alert('يرجى اختيار التاريخ أولاً');
-            const date = normalizeDate(dateInput);
-            document.getElementById('ar-date-display').innerText = `التاريخ: ${date}`;
-            const data30 = window.dailyStatementsArr || [];
-            
-            // فلترة البيانات اليومية حسب الشهر المختار
-            const selectedMonthKey = date.substring(0, 7); // مثال: "2025-05"
-            const monthData = data30.filter(d => d.date && d.date.startsWith(selectedMonthKey));
-            const dayData = data30.find(d => d.date === date);
-            
-            const dailyCards = document.getElementById('ar-daily-cards');
-            const fields = [
-                { key: 'bankBalance', label: 'الرصيد البنكي', color: 'text-blue-700 bg-blue-50 border-blue-200' },
-                { key: 'caravansBalance', label: 'رصيد القوافل', color: 'text-purple-700 bg-purple-50 border-purple-200' },
-                { key: 'vendorsBalance', label: 'رصيد الموردين', color: 'text-red-700 bg-red-50 border-red-200' },
-                { key: 'customersDue', label: 'مستحقة العملاء', color: 'text-amber-700 bg-amber-50 border-amber-200' },
-                { key: 'customersBilled', label: 'محررة العملاء', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
-                { key: 'collectionBalance', label: 'رصيد التحصيل', color: 'text-cyan-700 bg-cyan-50 border-cyan-200' }
-            ];
-            let cardsHtml = '';
-            fields.forEach(field => {
-                const currentValue = dayData ? (Number(dayData[field.key]) || 0) : 0;
-                // استخدام بيانات الشهر المختار فقط لحساب أعلى وأقل مبلغ
-                const filteredData = monthData.filter(d => Number(d[field.key]) !== 0);
-                let max = 0, min = 0, maxDate = '', minDate = '';
-                if (filteredData.length > 0) {
-                    const maxItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) > Number(current[field.key])) ? prev : current);
-                    max = Number(maxItem[field.key]) || 0; maxDate = maxItem.date || '';
-                    const minItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) < Number(current[field.key])) ? prev : current);
-                    min = Number(minItem[field.key]) || 0; minDate = minItem.date || '';
-                }
-                cardsHtml += `<div class="p-4 rounded-lg border ${field.color} shadow-sm">
-                    <span class="block text-xs font-medium mb-1">${field.label}</span>
-                    <span class="block text-xl font-extrabold">${currentValue.toLocaleString()} ر.س</span>
-                    <div class="mt-3 pt-2 border-t border-black/10 grid grid-cols-2 gap-2 text-[10px]">
-                        <div><span class="block font-bold text-emerald-800">▲ أعلى مبلغ</span><span class="font-bold">${max.toLocaleString()}</span>${maxDate ? `<span class="block text-slate-600 mt-0.5"><i class="fa-regular fa-calendar ml-0.5"></i>${maxDate}</span>` : ''}</div>
-                        <div><span class="block font-bold text-red-800">▼ أقل مبلغ</span><span class="font-bold">${min.toLocaleString()}</span>${minDate ? `<span class="block text-slate-600 mt-0.5"><i class="fa-regular fa-calendar ml-0.5"></i>${minDate}</span>` : ''}</div>
+                <!-- 7. تقرير الإدارة -->
+                <div id="page-adminReport" class="page space-y-6">
+                    <div class="flex flex-wrap gap-4 items-end bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                        <div><label class="block text-sm text-slate-500 mb-1">اختر يوم التقرير</label><input type="date" id="ar-date" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                        <button onclick="generateAdminReport()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg h-10">عرض التقرير</button>
+                        <button onclick="exportAdminReportPDF()" class="bg-red-600 text-white px-4 py-2 rounded-lg h-10 flex items-center gap-2"><i class="fa-solid fa-file-pdf"></i> تصدير PDF</button>
                     </div>
-                </div>`;
-            });
-            dailyCards.innerHTML = cardsHtml;
+                    <div id="admin-report-content" class="bg-white border border-slate-200 shadow-sm rounded-xl p-8">
+                        <div class="text-center border-b-2 border-slate-800 pb-4 mb-8">
+                            <h2 class="text-xl font-extrabold text-slate-800">زاد الجود للوجبات السريعة</h2>
+                            <h3 class="text-lg font-bold text-indigo-700 mt-1">التقرير المالي اليومي</h3>
+                            <p id="ar-date-display" class="text-slate-500 text-sm mt-2 font-medium">التاريخ: --</p>
+                        </div>
+                        <div class="mb-8">
+                            <h4 class="font-bold text-slate-700 mb-4 text-md border-b border-slate-200 pb-2">أولاً: الأرصدة والبيان اليومي</h4>
+                            <div id="ar-daily-cards" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-700 mb-4 text-md border-b border-slate-200 pb-2">ثانياً: المتبقي من الالتزامات والمصروفات الشهرية</h4>
+                            <table class="w-full text-sm text-right border-collapse">
+                                <thead class="bg-slate-100"><tr><th class="p-3 font-medium border border-slate-200">البند</th><th class="p-3 font-medium border border-slate-200">التصنيف</th><th class="p-3 font-medium border border-slate-200">المتبقي</th></tr></thead>
+                                <tbody id="ar-monthly-tbody" class="divide-y divide-slate-100"></tbody>
+                                <tfoot id="ar-monthly-footer" class="bg-slate-50 font-bold"></tfoot>
+                            </table>
+                        </div>
+                        <div class="mt-12 pt-8 border-t-2 border-slate-200 flex justify-center text-center">
+                            <div class="w-1/2 md:w-1/3">
+                                <p class="text-sm text-slate-500 mb-8">المدير المالى</p>
+                                <div class="border-b border-slate-400 w-3/4 mx-auto"></div>
+                                <p class="text-sm font-bold text-slate-700 mt-2">Reyad Hussein</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-            // === تحميل البنود الشهرية بناءً على الشهر المختار ===
-            const now = new Date();
-            const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            let monthlyData = [];
-
-            if (selectedMonthKey === currentMonthKey) {
-                // الشهر الحالي: استخدام البنود النشطة
-                monthlyData = window.monthlyItemsArr || [];
-            } else {
-                // شهر سابق: تحميل من الأرشيف
-                try {
-                    const snapshot = await get(ref(db, `monthlyArchive/${selectedMonthKey}`));
-                    if (snapshot.exists()) {
-                        monthlyData = Object.values(snapshot.val());
-                    } else {
-                        monthlyData = [];
-                    }
-                } catch(e) {
-                    console.error('خطأ في تحميل الأرشيف:', e);
-                    monthlyData = [];
-                }
-            }
-
-            const tbody = document.getElementById('ar-monthly-tbody');
-            const tfooter = document.getElementById('ar-monthly-footer');
-            let monthlyHtml = '';
-            let totalRemaining = 0;
-
-            if (monthlyData.length === 0) {
-                monthlyHtml = `<tr><td colspan="3" class="p-4 text-center text-slate-400">لا توجد بنود شهرية لهذا الشهر</td></tr>`;
-            } else {
-                monthlyData.forEach(item => {
-                    const remaining = (item.totalAmount || 0) - (item.paidAmount || 0);
-                    totalRemaining += remaining;
-                    const typeClass = item.type === 'التزام' ? 'text-orange-700' : 'text-blue-700';
-                    monthlyHtml += `<tr class="hover:bg-slate-50">
-                        <td class="p-3 border border-slate-200 font-medium">${item.name}</td>
-                        <td class="p-3 border border-slate-200 ${typeClass} text-center text-xs font-bold">${item.type}</td>
-                        <td class="p-3 border border-slate-200 text-red-700 font-bold text-center">${remaining.toLocaleString()} ر.س</td>
-                    </tr>`;
-                });
-            }
-
-            tbody.innerHTML = monthlyHtml;
-            tfooter.innerHTML = monthlyData.length > 0 
-                ? `<tr><td class="p-3 border border-slate-200" colspan="2">الإجمالي المتبقي من الالتزامات</td><td class="p-3 border border-slate-200 text-red-900 text-center font-extrabold">${totalRemaining.toLocaleString()} ر.س</td></tr>`
-                : '';
-        }
-
-        window.exportAdminReportPDF = async function() {
-            const dateInput = document.getElementById('ar-date').value;
-            if(!dateInput) return alert('يرجى اختيار التاريخ وعرض التقرير أولاً');
-
-            const element = document.getElementById('admin-report-content');
-            
-            // التأكد من أن التقرير تم توليده
-            if(!element.querySelector('#ar-daily-cards').children.length) {
-                return alert('يرجى عرض التقرير أولاً قبل التصدير');
-            }
-
-            // إظهار شاشة التحميل
-            const loadingEl = document.getElementById('pdf-loading-overlay');
-            loadingEl.style.display = 'flex';
-
-            try {
-                // إعطاء وقت للمحتوى أن يرسم
-                await new Promise(r => setTimeout(r, 500));
-
-                const canvas = await html2canvas(element, {
-                    scale: 2,
-                    useCORS: true,
-                    backgroundColor: '#ffffff',
-                    logging: false,
-                    width: element.scrollWidth,
-                    height: element.scrollHeight
-                });
-
-                const { jsPDF } = window.jspdf;
-                const imgWidth = 210; // عرض A4 بالملم
-                const pageHeight = 297; // ارتفاع A4 بالملم
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-                const pdf = new jsPDF('p', 'mm', 'a4');
-
-                let heightLeft = imgHeight;
-                let position = 0;
-
-                // الصفحة الأولى
-                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-
-                // صفحات إضافية إذا كان المحتوى طويلاً
-                while (heightLeft > 0) {
-                    position = -(imgHeight - heightLeft);
-                    pdf.addPage();
-                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-                }
-
-                const fileName = `تقرير_الإدارة_${dateInput}.pdf`;
-                pdf.save(fileName);
-
-            } catch(err) {
-                console.error('PDF Export Error:', err);
-                alert('حدث خطأ أثناء تصدير PDF: ' + err.message);
-            }
-
-            // إخفاء شاشة التحميل
-            loadingEl.style.display = 'none';
-        }
+            </div>
+        </main>
+    </div>
 
     <!-- نافذة الأرشيف -->
     <div id="archive-modal" class="modal-overlay hidden">
@@ -514,9 +359,7 @@
         </div>
     </div>
 
-    <!-- حاوية تصدير PDF - ثابتة في DOM -->
     <div id="pdf-workspace"></div>
-    <!-- شاشة التحميل -->
     <div id="pdf-loading-overlay">
         <div style="width:48px;height:48px;border:4px solid rgba(255,255,255,0.2);border-top-color:white;border-radius:50%;" class="pdf-spinner"></div>
         <p style="color:white;font-size:18px;font-weight:700;margin:0;">جاري إعداد ملف PDF...</p>
@@ -549,7 +392,6 @@
         window.monthlyItemsArr = [];
         window.usersArr = [];
 
-        // متغيرات الرسم البياني للمبيعات
         let msChartInstance = null;
         let msCurrentChartType = 'bar';
         let msChartData = { labels: [], values: [] };
@@ -902,7 +744,6 @@
         // ===   5.5 المبيعات الشهرية (مطوّر)   ===
         // =========================================
 
-        // تغيير نوع الرسم البياني
         window.setChartType = function(type) {
             msCurrentChartType = type;
             document.getElementById('btn-chart-bar').className = type === 'bar' 
@@ -916,7 +757,6 @@
             }
         }
 
-        // بناء الرسم البياني
         function buildChart(labels, values) {
             if (msChartInstance) { msChartInstance.destroy(); msChartInstance = null; }
 
@@ -982,19 +822,11 @@
                         y: {
                             beginAtZero: true,
                             grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
-                            ticks: {
-                                font: { family: 'Tajawal', size: 11 },
-                                callback: function(value) { return value.toLocaleString(); }
-                            }
+                            ticks: { font: { family: 'Tajawal', size: 11 }, callback: function(value) { return value.toLocaleString(); } }
                         },
                         x: {
                             grid: { display: false },
-                            ticks: {
-                                font: { family: 'Tajawal', size: 10 },
-                                maxRotation: 60,
-                                minRotation: 0,
-                                maxTicksLimit: 30
-                            }
+                            ticks: { font: { family: 'Tajawal', size: 10 }, maxRotation: 60, minRotation: 0, maxTicksLimit: 30 }
                         }
                     },
                     animation: { duration: 800, easing: 'easeOutQuart' }
@@ -1009,7 +841,6 @@
             if(startDate) data = data.filter(d => d.date >= startDate);
             if(endDate) data = data.filter(d => d.date <= endDate);
 
-            // ترتيب تصاعدي للرسم البياني
             const sortedData = [...data].sort((a, b) => String(a.date).localeCompare(String(b.date)));
 
             let totalBilled = 0;
@@ -1025,7 +856,6 @@
                 return;
             }
 
-            // إظهار العناصر
             document.getElementById('ms-total-card').classList.remove('hidden');
             document.getElementById('ms-chart-container').classList.remove('hidden');
             document.getElementById('ms-stats-cards').classList.remove('hidden');
@@ -1034,7 +864,7 @@
             const labels = [];
             const values = [];
             let maxVal = 0, minVal = Infinity, maxDate = '', minDate = '';
-            let operatingDaysCount = 0; // عدد أيام العمل الفعلية لحساب المتوسط
+            let operatingDaysCount = 0;
 
             let rowsHtml = '';
             sortedData.forEach(item => {
@@ -1044,23 +874,16 @@
                 labels.push(item.date);
                 values.push(billed);
                 
-                // حساب أعلى مبيعات
                 if (billed > maxVal) { maxVal = billed; maxDate = item.date; }
-                
-                // حساب أقل مبيعات (تجنب القيمة صفر لأنها تعنى إجازة وليس مبيعات ضعيفة)
                 if (billed > 0 && billed < minVal) { minVal = billed; minDate = item.date; }
-                
-                // حساب أيام العمل الفعلية
                 if (billed > 0) operatingDaysCount++;
             });
 
             tbody.innerHTML = rowsHtml;
             document.getElementById('ms-total-val').innerHTML = `${totalBilled.toLocaleString()} <span class="text-sm font-normal">ر.س</span>`;
 
-            // في حال كانت كل القيم صفر (لا يوجد أيام عمل)
             if (minVal === Infinity) { minVal = 0; }
 
-            // حساب المتوسط بناءً على أيام العمل فقط
             const avg = operatingDaysCount > 0 ? Math.round(totalBilled / operatingDaysCount) : 0;
 
             document.getElementById('ms-max-val').textContent = maxVal.toLocaleString() + ' ر.س';
@@ -1069,15 +892,10 @@
             document.getElementById('ms-min-date').innerHTML = minDate ? `<i class="fa-regular fa-calendar ml-1"></i>${minDate}` : '';
             document.getElementById('ms-avg-val').textContent = avg.toLocaleString() + ' ر.س';
 
-            // حفظ البيانات وإعادة بناء الرسم البياني
             msChartData = { labels, values };
             buildChart(labels, values);
         }
 
-        // =========================================
-        // ===     تصدير المبيعات الشهرية PDF    ===
-        // ===   (باستخدام html2canvas + jsPDF)  ===
-        // =========================================
         window.exportMonthlySalesPDF = async function() {
             if (msChartData.labels.length === 0) return alert('لا توجد بيانات للتصدير. يرجى عرض المبيعات أولاً.');
 
@@ -1088,23 +906,17 @@
                 : endDate ? `إلى ${endDate}` 
                 : 'كل الفترة المتاحة';
 
-            // الحصول على صورة الرسم البياني
             const chartImage = msChartInstance ? msChartInstance.toBase64Image('image/png', 1) : '';
 
             const totalBilled = msChartData.values.reduce((s, v) => s + v, 0);
             const maxVal = Math.max(...msChartData.values);
-            
-            // تجاهل القيمة صفر عند حساب أقل مبيعات في PDF
             const positiveValues = msChartData.values.filter(v => v > 0);
             const minVal = positiveValues.length > 0 ? Math.min(...positiveValues) : 0;
-            
-            // المتوسط بناء على أيام العمل
             const avgVal = positiveValues.length > 0 ? Math.round(totalBilled / positiveValues.length) : 0;
             
             const maxIdx = msChartData.values.indexOf(maxVal);
             const minIdx = msChartData.values.indexOf(minVal);
 
-            // بناء صفوف الجدول
             let tableRows = '';
             msChartData.labels.forEach((label, i) => {
                 const val = msChartData.values[i];
@@ -1114,41 +926,34 @@
                 tableRows += `<tr style="${rowBg}"><td style="padding:8px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:500;">${label}</td><td style="padding:8px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:700;color:#047857;text-align:right;">${val.toLocaleString()} ر.س${isMax ? ' ▲' : ''}${isMin ? ' ▼' : ''}</td></tr>`;
             });
 
-            // === إظهار شاشة التحميل ===
             const loadingEl = document.getElementById('pdf-loading-overlay');
             loadingEl.style.display = 'flex';
 
-            // === استخدام الحاوية الثابتة في DOM ===
             const workspace = document.getElementById('pdf-workspace');
             workspace.innerHTML = '';
 
-            // بناء محتوى PDF بتنسيق بسيط (جداول بدلاً من CSS Grid)
             const contentDiv = document.createElement('div');
             contentDiv.style.cssText = 'direction:rtl;font-family:Tajawal,sans-serif;color:#1e293b;width:760px;margin:0 auto;background:white;padding:30px;';
 
             let html = '';
             
-            // الرأس
             html += `<div style="text-align:center;border-bottom:3px solid #1e293b;padding-bottom:20px;margin-bottom:24px;">`;
             html += `<h2 style="font-size:22px;font-weight:800;color:#1e293b;margin:0 0 4px;">زاد الجود للوجبات السريعة</h2>`;
             html += `<h3 style="font-size:17px;font-weight:700;color:#4f46e5;margin:8px 0 4px;">تقرير المبيعات الشهرية</h3>`;
             html += `<p style="font-size:13px;color:#64748b;margin:0;font-weight:500;">الفترة: ${periodText}</p>`;
             html += `</div>`;
 
-            // بطاقة الإجمالي
             html += `<div style="background:#d1fae5;border:2px solid #6ee7b7;border-radius:10px;padding:20px;margin-bottom:20px;">`;
             html += `<p style="font-size:13px;color:#059669;margin:0 0 6px;font-weight:500;">إجمالي المبيعات خلال الفترة</p>`;
             html += `<p style="font-size:28px;font-weight:800;color:#047857;margin:0;">${totalBilled.toLocaleString()} ر.س</p>`;
             html += `</div>`;
 
-            // بطاقات إحصائية (باستخدام table للتوافقية مع html2canvas)
             html += `<table style="width:100%;border-collapse:separate;border-spacing:10px;margin-bottom:24px;"><tr>`;
             html += `<td style="width:33.3%;background:#dbeafe;border:1px solid #93c5fd;border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#2563eb;margin:0 0 4px;font-weight:600;">أعلى مبيعات يومية</p><p style="font-size:18px;font-weight:800;color:#1d4ed8;margin:0;">${maxVal.toLocaleString()} ر.س</p><p style="font-size:10px;color:#64748b;margin:4px 0 0;">${msChartData.labels[maxIdx] || ''}</p></td>`;
             html += `<td style="width:33.3%;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#d97706;margin:0 0 4px;font-weight:600;">أقل مبيعات (أيام العمل)</p><p style="font-size:18px;font-weight:800;color:#b45309;margin:0;">${minVal.toLocaleString()} ر.س</p><p style="font-size:10px;color:#64748b;margin:4px 0 0;">${msChartData.labels[minIdx] || ''}</p></td>`;
             html += `<td style="width:33.3%;background:#ede9fe;border:1px solid #c4b5fd;border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#7c3aed;margin:0 0 4px;font-weight:600;">متوسط المبيعات (لأيام العمل)</p><p style="font-size:18px;font-weight:800;color:#6d28d9;margin:0;">${avgVal.toLocaleString()} ر.س</p></td>`;
             html += `</tr></table>`;
 
-            // الرسم البياني
             if (chartImage) {
                 html += `<div style="margin-bottom:24px;">`;
                 html += `<h4 style="font-size:14px;font-weight:700;color:#334155;margin:0 0 12px;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">الرسم البياني للمبيعات</h4>`;
@@ -1157,7 +962,6 @@
                 html += `</div></div>`;
             }
 
-            // جدول البيانات
             html += `<div style="margin-bottom:24px;">`;
             html += `<h4 style="font-size:14px;font-weight:700;color:#334155;margin:0 0 12px;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">تفاصيل المبيعات اليومية</h4>`;
             html += `<table style="width:100%;border-collapse:collapse;">`;
@@ -1166,7 +970,6 @@
             html += `<tfoot><tr style="background:#f1f5f9;font-weight:800;"><td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:13px;">الإجمالي</td><td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:13px;color:#047857;text-align:right;">${totalBilled.toLocaleString()} ر.س</td></tr></tfoot>`;
             html += `</table></div>`;
 
-            // التذييل
             html += `<div style="margin-top:48px;padding-top:24px;border-top:2px solid #e2e8f0;text-align:center;">`;
             html += `<p style="font-size:12px;color:#64748b;margin:0 0 40px;">المدير المالى</p>`;
             html += `<div style="border-bottom:1px solid #94a3b8;width:200px;margin:0 auto;"></div>`;
@@ -1175,15 +978,11 @@
 
             contentDiv.innerHTML = html;
             workspace.appendChild(contentDiv);
-
-            // إظهار الحاوية
             workspace.style.display = 'block';
 
-            // الانتظار حتى يتم رسم المحتوى بالكامل
             await new Promise(r => setTimeout(r, 1500));
 
             try {
-                // التقاط المحتوى باستخدام html2canvas مباشرة
                 const canvas = await html2canvas(contentDiv, {
                     scale: 2,
                     useCORS: true,
@@ -1193,10 +992,9 @@
                     height: contentDiv.scrollHeight
                 });
 
-                // إنشاء PDF من Canvas
                 const { jsPDF } = window.jspdf;
-                const imgWidth = 210; // عرض A4 بالملم
-                const pageHeight = 297; // ارتفاع A4 بالملم
+                const imgWidth = 210;
+                const pageHeight = 297;
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
                 
                 const pdf = new jsPDF('p', 'mm', 'a4');
@@ -1204,11 +1002,9 @@
                 let heightLeft = imgHeight;
                 let position = 0;
                 
-                // الصفحة الأولى
                 pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
                 heightLeft -= pageHeight;
                 
-                // صفحات إضافية إذا كان المحتوى طويلاً
                 while (heightLeft > 0) {
                     position = -(imgHeight - heightLeft);
                     pdf.addPage();
@@ -1224,7 +1020,6 @@
                 alert('حدث خطأ أثناء تصدير PDF: ' + err.message);
             }
 
-            // تنظيف
             workspace.style.display = 'none';
             workspace.innerHTML = '';
             loadingEl.style.display = 'none';
@@ -1263,33 +1058,161 @@
         }
 
         // =========================================
-        // ===       7. تقرير الإدارة            ===
+        // ===  7. تقرير الإدارة (تم إصلاحه)    ===
         // =========================================
-        window.generateAdminReport = function() {
+        window.generateAdminReport = async function() {
             const dateInput = document.getElementById('ar-date').value;
             if(!dateInput) return alert('يرجى اختيار التاريخ أولاً');
             const date = normalizeDate(dateInput);
             document.getElementById('ar-date-display').innerText = `التاريخ: ${date}`;
             const data30 = window.dailyStatementsArr || [];
-            const dayData = data30.find(d => d.date === date); const dailyCards = document.getElementById('ar-daily-cards');
-            const fields = [ { key: 'bankBalance', label: 'الرصيد البنكي', color: 'text-blue-700 bg-blue-50 border-blue-200' }, { key: 'caravansBalance', label: 'رصيد القوافل', color: 'text-purple-700 bg-purple-50 border-purple-200' }, { key: 'vendorsBalance', label: 'رصيد الموردين', color: 'text-red-700 bg-red-50 border-red-200' }, { key: 'customersDue', label: 'مستحقة العملاء', color: 'text-amber-700 bg-amber-50 border-amber-200' }, { key: 'customersBilled', label: 'محررة العملاء', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' }, { key: 'collectionBalance', label: 'رصيد التحصيل', color: 'text-cyan-700 bg-cyan-50 border-cyan-200' } ];
+            
+            // استخراج الشهر المختار (مثال: 2025-05)
+            const selectedMonthKey = date.substring(0, 7); 
+            
+            // فلترة البيانات اليومية لتشمل الشهر المختار فقط
+            const monthData = data30.filter(d => d.date && d.date.startsWith(selectedMonthKey));
+            const dayData = data30.find(d => d.date === date);
+            
+            const dailyCards = document.getElementById('ar-daily-cards');
+            const fields = [
+                { key: 'bankBalance', label: 'الرصيد البنكي', color: 'text-blue-700 bg-blue-50 border-blue-200' },
+                { key: 'caravansBalance', label: 'رصيد القوافل', color: 'text-purple-700 bg-purple-50 border-purple-200' },
+                { key: 'vendorsBalance', label: 'رصيد الموردين', color: 'text-red-700 bg-red-50 border-red-200' },
+                { key: 'customersDue', label: 'مستحقة العملاء', color: 'text-amber-700 bg-amber-50 border-amber-200' },
+                { key: 'customersBilled', label: 'محررة العملاء', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+                { key: 'collectionBalance', label: 'رصيد التحصيل', color: 'text-cyan-700 bg-cyan-50 border-cyan-200' }
+            ];
             let cardsHtml = '';
             fields.forEach(field => {
                 const currentValue = dayData ? (Number(dayData[field.key]) || 0) : 0;
-                const filteredData = data30.filter(d => Number(d[field.key]) !== 0); let max = 0, min = 0, maxDate = '', minDate = '';
-                if (filteredData.length > 0) { const maxItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) > Number(current[field.key])) ? prev : current); max = Number(maxItem[field.key]) || 0; maxDate = maxItem.date || ''; const minItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) < Number(current[field.key])) ? prev : current); min = Number(minItem[field.key]) || 0; minDate = minItem.date || ''; }
-                cardsHtml += `<div class="p-4 rounded-lg border ${field.color} shadow-sm"><span class="block text-xs font-medium mb-1">${field.label}</span><span class="block text-xl font-extrabold">${currentValue.toLocaleString()} ر.س</span><div class="mt-3 pt-2 border-t border-black/10 grid grid-cols-2 gap-2 text-[10px]"><div><span class="block font-bold text-emerald-800">▲ أعلى مبلغ</span><span class="font-bold">${max.toLocaleString()}</span>${maxDate ? `<span class="block text-slate-600 mt-0.5"><i class="fa-regular fa-calendar ml-0.5"></i>${maxDate}</span>` : ''}</div><div><span class="block font-bold text-red-800">▼ أقل مبلغ</span><span class="font-bold">${min.toLocaleString()}</span>${minDate ? `<span class="block text-slate-600 mt-0.5"><i class="fa-regular fa-calendar ml-0.5"></i>${minDate}</span>` : ''}</div></div></div>`;
+                const filteredData = monthData.filter(d => Number(d[field.key]) !== 0);
+                let max = 0, min = 0, maxDate = '', minDate = '';
+                if (filteredData.length > 0) {
+                    const maxItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) > Number(current[field.key])) ? prev : current);
+                    max = Number(maxItem[field.key]) || 0; maxDate = maxItem.date || '';
+                    const minItem = filteredData.reduce((prev, current) => (Number(prev[field.key]) < Number(current[field.key])) ? prev : current);
+                    min = Number(minItem[field.key]) || 0; minDate = minItem.date || '';
+                }
+                cardsHtml += `<div class="p-4 rounded-lg border ${field.color} shadow-sm">
+                    <span class="block text-xs font-medium mb-1">${field.label}</span>
+                    <span class="block text-xl font-extrabold">${currentValue.toLocaleString()} ر.س</span>
+                    <div class="mt-3 pt-2 border-t border-black/10 grid grid-cols-2 gap-2 text-[10px]">
+                        <div><span class="block font-bold text-emerald-800">▲ أعلى مبلغ</span><span class="font-bold">${max.toLocaleString()}</span>${maxDate ? `<span class="block text-slate-600 mt-0.5"><i class="fa-regular fa-calendar ml-0.5"></i>${maxDate}</span>` : ''}</div>
+                        <div><span class="block font-bold text-red-800">▼ أقل مبلغ</span><span class="font-bold">${min.toLocaleString()}</span>${minDate ? `<span class="block text-slate-600 mt-0.5"><i class="fa-regular fa-calendar ml-0.5"></i>${minDate}</span>` : ''}</div>
+                    </div>
+                </div>`;
             });
             dailyCards.innerHTML = cardsHtml;
-            const monthlyData = window.monthlyItemsArr || []; const tbody = document.getElementById('ar-monthly-tbody'); const tfooter = document.getElementById('ar-monthly-footer'); let monthlyHtml = ''; let totalRemaining = 0;
-            monthlyData.forEach(item => { const remaining = (item.totalAmount || 0) - (item.paidAmount || 0); totalRemaining += remaining; const typeClass = item.type === 'التزام' ? 'text-orange-700' : 'text-blue-700'; monthlyHtml += `<tr class="hover:bg-slate-50"><td class="p-3 border border-slate-200 font-medium">${item.name}</td><td class="p-3 border border-slate-200 ${typeClass} text-center text-xs font-bold">${item.type}</td><td class="p-3 border border-slate-200 text-red-700 font-bold text-center">${remaining.toLocaleString()} ر.س</td></tr>`; });
-            tbody.innerHTML = monthlyHtml; tfooter.innerHTML = `<tr><td class="p-3 border border-slate-200" colspan="2">الإجمالي المتبقي من الالتزامات</td><td class="p-3 border border-slate-200 text-red-900 text-center font-extrabold">${totalRemaining.toLocaleString()} ر.س</td></tr>`;
+
+            // تحديد الشهر الحالي
+            const now = new Date();
+            const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            let monthlyData = [];
+
+            // جلب البنود الشهرية: إذا كان الشهر المختار هو الحالي نأخذ من البنود النشطة، وإلا من الأرشيف
+            if (selectedMonthKey === currentMonthKey) {
+                monthlyData = window.monthlyItemsArr || [];
+            } else {
+                try {
+                    const snapshot = await get(ref(db, `monthlyArchive/${selectedMonthKey}`));
+                    if (snapshot.exists()) {
+                        monthlyData = Object.values(snapshot.val());
+                    } else {
+                        monthlyData = [];
+                    }
+                } catch(e) {
+                    console.error('خطأ في تحميل الأرشيف:', e);
+                    monthlyData = [];
+                }
+            }
+
+            const tbody = document.getElementById('ar-monthly-tbody');
+            const tfooter = document.getElementById('ar-monthly-footer');
+            let monthlyHtml = '';
+            let totalRemaining = 0;
+
+            if (monthlyData.length === 0) {
+                monthlyHtml = `<tr><td colspan="3" class="p-4 text-center text-slate-400">لا توجد بنود شهرية مسجلة لهذا الشهر في الأرشيف</td></tr>`;
+            } else {
+                monthlyData.forEach(item => {
+                    const remaining = (item.totalAmount || 0) - (item.paidAmount || 0);
+                    totalRemaining += remaining;
+                    const typeClass = item.type === 'التزام' ? 'text-orange-700' : 'text-blue-700';
+                    monthlyHtml += `<tr class="hover:bg-slate-50">
+                        <td class="p-3 border border-slate-200 font-medium">${item.name}</td>
+                        <td class="p-3 border border-slate-200 ${typeClass} text-center text-xs font-bold">${item.type}</td>
+                        <td class="p-3 border border-slate-200 text-red-700 font-bold text-center">${remaining.toLocaleString()} ر.س</td>
+                    </tr>`;
+                });
+            }
+
+            tbody.innerHTML = monthlyHtml;
+            tfooter.innerHTML = monthlyData.length > 0 
+                ? `<tr><td class="p-3 border border-slate-200" colspan="2">الإجمالي المتبقي من الالتزامات</td><td class="p-3 border border-slate-200 text-red-900 text-center font-extrabold">${totalRemaining.toLocaleString()} ر.س</td></tr>`
+                : '';
         }
         
-        window.exportAdminReportPDF = function() {
-            const element = document.getElementById('admin-report-content'); const dateInput = document.getElementById('ar-date').value || 'report';
-            const opt = { margin: [0.5, 0.5, 0.5, 0.5], filename: `تقرير_الإدارة_${dateInput}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
-            alert('جاري إعداد ملف PDF، يرجى الانتظار...'); html2pdf().set(opt).from(element).save();
+        window.exportAdminReportPDF = async function() {
+            const dateInput = document.getElementById('ar-date').value;
+            if(!dateInput) return alert('يرجى اختيار التاريخ وعرض التقرير أولاً');
+
+            const element = document.getElementById('admin-report-content');
+            
+            // التأكد من أن التقرير تم توليده
+            if(!element.querySelector('#ar-daily-cards').innerHTML.trim()) {
+                return alert('يرجى النقر على "عرض التقرير" أولاً قبل التصدير');
+            }
+
+            // إظهار شاشة التحميل
+            const loadingEl = document.getElementById('pdf-loading-overlay');
+            loadingEl.style.display = 'flex';
+
+            try {
+                // إعطاء وقت للمحتوى أن يرسم
+                await new Promise(r => setTimeout(r, 500));
+
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    width: element.scrollWidth,
+                    height: element.scrollHeight
+                });
+
+                const { jsPDF } = window.jspdf;
+                const imgWidth = 210; // عرض A4 بالملم
+                const pageHeight = 297; // ارتفاع A4 بالملم
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                const pdf = new jsPDF('p', 'mm', 'a4');
+
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                // الصفحة الأولى
+                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                // صفحات إضافية إذا كان المحتوى طويلاً
+                while (heightLeft > 0) {
+                    position = -(imgHeight - heightLeft);
+                    pdf.addPage();
+                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                const fileName = `تقرير_الإدارة_${dateInput}.pdf`;
+                pdf.save(fileName);
+
+            } catch(err) {
+                console.error('PDF Export Error:', err);
+                alert('حدث خطأ أثناء تصدير PDF: ' + err.message);
+            }
+
+            // إخفاء شاشة التحميل
+            loadingEl.style.display = 'none';
         }
 
         // =========================================
@@ -1309,6 +1232,7 @@
         function initApp() {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('d-date').value = today;
+            document.getElementById('ar-date').value = today;
             const dateObj = new Date(); const options = { year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('current-date-header').textContent = dateObj.toLocaleDateString('ar-EG', options);
             showPage('daily');
