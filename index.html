@@ -29,6 +29,8 @@
         .pdf-spinner { animation: pdfSpin 1s linear infinite; }
         #pdf-workspace { display: none; position: fixed; top: 0; right: 0; width: 100%; height: 100%; z-index: 99999; background: white; overflow-y: auto; padding: 30px; direction: rtl; font-family: 'Tajawal', sans-serif; color: #1e293b; }
         #pdf-loading-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 999999; flex-direction: column; align-items: center; justify-content: center; gap: 16px; font-family: 'Tajawal', sans-serif; }
+        /* تنسيق علامة الريال لتكون أكبر ومناسبة للقيم */
+        .currency { font-weight: 800; font-size: 0.85em; display: inline-block; margin-right: 4px; vertical-align: baseline; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
@@ -248,21 +250,21 @@
                         <button id="ms-pdf-btn" onclick="exportMonthlySalesPDF()" class="hidden bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg h-10 font-medium transition-colors items-center gap-2"><i class="fa-solid fa-file-pdf"></i> تصدير PDF</button>
                     </div>
                     <div id="ms-total-card" class="hidden animate-fade-in-up bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                        <div><p class="text-sm text-slate-500 mb-1">إجمالي المبيعات (المبالغ المحررة) خلال الفترة</p><h3 id="ms-total-val" class="text-2xl font-bold text-emerald-700">0 <span class="text-sm font-normal">ر.س</span></h3></div>
+                        <div><p class="text-sm text-slate-500 mb-1">إجمالي المبيعات (المبالغ المحررة) خلال الفترة</p><h3 id="ms-total-val" class="text-2xl font-bold text-emerald-700">0</h3></div>
                         <div class="p-3 rounded-xl bg-emerald-50 text-emerald-600"><i class="fa-solid fa-file-invoice-dollar text-xl"></i></div>
                     </div>
                     <div id="ms-stats-cards" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in-up">
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
                             <div class="p-3 rounded-xl bg-blue-50 text-blue-600"><i class="fa-solid fa-arrow-up text-lg"></i></div>
-                            <div><p class="text-xs text-slate-500">أعلى مبيعات يومية</p><p id="ms-max-val" class="text-lg font-bold text-blue-700">0 ر.س</p><p id="ms-max-date" class="text-[10px] text-slate-400"></p></div>
+                            <div><p class="text-xs text-slate-500">أعلى مبيعات يومية</p><p id="ms-max-val" class="text-lg font-bold text-blue-700">0</p><p id="ms-max-date" class="text-[10px] text-slate-400"></p></div>
                         </div>
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
                             <div class="p-3 rounded-xl bg-amber-50 text-amber-600"><i class="fa-solid fa-arrow-down text-lg"></i></div>
-                            <div><p class="text-xs text-slate-500">أقل مبيعات يومية (أيام العمل)</p><p id="ms-min-val" class="text-lg font-bold text-amber-700">0 ر.س</p><p id="ms-min-date" class="text-[10px] text-slate-400"></p></div>
+                            <div><p class="text-xs text-slate-500">أقل مبيعات يومية (أيام العمل)</p><p id="ms-min-val" class="text-lg font-bold text-amber-700">0</p><p id="ms-min-date" class="text-[10px] text-slate-400"></p></div>
                         </div>
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
                             <div class="p-3 rounded-xl bg-violet-50 text-violet-600"><i class="fa-solid fa-calculator text-lg"></i></div>
-                            <div><p class="text-xs text-slate-500">متوسط المبيعات اليومية</p><p id="ms-avg-val" class="text-lg font-bold text-violet-700">0 ر.س</p></div>
+                            <div><p class="text-xs text-slate-500">متوسط المبيعات اليومية</p><p id="ms-avg-val" class="text-lg font-bold text-violet-700">0</p></div>
                         </div>
                     </div>
                     <div id="ms-chart-container" class="hidden animate-fade-in-up bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
@@ -636,7 +638,7 @@
                         <button onclick="editItemAmount('${item.id}')" class="text-amber-600 hover:text-amber-800" title="تعديل المبلغ"><i class="fa-solid fa-pen-to-square"></i></button>
                         <button onclick="deleteItem('${item.id}')" class="text-red-600 hover:text-red-800" title="حذف البند"><i class="fa-solid fa-trash"></i></button>
                     </div>` : '-';
-                tbody.innerHTML += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${item.name}</td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs ${typeClass}">${item.type}</span></td><td class="p-4">${(item.totalAmount || 0).toLocaleString()} ر.س</td><td class="p-4 text-emerald-600">${(item.paidAmount || 0).toLocaleString()} ر.س</td><td class="p-4 text-red-600 font-bold">${remaining.toLocaleString()} ر.س</td><td class="p-4">${actionBtns}</td></tr>`;
+                tbody.innerHTML += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${item.name}</td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs ${typeClass}">${item.type}</span></td><td class="p-4">${(item.totalAmount || 0).toLocaleString()} <span class="currency">﷼</span></td><td class="p-4 text-emerald-600">${(item.paidAmount || 0).toLocaleString()} <span class="currency">﷼</span></td><td class="p-4 text-red-600 font-bold">${remaining.toLocaleString()} <span class="currency">﷼</span></td><td class="p-4">${actionBtns}</td></tr>`;
             });
         }
 
@@ -707,12 +709,12 @@
             const totalBilled = data.reduce((sum, d) => sum + (Number(d.customersBilled)||0), 0);
             const latest = data.length > 0 ? data[0] : null;
             document.getElementById('report30-cards').innerHTML = `
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">رصيد البنك</p><h3 class="text-2xl font-bold">${(Number(latest?.bankBalance)||0).toLocaleString()} <span class="text-sm font-normal">ر.س</span></h3></div><div class="p-3 rounded-xl bg-blue-50 text-blue-600"><i class="fa-solid fa-building-columns text-xl"></i></div></div>
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">رصيد القوافل</p><h3 class="text-2xl font-bold">${(Number(latest?.caravansBalance)||0).toLocaleString()} <span class="text-sm font-normal">ر.س</span></h3></div><div class="p-3 rounded-xl bg-purple-50 text-purple-600"><i class="fa-solid fa-truck text-xl"></i></div></div>
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">مستحقة العملاء</p><h3 class="text-2xl font-bold">${(Number(latest?.customersDue)||0).toLocaleString()} <span class="text-sm font-normal">ر.س</span></h3></div><div class="p-3 rounded-xl bg-amber-50 text-amber-600"><i class="fa-solid fa-users text-xl"></i></div></div>
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">محررة العملاء (مبيعات)</p><h3 class="text-2xl font-bold text-emerald-700">${totalBilled.toLocaleString()} <span class="text-sm font-normal">ر.س</span></h3></div><div class="p-3 rounded-xl bg-emerald-50 text-emerald-600"><i class="fa-solid fa-file-invoice-dollar text-xl"></i></div></div>
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">رصيد الموردين</p><h3 class="text-2xl font-bold">${(Number(latest?.vendorsBalance)||0).toLocaleString()} <span class="text-sm font-normal">ر.س</span></h3></div><div class="p-3 rounded-xl bg-red-50 text-red-600"><i class="fa-solid fa-wallet text-xl"></i></div></div>
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">رصيد التحصيل</p><h3 class="text-2xl font-bold">${(Number(latest?.collectionBalance)||0).toLocaleString()} <span class="text-sm font-normal">ر.س</span></h3></div><div class="p-3 rounded-xl bg-cyan-50 text-cyan-600"><i class="fa-solid fa-chart-line text-xl"></i></div></div>`;
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">رصيد البنك</p><h3 class="text-2xl font-bold">${(Number(latest?.bankBalance)||0).toLocaleString()} <span class="text-lg font-bold opacity-80">﷼</span></h3></div><div class="p-3 rounded-xl bg-blue-50 text-blue-600"><i class="fa-solid fa-building-columns text-xl"></i></div></div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">رصيد القوافل</p><h3 class="text-2xl font-bold">${(Number(latest?.caravansBalance)||0).toLocaleString()} <span class="text-lg font-bold opacity-80">﷼</span></h3></div><div class="p-3 rounded-xl bg-purple-50 text-purple-600"><i class="fa-solid fa-truck text-xl"></i></div></div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">مستحقة العملاء</p><h3 class="text-2xl font-bold">${(Number(latest?.customersDue)||0).toLocaleString()} <span class="text-lg font-bold opacity-80">﷼</span></h3></div><div class="p-3 rounded-xl bg-amber-50 text-amber-600"><i class="fa-solid fa-users text-xl"></i></div></div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">محررة العملاء (مبيعات)</p><h3 class="text-2xl font-bold text-emerald-700">${totalBilled.toLocaleString()} <span class="text-lg font-bold opacity-80">﷼</span></h3></div><div class="p-3 rounded-xl bg-emerald-50 text-emerald-600"><i class="fa-solid fa-file-invoice-dollar text-xl"></i></div></div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">رصيد الموردين</p><h3 class="text-2xl font-bold">${(Number(latest?.vendorsBalance)||0).toLocaleString()} <span class="text-lg font-bold opacity-80">﷼</span></h3></div><div class="p-3 rounded-xl bg-red-50 text-red-600"><i class="fa-solid fa-wallet text-xl"></i></div></div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between"><div><p class="text-sm text-slate-500 mb-1">رصيد التحصيل</p><h3 class="text-2xl font-bold">${(Number(latest?.collectionBalance)||0).toLocaleString()} <span class="text-lg font-bold opacity-80">﷼</span></h3></div><div class="p-3 rounded-xl bg-cyan-50 text-cyan-600"><i class="fa-solid fa-chart-line text-xl"></i></div></div>`;
         }
 
         // =========================================
@@ -728,7 +730,7 @@
             const totalPaid = monthlyItems.reduce((sum, item) => sum + (item.paidAmount||0), 0);
             const totalRemaining = totalDue - totalPaid;
             const paymentPercentage = totalDue > 0 ? ((totalPaid / totalDue) * 100).toFixed(1) : 0;
-            container.innerHTML += `<div class="col-span-1 md:col-span-2 lg:col-span-3 mb-4"><h3 class="text-md font-bold text-slate-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-calendar-check text-indigo-600"></i> ملخص الالتزامات والمصروفات الشهرية</h3><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"><div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4"><span class="text-xs text-indigo-500 block mb-1">المبلغ المستحق خلال الشهر</span><span class="text-xl font-bold text-indigo-700">${totalDue.toLocaleString()} ر.س</span></div><div class="bg-emerald-50 border border-emerald-100 rounded-lg p-4"><span class="text-xs text-emerald-500 block mb-1">المبلغ المسدد خلال الشهر</span><span class="text-xl font-bold text-emerald-700">${totalPaid.toLocaleString()} ر.س</span></div><div class="bg-cyan-50 border border-cyan-100 rounded-lg p-4"><span class="text-xs text-cyan-500 block mb-1">نسبة السداد خلال الشهر</span><span class="text-xl font-bold text-cyan-700">${paymentPercentage}%</span><div class="w-full bg-cyan-200 rounded-full h-1.5 mt-2"><div class="bg-cyan-600 h-1.5 rounded-full" style="width: ${paymentPercentage}%"></div></div></div><div class="bg-red-50 border border-red-100 rounded-lg p-4"><span class="text-xs text-red-500 block mb-1">المبلغ المتبقي خلال الشهر</span><span class="text-xl font-bold text-red-700">${totalRemaining.toLocaleString()} ر.س</span></div></div></div>`;
+            container.innerHTML += `<div class="col-span-1 md:col-span-2 lg:col-span-3 mb-4"><h3 class="text-md font-bold text-slate-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-calendar-check text-indigo-600"></i> ملخص الالتزامات والمصروفات الشهرية</h3><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"><div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4"><span class="text-xs text-indigo-500 block mb-1">المبلغ المستحق خلال الشهر</span><span class="text-xl font-bold text-indigo-700">${totalDue.toLocaleString()} <span class="currency">﷼</span></span></div><div class="bg-emerald-50 border border-emerald-100 rounded-lg p-4"><span class="text-xs text-emerald-500 block mb-1">المبلغ المسدد خلال الشهر</span><span class="text-xl font-bold text-emerald-700">${totalPaid.toLocaleString()} <span class="currency">﷼</span></span></div><div class="bg-cyan-50 border border-cyan-100 rounded-lg p-4"><span class="text-xs text-cyan-500 block mb-1">نسبة السداد خلال الشهر</span><span class="text-xl font-bold text-cyan-700">${paymentPercentage}%</span><div class="w-full bg-cyan-200 rounded-full h-1.5 mt-2"><div class="bg-cyan-600 h-1.5 rounded-full" style="width: ${paymentPercentage}%"></div></div></div><div class="bg-red-50 border border-red-100 rounded-lg p-4"><span class="text-xs text-red-500 block mb-1">المبلغ المتبقي خلال الشهر</span><span class="text-xl font-bold text-red-700">${totalRemaining.toLocaleString()} <span class="currency">﷼</span></span></div></div></div>`;
             const fields = [ { key: 'bankBalance', label: 'رصيد البنك' }, { key: 'caravansBalance', label: 'رصيد القوافل' }, { key: 'vendorsBalance', label: 'رصيد الموردين' }, { key: 'customersDue', label: 'مستحقة العملاء' }, { key: 'customersBilled', label: 'محررة العملاء' }, { key: 'collectionBalance', label: 'رصيد التحصيل' } ];
             fields.forEach(field => {
                 const filteredData = data.filter(d => Number(d[field.key]) !== 0); let max = 0, min = 0, maxDate = '', minDate = '';
@@ -773,7 +775,7 @@
             const isBar = msCurrentChartType === 'bar';
 
             const dataset = isBar ? {
-                label: 'المبيعات (ر.س)',
+                label: 'المبيعات (﷼)',
                 data: values,
                 backgroundColor: barGradient,
                 borderColor: 'rgba(16, 185, 129, 1)',
@@ -782,7 +784,7 @@
                 borderSkipped: false,
                 maxBarThickness: 50,
             } : {
-                label: 'المبيعات (ر.س)',
+                label: 'المبيعات (﷼)',
                 data: values,
                 borderColor: 'rgba(99, 102, 241, 1)',
                 backgroundColor: lineGradient,
@@ -814,7 +816,7 @@
                             displayColors: false,
                             callbacks: {
                                 title: function(items) { return items[0].label; },
-                                label: function(context) { return context.parsed.y.toLocaleString() + ' ر.س'; }
+                                label: function(context) { return context.parsed.y.toLocaleString() + ' ﷼'; }
                             }
                         }
                     },
@@ -870,7 +872,7 @@
             sortedData.forEach(item => {
                 const billed = Number(item.customersBilled) || 0;
                 totalBilled += billed;
-                rowsHtml += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${item.date}</td><td class="p-4 text-emerald-700 font-bold">${billed.toLocaleString()} ر.س</td></tr>`;
+                rowsHtml += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${item.date}</td><td class="p-4 text-emerald-700 font-bold">${billed.toLocaleString()} <span class="currency">﷼</span></td></tr>`;
                 labels.push(item.date);
                 values.push(billed);
                 
@@ -880,17 +882,17 @@
             });
 
             tbody.innerHTML = rowsHtml;
-            document.getElementById('ms-total-val').innerHTML = `${totalBilled.toLocaleString()} <span class="text-sm font-normal">ر.س</span>`;
+            document.getElementById('ms-total-val').innerHTML = `${totalBilled.toLocaleString()} <span class="text-lg font-bold opacity-80">﷼</span>`;
 
             if (minVal === Infinity) { minVal = 0; }
 
             const avg = operatingDaysCount > 0 ? Math.round(totalBilled / operatingDaysCount) : 0;
 
-            document.getElementById('ms-max-val').textContent = maxVal.toLocaleString() + ' ر.س';
+            document.getElementById('ms-max-val').innerHTML = `${maxVal.toLocaleString()} <span class="currency">﷼</span>`;
             document.getElementById('ms-max-date').innerHTML = maxDate ? `<i class="fa-regular fa-calendar ml-1"></i>${maxDate}` : '';
-            document.getElementById('ms-min-val').textContent = minVal.toLocaleString() + ' ر.س';
+            document.getElementById('ms-min-val').innerHTML = `${minVal.toLocaleString()} <span class="currency">﷼</span>`;
             document.getElementById('ms-min-date').innerHTML = minDate ? `<i class="fa-regular fa-calendar ml-1"></i>${minDate}` : '';
-            document.getElementById('ms-avg-val').textContent = avg.toLocaleString() + ' ر.س';
+            document.getElementById('ms-avg-val').innerHTML = `${avg.toLocaleString()} <span class="currency">﷼</span>`;
 
             msChartData = { labels, values };
             buildChart(labels, values);
@@ -923,7 +925,7 @@
                 const isMax = val === maxVal;
                 const isMin = val === minVal && msChartData.values.length > 1;
                 const rowBg = isMax ? 'background:#d1fae5;' : isMin ? 'background:#fef3c7;' : '';
-                tableRows += `<tr style="${rowBg}"><td style="padding:8px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:500;">${label}</td><td style="padding:8px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:700;color:#047857;text-align:right;">${val.toLocaleString()} ر.س${isMax ? ' ▲' : ''}${isMin ? ' ▼' : ''}</td></tr>`;
+                tableRows += `<tr style="${rowBg}"><td style="padding:8px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:500;">${label}</td><td style="padding:8px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:700;color:#047857;text-align:right;">${val.toLocaleString()} <span style="font-weight:800;font-size:0.9em;">﷼</span>${isMax ? ' ▲' : ''}${isMin ? ' ▼' : ''}</td></tr>`;
             });
 
             const loadingEl = document.getElementById('pdf-loading-overlay');
@@ -945,13 +947,13 @@
 
             html += `<div style="background:#d1fae5;border:2px solid #6ee7b7;border-radius:10px;padding:20px;margin-bottom:20px;">`;
             html += `<p style="font-size:13px;color:#059669;margin:0 0 6px;font-weight:500;">إجمالي المبيعات خلال الفترة</p>`;
-            html += `<p style="font-size:28px;font-weight:800;color:#047857;margin:0;">${totalBilled.toLocaleString()} ر.س</p>`;
+            html += `<p style="font-size:28px;font-weight:800;color:#047857;margin:0;">${totalBilled.toLocaleString()} <span style="font-size:22px;font-weight:800;">﷼</span></p>`;
             html += `</div>`;
 
             html += `<table style="width:100%;border-collapse:separate;border-spacing:10px;margin-bottom:24px;"><tr>`;
-            html += `<td style="width:33.3%;background:#dbeafe;border:1px solid #93c5fd;border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#2563eb;margin:0 0 4px;font-weight:600;">أعلى مبيعات يومية</p><p style="font-size:18px;font-weight:800;color:#1d4ed8;margin:0;">${maxVal.toLocaleString()} ر.س</p><p style="font-size:10px;color:#64748b;margin:4px 0 0;">${msChartData.labels[maxIdx] || ''}</p></td>`;
-            html += `<td style="width:33.3%;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#d97706;margin:0 0 4px;font-weight:600;">أقل مبيعات (أيام العمل)</p><p style="font-size:18px;font-weight:800;color:#b45309;margin:0;">${minVal.toLocaleString()} ر.س</p><p style="font-size:10px;color:#64748b;margin:4px 0 0;">${msChartData.labels[minIdx] || ''}</p></td>`;
-            html += `<td style="width:33.3%;background:#ede9fe;border:1px solid #c4b5fd;border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#7c3aed;margin:0 0 4px;font-weight:600;">متوسط المبيعات (لأيام العمل)</p><p style="font-size:18px;font-weight:800;color:#6d28d9;margin:0;">${avgVal.toLocaleString()} ر.س</p></td>`;
+            html += `<td style="width:33.3%;background:#dbeafe;border:1px solid #93c5fd;border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#2563eb;margin:0 0 4px;font-weight:600;">أعلى مبيعات يومية</p><p style="font-size:18px;font-weight:800;color:#1d4ed8;margin:0;">${maxVal.toLocaleString()} <span style="font-size:0.85em;">﷼</span></p><p style="font-size:10px;color:#64748b;margin:4px 0 0;">${msChartData.labels[maxIdx] || ''}</p></td>`;
+            html += `<td style="width:33.3%;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#d97706;margin:0 0 4px;font-weight:600;">أقل مبيعات (أيام العمل)</p><p style="font-size:18px;font-weight:800;color:#b45309;margin:0;">${minVal.toLocaleString()} <span style="font-size:0.85em;">﷼</span></p><p style="font-size:10px;color:#64748b;margin:4px 0 0;">${msChartData.labels[minIdx] || ''}</p></td>`;
+            html += `<td style="width:33.3%;background:#ede9fe;border:1px solid #c4b5fd;border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#7c3aed;margin:0 0 4px;font-weight:600;">متوسط المبيعات (لأيام العمل)</p><p style="font-size:18px;font-weight:800;color:#6d28d9;margin:0;">${avgVal.toLocaleString()} <span style="font-size:0.85em;">﷼</span></p></td>`;
             html += `</tr></table>`;
 
             if (chartImage) {
@@ -967,7 +969,7 @@
             html += `<table style="width:100%;border-collapse:collapse;">`;
             html += `<thead><tr style="background:#f1f5f9;"><th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:700;text-align:right;color:#475569;">التاريخ</th><th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:700;text-align:right;color:#475569;">المبالغ المحررة</th></tr></thead>`;
             html += `<tbody>${tableRows}</tbody>`;
-            html += `<tfoot><tr style="background:#f1f5f9;font-weight:800;"><td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:13px;">الإجمالي</td><td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:13px;color:#047857;text-align:right;">${totalBilled.toLocaleString()} ر.س</td></tr></tfoot>`;
+            html += `<tfoot><tr style="background:#f1f5f9;font-weight:800;"><td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:13px;">الإجمالي</td><td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:13px;color:#047857;text-align:right;">${totalBilled.toLocaleString()} <span style="font-weight:800;font-size:0.9em;">﷼</span></td></tr></tfoot>`;
             html += `</table></div>`;
 
             html += `<div style="margin-top:48px;padding-top:24px;border-top:2px solid #e2e8f0;text-align:center;">`;
@@ -996,15 +998,15 @@
                 const imgWidth = 210;
                 const pageHeight = 297;
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                
+
                 const pdf = new jsPDF('p', 'mm', 'a4');
-                
+
                 let heightLeft = imgHeight;
                 let position = 0;
-                
+
                 pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
                 heightLeft -= pageHeight;
-                
+
                 while (heightLeft > 0) {
                     position = -(imgHeight - heightLeft);
                     pdf.addPage();
@@ -1067,10 +1069,7 @@
             document.getElementById('ar-date-display').innerText = `التاريخ: ${date}`;
             const data30 = window.dailyStatementsArr || [];
             
-            // استخراج الشهر المختار (مثال: 2025-05)
             const selectedMonthKey = date.substring(0, 7); 
-            
-            // فلترة البيانات اليومية لتشمل الشهر المختار فقط
             const monthData = data30.filter(d => d.date && d.date.startsWith(selectedMonthKey));
             const dayData = data30.find(d => d.date === date);
             
@@ -1096,7 +1095,7 @@
                 }
                 cardsHtml += `<div class="p-4 rounded-lg border ${field.color} shadow-sm">
                     <span class="block text-xs font-medium mb-1">${field.label}</span>
-                    <span class="block text-xl font-extrabold">${currentValue.toLocaleString()} ر.س</span>
+                    <span class="block text-xl font-extrabold">${currentValue.toLocaleString()} <span class="currency">﷼</span></span>
                     <div class="mt-3 pt-2 border-t border-black/10 grid grid-cols-2 gap-2 text-[10px]">
                         <div><span class="block font-bold text-emerald-800">▲ أعلى مبلغ</span><span class="font-bold">${max.toLocaleString()}</span>${maxDate ? `<span class="block text-slate-600 mt-0.5"><i class="fa-regular fa-calendar ml-0.5"></i>${maxDate}</span>` : ''}</div>
                         <div><span class="block font-bold text-red-800">▼ أقل مبلغ</span><span class="font-bold">${min.toLocaleString()}</span>${minDate ? `<span class="block text-slate-600 mt-0.5"><i class="fa-regular fa-calendar ml-0.5"></i>${minDate}</span>` : ''}</div>
@@ -1105,12 +1104,10 @@
             });
             dailyCards.innerHTML = cardsHtml;
 
-            // تحديد الشهر الحالي
             const now = new Date();
             const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             let monthlyData = [];
 
-            // جلب البنود الشهرية: إذا كان الشهر المختار هو الحالي نأخذ من البنود النشطة، وإلا من الأرشيف
             if (selectedMonthKey === currentMonthKey) {
                 monthlyData = window.monthlyItemsArr || [];
             } else {
@@ -1142,14 +1139,14 @@
                     monthlyHtml += `<tr class="hover:bg-slate-50">
                         <td class="p-3 border border-slate-200 font-medium">${item.name}</td>
                         <td class="p-3 border border-slate-200 ${typeClass} text-center text-xs font-bold">${item.type}</td>
-                        <td class="p-3 border border-slate-200 text-red-700 font-bold text-center">${remaining.toLocaleString()} ر.س</td>
+                        <td class="p-3 border border-slate-200 text-red-700 font-bold text-center">${remaining.toLocaleString()} <span class="currency">﷼</span></td>
                     </tr>`;
                 });
             }
 
             tbody.innerHTML = monthlyHtml;
             tfooter.innerHTML = monthlyData.length > 0 
-                ? `<tr><td class="p-3 border border-slate-200" colspan="2">الإجمالي المتبقي من الالتزامات</td><td class="p-3 border border-slate-200 text-red-900 text-center font-extrabold">${totalRemaining.toLocaleString()} ر.س</td></tr>`
+                ? `<tr><td class="p-3 border border-slate-200" colspan="2">الإجمالي المتبقي من الالتزامات</td><td class="p-3 border border-slate-200 text-red-900 text-center font-extrabold">${totalRemaining.toLocaleString()} <span class="currency">﷼</span></td></tr>`
                 : '';
         }
         
@@ -1159,17 +1156,14 @@
 
             const element = document.getElementById('admin-report-content');
             
-            // التأكد من أن التقرير تم توليده
             if(!element.querySelector('#ar-daily-cards').innerHTML.trim()) {
                 return alert('يرجى النقر على "عرض التقرير" أولاً قبل التصدير');
             }
 
-            // إظهار شاشة التحميل
             const loadingEl = document.getElementById('pdf-loading-overlay');
             loadingEl.style.display = 'flex';
 
             try {
-                // إعطاء وقت للمحتوى أن يرسم
                 await new Promise(r => setTimeout(r, 500));
 
                 const canvas = await html2canvas(element, {
@@ -1182,8 +1176,8 @@
                 });
 
                 const { jsPDF } = window.jspdf;
-                const imgWidth = 210; // عرض A4 بالملم
-                const pageHeight = 297; // ارتفاع A4 بالملم
+                const imgWidth = 210;
+                const pageHeight = 297;
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
                 const pdf = new jsPDF('p', 'mm', 'a4');
@@ -1191,11 +1185,9 @@
                 let heightLeft = imgHeight;
                 let position = 0;
 
-                // الصفحة الأولى
                 pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
                 heightLeft -= pageHeight;
 
-                // صفحات إضافية إذا كان المحتوى طويلاً
                 while (heightLeft > 0) {
                     position = -(imgHeight - heightLeft);
                     pdf.addPage();
@@ -1211,7 +1203,6 @@
                 alert('حدث خطأ أثناء تصدير PDF: ' + err.message);
             }
 
-            // إخفاء شاشة التحميل
             loadingEl.style.display = 'none';
         }
 
