@@ -727,7 +727,7 @@
         }
 
         // =========================================
-        // ===   5. التقرير الشامل (تم إصلاح حساب القيم السالبة والصفر) ===
+        // ===   5. التقرير الشامل  ===
         // =========================================
         window.calcReportFull = async function() {
             const startDate = document.getElementById('rf-start').value; 
@@ -773,7 +773,6 @@
             
             const fields = [ { key: 'bankBalance', label: 'رصيد البنك' }, { key: 'caravansBalance', label: 'رصيد القوافل' }, { key: 'vendorsBalance', label: 'رصيد الموردين' }, { key: 'customersDue', label: 'مستحقة العملاء' }, { key: 'customersBilled', label: 'محررة العملاء' }, { key: 'collectionBalance', label: 'رصيد التحصيل' } ];
             fields.forEach(field => {
-                // تجاهل القيمة صفر للمبيعات (لأنها إجازة)، واحتسابها كأقل قيمة للأرصدة (لأنها رصيد حقيقي)
                 const filteredData = field.key === 'customersBilled' 
                     ? data.filter(d => Number(d[field.key]) !== 0) 
                     : data.filter(d => !isNaN(Number(d[field.key])));
@@ -1136,8 +1135,6 @@
             let cardsHtml = '';
             fields.forEach(field => {
                 const currentValue = dayData ? (Number(dayData[field.key]) || 0) : 0;
-                
-                // تجاهل القيمة صفر للمبيعات (لأنها إجازة)، واحتسابها كأقل قيمة للأرصدة (لأنها رصيد حقيقي)
                 const filteredData = field.key === 'customersBilled' 
                     ? data30.filter(d => Number(d[field.key]) !== 0) 
                     : data30.filter(d => !isNaN(Number(d[field.key])));
@@ -1225,26 +1222,172 @@
         window.exportAdminReportPDF = async function() {
             const dateInput = document.getElementById('ar-date').value;
             if(!dateInput) return alert('يرجى اختيار التاريخ وعرض التقرير أولاً');
-
-            const element = document.getElementById('admin-report-content');
             
-            if(!element.querySelector('#ar-daily-cards').innerHTML.trim()) {
+            // التحقق من وجود بيانات معروضة
+            const dailyCards = document.getElementById('ar-daily-cards');
+            if(!dailyCards.innerHTML.trim()) {
                 return alert('يرجى النقر على "عرض التقرير" أولاً قبل التصدير');
+            }
+
+            const date = normalizeDate(dateInput);
+            const allData = window.dailyStatementsArr || [];
+            
+            // استخراج نفس البيانات المعروضة على الشاشة
+            const selectedDateObj = new Date(date);
+            const startDateObj = new Date(selectedDateObj);
+            startDateObj.setDate(startDateObj.getDate() - 29);
+            const startDateStr = startDateObj.toISOString().split('T')[0];
+            
+            const data30 = allData.filter(d => d.date >= startDateStr && d.date <= date);
+            const dayData = allData.find(d => d.date === date);
+            
+            const fields = [
+                { key: 'bankBalance', label: 'الرصيد البنكي', color: '#1d4ed8', bgColor: '#dbeafe' },
+                { key: 'caravansBalance', label: 'رصيد القوافل', color: '#7e22ce', bgColor: '#f3e8ff' },
+                { key: 'vendorsBalance', label: 'رصيد الموردين', color: '#b91c1c', bgColor: '#fee2e2' },
+                { key: 'customersDue', label: 'مستحقة العملاء', color: '#b45309', bgColor: '#fef3c7' },
+                { key: 'customersBilled', label: 'محررة العملاء', color: '#047857', bgColor: '#d1fae5' },
+                { key: 'collectionBalance', label: 'رصيد التحصيل', color: '#0e7490', bgColor: '#cffafe' }
+            ];
+
+            const now = new Date();
+            const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const selectedMonthKey = date.substring(0, 7);
+            let monthlyData = [];
+
+            if (selectedMonthKey === currentMonthKey) {
+                monthlyData = window.monthlyItemsArr || [];
+            } else {
+                try {
+                    const snapshot = await get(ref(db, `monthlyArchive/${selectedMonthKey}`));
+                    if (snapshot.exists()) monthlyData = Object.values(snapshot.val());
+                } catch(e) { console.error(e); }
             }
 
             const loadingEl = document.getElementById('pdf-loading-overlay');
             loadingEl.style.display = 'flex';
 
-            try {
-                await new Promise(r => setTimeout(r, 500));
+            const workspace = document.getElementById('pdf-workspace');
+            workspace.innerHTML = '';
 
-                const canvas = await html2canvas(element, {
+            const contentDiv = document.createElement('div');
+            contentDiv.style.cssText = 'direction:rtl;font-family:Tajawal,sans-serif;color:#1e293b;width:760px;margin:0 auto;background:white;padding:40px 30px;';
+
+            let html = '';
+            
+            // 1. رأس التقرير
+            html += `<div style="text-align:center;border-bottom:3px solid #1e293b;padding-bottom:20px;margin-bottom:30px;">`;
+            html += `<h2 style="font-size:26px;font-weight:800;color:#1e293b;margin:0 0 6px;">زاد الجود للوجبات السريعة</h2>`;
+            html += `<h3 style="font-size:20px;font-weight:700;color:#4f46e5;margin:10px 0 6px;">التقرير المالي اليومي</h3>`;
+            html += `<p style="font-size:16px;color:#64748b;margin:0;font-weight:500;">التاريخ: ${date}</p>`;
+            html += `</div>`;
+
+            // 2. الأرصدة اليومية (تم تحويلها لجدول عريض لتكون واضحة بالـ PDF)
+            html += `<div style="margin-bottom:40px;">`;
+            html += `<h4 style="font-size:18px;font-weight:700;color:#334155;margin:0 0 20px;border-bottom:2px solid #e2e8f0;padding-bottom:10px;">أولاً: الأرصدة والبيان اليومي</h4>`;
+            html += `<table style="width:100%;border-collapse:collapse;font-size:15px;">`;
+            html += `<thead><tr style="background:#f1f5f9;">`;
+            html += `<th style="padding:12px;border:1px solid #cbd5e1;font-weight:700;text-align:right;width:25%;">البند</th>`;
+            html += `<th style="padding:12px;border:1px solid #cbd5e1;font-weight:700;text-align:center;width:25%;">الرصيد الحالي</th>`;
+            html += `<th style="padding:12px;border:1px solid #cbd5e1;font-weight:700;text-align:center;width:25%;">أعلى رصيد (30 يوم)</th>`;
+            html += `<th style="padding:12px;border:1px solid #cbd5e1;font-weight:700;text-align:center;width:25%;">أقل رصيد (30 يوم)</th>`;
+            html += `</tr></thead><tbody>`;
+
+            fields.forEach(field => {
+                const currentValue = dayData ? (Number(dayData[field.key]) || 0) : 0;
+                const filteredData = field.key === 'customersBilled' 
+                    ? data30.filter(d => Number(d[field.key]) !== 0) 
+                    : data30.filter(d => !isNaN(Number(d[field.key])));
+
+                let max = 0, min = 0, maxDate = '', minDate = '';
+                if (filteredData.length > 0) {
+                    const maxItem = filteredData.reduce((prev, current) => (Math.abs(Number(prev[field.key])) > Math.abs(Number(current[field.key]))) ? prev : current);
+                    max = Number(maxItem[field.key]) || 0; maxDate = maxItem.date || '';
+                    const minItem = filteredData.reduce((prev, current) => (Math.abs(Number(prev[field.key])) < Math.abs(Number(current[field.key]))) ? prev : current);
+                    min = Number(minItem[field.key]) || 0; minDate = minItem.date || '';
+                }
+
+                html += `<tr style="background:${field.bgColor};">`;
+                html += `<td style="padding:12px;border:1px solid #cbd5e1;font-weight:700;color:${field.color};">${field.label}</td>`;
+                html += `<td style="padding:12px;border:1px solid #cbd5e1;text-align:center;font-size:22px;font-weight:800;color:${field.color};">${currentValue.toLocaleString()} <span style="font-size:16px;">﷼</span></td>`;
+                html += `<td style="padding:12px;border:1px solid #cbd5e1;text-align:center;font-weight:600;">▲ ${max.toLocaleString()}<br><span style="font-size:11px;color:#64748b;">${maxDate}</span></td>`;
+                html += `<td style="padding:12px;border:1px solid #cbd5e1;text-align:center;font-weight:600;">▼ ${min.toLocaleString()}<br><span style="font-size:11px;color:#64748b;">${minDate}</span></td>`;
+                html += `</tr>`;
+            });
+
+            html += `</tbody></table></div>`;
+
+            // 3. البنود الشهرية
+            html += `<div style="margin-bottom:40px;">`;
+            html += `<h4 style="font-size:18px;font-weight:700;color:#334155;margin:0 0 20px;border-bottom:2px solid #e2e8f0;padding-bottom:10px;">ثانياً: المتبقي من الالتزامات والمصروفات الشهرية</h4>`;
+            html += `<table style="width:100%;border-collapse:collapse;font-size:15px;">`;
+            html += `<thead><tr style="background:#f1f5f9;">`;
+            html += `<th style="padding:12px;border:1px solid #cbd5e1;font-weight:700;text-align:right;">البند</th>`;
+            html += `<th style="padding:12px;border:1px solid #cbd5e1;font-weight:700;text-align:center;">التصنيف</th>`;
+            html += `<th style="padding:12px;border:1px solid #cbd5e1;font-weight:700;text-align:center;">المبلغ المقدر</th>`;
+            html += `<th style="padding:12px;border:1px solid #cbd5e1;font-weight:700;text-align:center;">المسدد</th>`;
+            html += `<th style="padding:12px;border:1px solid #cbd5e1;font-weight:700;text-align:center;">المتبقي</th>`;
+            html += `</tr></thead><tbody>`;
+
+            let totalEstimated = 0, totalPaid = 0, totalRemaining = 0;
+
+            if (monthlyData.length === 0) {
+                html += `<tr><td colspan="5" style="padding:20px;border:1px solid #cbd5e1;text-align:center;color:#94a3b8;">لا توجد بنود شهرية مسجلة</td></tr>`;
+            } else {
+                monthlyData.forEach(item => {
+                    const estimated = (item.totalAmount || 0);
+                    const paid = (item.paidAmount || 0);
+                    const remaining = estimated - paid;
+                    
+                    totalEstimated += estimated;
+                    totalPaid += paid;
+                    totalRemaining += remaining;
+
+                    const typeColor = item.type === 'التزام' ? '#c2410c' : '#1d4ed8';
+                    html += `<tr>`;
+                    html += `<td style="padding:12px;border:1px solid #cbd5e1;font-weight:600;">${item.name}</td>`;
+                    html += `<td style="padding:12px;border:1px solid #cbd5e1;text-align:center;color:${typeColor};font-weight:700;">${item.type}</td>`;
+                    html += `<td style="padding:12px;border:1px solid #cbd5e1;text-align:center;">${estimated.toLocaleString()} <span style="font-size:13px;">﷼</span></td>`;
+                    html += `<td style="padding:12px;border:1px solid #cbd5e1;text-align:center;color:#047857;font-weight:600;">${paid.toLocaleString()} <span style="font-size:13px;">﷼</span></td>`;
+                    html += `<td style="padding:12px;border:1px solid #cbd5e1;text-align:center;color:#b91c1c;font-weight:800;">${remaining.toLocaleString()} <span style="font-size:13px;">﷼</span></td>`;
+                    html += `</tr>`;
+                });
+            }
+
+            html += `</tbody>`;
+
+            if (monthlyData.length > 0) {
+                html += `<tfoot><tr style="background:#f1f5f9;">`;
+                html += `<td style="padding:12px;border:1px solid #cbd5e1;font-weight:800;" colspan="2">الإجمالي</td>`;
+                html += `<td style="padding:12px;border:1px solid #cbd5e1;text-align:center;font-weight:800;">${totalEstimated.toLocaleString()} <span style="font-size:13px;">﷼</span></td>`;
+                html += `<td style="padding:12px;border:1px solid #cbd5e1;text-align:center;font-weight:800;color:#047857;">${totalPaid.toLocaleString()} <span style="font-size:13px;">﷼</span></td>`;
+                html += `<td style="padding:12px;border:1px solid #cbd5e1;text-align:center;font-weight:800;color:#b91c1c;">${totalRemaining.toLocaleString()} <span style="font-size:13px;">﷼</span></td>`;
+                html += `</tr></tfoot>`;
+            }
+
+            html += `</table></div>`;
+
+            // 4. التوقيع
+            html += `<div style="margin-top:80px;padding-top:30px;border-top:2px solid #e2e8f0;text-align:center;">`;
+            html += `<p style="font-size:14px;color:#64748b;margin:0 0 60px;">المدير المالى</p>`;
+            html += `<div style="border-bottom:1px solid #94a3b8;width:250px;margin:0 auto;"></div>`;
+            html += `<p style="font-size:16px;font-weight:700;color:#334155;margin:10px 0 0;">Reyad Hussein</p>`;
+            html += `</div>`;
+
+            contentDiv.innerHTML = html;
+            workspace.appendChild(contentDiv);
+            workspace.style.display = 'block';
+
+            await new Promise(r => setTimeout(r, 1500));
+
+            try {
+                const canvas = await html2canvas(contentDiv, {
                     scale: 2,
                     useCORS: true,
                     backgroundColor: '#ffffff',
                     logging: false,
-                    width: element.scrollWidth,
-                    height: element.scrollHeight
+                    width: contentDiv.scrollWidth,
+                    height: contentDiv.scrollHeight
                 });
 
                 const { jsPDF } = window.jspdf;
@@ -1267,7 +1410,7 @@
                     heightLeft -= pageHeight;
                 }
 
-                const fileName = `تقرير_الإدارة_${dateInput}.pdf`;
+                const fileName = `تقرير_الإدارة_${date}.pdf`;
                 pdf.save(fileName);
 
             } catch(err) {
@@ -1275,6 +1418,8 @@
                 alert('حدث خطأ أثناء تصدير PDF: ' + err.message);
             }
 
+            workspace.style.display = 'none';
+            workspace.innerHTML = '';
             loadingEl.style.display = 'none';
         }
 
