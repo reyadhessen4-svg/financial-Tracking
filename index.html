@@ -727,7 +727,7 @@
         }
 
         // =========================================
-        // ===   5. التقرير الشامل (تم إصلاح حساب القيم السالبة) ===
+        // ===   5. التقرير الشامل (تم إصلاح حساب القيم السالبة والصفر) ===
         // =========================================
         window.calcReportFull = async function() {
             const startDate = document.getElementById('rf-start').value; 
@@ -773,9 +773,13 @@
             
             const fields = [ { key: 'bankBalance', label: 'رصيد البنك' }, { key: 'caravansBalance', label: 'رصيد القوافل' }, { key: 'vendorsBalance', label: 'رصيد الموردين' }, { key: 'customersDue', label: 'مستحقة العملاء' }, { key: 'customersBilled', label: 'محررة العملاء' }, { key: 'collectionBalance', label: 'رصيد التحصيل' } ];
             fields.forEach(field => {
-                const filteredData = data.filter(d => Number(d[field.key]) !== 0); let max = 0, min = 0, maxDate = '', minDate = '';
+                // تجاهل القيمة صفر للمبيعات (لأنها إجازة)، واحتسابها كأقل قيمة للأرصدة (لأنها رصيد حقيقي)
+                const filteredData = field.key === 'customersBilled' 
+                    ? data.filter(d => Number(d[field.key]) !== 0) 
+                    : data.filter(d => !isNaN(Number(d[field.key])));
+
+                let max = 0, min = 0, maxDate = '', minDate = '';
                 if (filteredData.length > 0) {
-                    // استخدام القيمة المطلقة للمقارنة لتحديد أعلى وأقل مبلغ (لحل مشكلة الأرقام السالبة)
                     const maxItem = filteredData.reduce((prev, current) => (Math.abs(Number(prev[field.key])) > Math.abs(Number(current[field.key]))) ? prev : current); 
                     max = Number(maxItem[field.key]) || 0; maxDate = maxItem.date || '';
                     const minItem = filteredData.reduce((prev, current) => (Math.abs(Number(prev[field.key])) < Math.abs(Number(current[field.key]))) ? prev : current); 
@@ -1103,7 +1107,7 @@
         }
 
         // =========================================
-        // ===  7. تقرير الإدارة (تم إصلاح حساب القيم السالبة والـ 30 يوم) ===
+        // ===  7. تقرير الإدارة (تم إصلاح حساب القيم السالبة والصفر) ===
         // =========================================
         window.generateAdminReport = async function() {
             const dateInput = document.getElementById('ar-date').value;
@@ -1112,13 +1116,11 @@
             document.getElementById('ar-date-display').innerText = `التاريخ: ${date}`;
             const allData = window.dailyStatementsArr || [];
             
-            // تحديد فترة 30 يوم المنتهية بالتاريخ المختار
             const selectedDateObj = new Date(date);
             const startDateObj = new Date(selectedDateObj);
             startDateObj.setDate(startDateObj.getDate() - 29);
             const startDateStr = startDateObj.toISOString().split('T')[0];
             
-            // فلترة البيانات لتشمل آخر 30 يوم من تاريخ الاستعلام
             const data30 = allData.filter(d => d.date >= startDateStr && d.date <= date);
             const dayData = allData.find(d => d.date === date);
             
@@ -1134,10 +1136,14 @@
             let cardsHtml = '';
             fields.forEach(field => {
                 const currentValue = dayData ? (Number(dayData[field.key]) || 0) : 0;
-                const filteredData = data30.filter(d => Number(d[field.key]) !== 0);
+                
+                // تجاهل القيمة صفر للمبيعات (لأنها إجازة)، واحتسابها كأقل قيمة للأرصدة (لأنها رصيد حقيقي)
+                const filteredData = field.key === 'customersBilled' 
+                    ? data30.filter(d => Number(d[field.key]) !== 0) 
+                    : data30.filter(d => !isNaN(Number(d[field.key])));
+
                 let max = 0, min = 0, maxDate = '', minDate = '';
                 if (filteredData.length > 0) {
-                    // استخدام القيمة المطلقة للمقارنة لتحديد أعلى وأقل مبلغ (لحل مشكلة الأرقام السالبة)
                     const maxItem = filteredData.reduce((prev, current) => (Math.abs(Number(prev[field.key])) > Math.abs(Number(current[field.key]))) ? prev : current);
                     max = Number(maxItem[field.key]) || 0; maxDate = maxItem.date || '';
                     const minItem = filteredData.reduce((prev, current) => (Math.abs(Number(prev[field.key])) < Math.abs(Number(current[field.key]))) ? prev : current);
@@ -1154,7 +1160,6 @@
             });
             dailyCards.innerHTML = cardsHtml;
 
-            // جلب البنود الشهرية بناءً على الشهر المختار
             const now = new Date();
             const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             const selectedMonthKey = date.substring(0, 7);
