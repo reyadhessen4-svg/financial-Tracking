@@ -38,7 +38,7 @@
     <div id="login-screen" class="min-h-screen w-full bg-gradient-to-br from-[#0c1222] via-[#141b2d] to-[#0f1535] flex items-center justify-center relative overflow-hidden">
         <div class="absolute inset-0 overflow-hidden">
             <div class="absolute -top-40 -right-40 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl animate-pulse"></div>
-            <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s"></div>
+            <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl animate-pulse" style="animationDelay: '1s'"></div>
         </div>
         <div class="relative z-10 flex flex-col items-center gap-6 w-full max-w-md px-4">
             <div class="flex flex-col items-center gap-3">
@@ -727,7 +727,7 @@
         }
 
         // =========================================
-        // ===   5. التقرير الشامل  ===
+        // ===   5. التقرير الشامل (تم إصلاح حساب القيم السالبة والصفر) ===
         // =========================================
         window.calcReportFull = async function() {
             const startDate = document.getElementById('rf-start').value; 
@@ -752,10 +752,17 @@
                         const snapshot = await get(ref(db, `monthlyArchive/${selectedMonthKey}`));
                         if (snapshot.exists()) {
                             monthlyItems = Object.values(snapshot.val());
-                        } else { monthlyItems = []; }
-                    } catch(e) { console.error('خطأ في تحميل الأرشيف:', e); monthlyItems = []; }
+                        } else {
+                            monthlyItems = [];
+                        }
+                    } catch(e) {
+                        console.error('خطأ في تحميل الأرشيف:', e);
+                        monthlyItems = [];
+                    }
                 }
-            } else { monthlyItems = window.monthlyItemsArr || []; }
+            } else {
+                monthlyItems = window.monthlyItemsArr || [];
+            }
 
             const totalDue = monthlyItems.reduce((sum, item) => sum + (item.totalAmount||0), 0);
             const totalPaid = monthlyItems.reduce((sum, item) => sum + (item.paidAmount||0), 0);
@@ -766,6 +773,7 @@
             
             const fields = [ { key: 'bankBalance', label: 'رصيد البنك' }, { key: 'caravansBalance', label: 'رصيد القوافل' }, { key: 'vendorsBalance', label: 'رصيد الموردين' }, { key: 'customersDue', label: 'مستحقة العملاء' }, { key: 'customersBilled', label: 'محررة العملاء' }, { key: 'collectionBalance', label: 'رصيد التحصيل' } ];
             fields.forEach(field => {
+                // تجاهل القيمة صفر للمبيعات (لأنها إجازة)، واحتسابها كأقل قيمة للأرصدة (لأنها رصيد حقيقي)
                 const filteredData = field.key === 'customersBilled' 
                     ? data.filter(d => Number(d[field.key]) !== 0) 
                     : data.filter(d => !isNaN(Number(d[field.key])));
@@ -782,64 +790,288 @@
         }
 
         // =========================================
-        // ===   5.5 المبيعات الشهرية   ===
+        // ===   5.5 المبيعات الشهرية (مطوّر)   ===
         // =========================================
+
         window.setChartType = function(type) {
             msCurrentChartType = type;
-            document.getElementById('btn-chart-bar').className = type === 'bar' ? 'px-3 py-1 text-xs rounded-lg bg-indigo-100 text-indigo-700 font-medium' : 'px-3 py-1 text-xs rounded-lg bg-slate-100 text-slate-600 font-medium';
-            document.getElementById('btn-chart-line').className = type === 'line' ? 'px-3 py-1 text-xs rounded-lg bg-indigo-100 text-indigo-700 font-medium' : 'px-3 py-1 text-xs rounded-lg bg-slate-100 text-slate-600 font-medium';
-            if (msChartData.labels.length > 0) buildChart(msChartData.labels, msChartData.values);
+            document.getElementById('btn-chart-bar').className = type === 'bar' 
+                ? 'px-3 py-1 text-xs rounded-lg bg-indigo-100 text-indigo-700 font-medium transition-colors' 
+                : 'px-3 py-1 text-xs rounded-lg bg-slate-100 text-slate-600 font-medium transition-colors';
+            document.getElementById('btn-chart-line').className = type === 'line' 
+                ? 'px-3 py-1 text-xs rounded-lg bg-indigo-100 text-indigo-700 font-medium transition-colors' 
+                : 'px-3 py-1 text-xs rounded-lg bg-slate-100 text-slate-600 font-medium transition-colors';
+            if (msChartData.labels.length > 0) {
+                buildChart(msChartData.labels, msChartData.values);
+            }
         }
 
         function buildChart(labels, values) {
             if (msChartInstance) { msChartInstance.destroy(); msChartInstance = null; }
+
             const ctx = document.getElementById('ms-chart').getContext('2d');
+
             const barGradient = ctx.createLinearGradient(0, 0, 0, 380);
-            barGradient.addColorStop(0, 'rgba(16, 185, 129, 0.85)'); barGradient.addColorStop(1, 'rgba(16, 185, 129, 0.15)');
+            barGradient.addColorStop(0, 'rgba(16, 185, 129, 0.85)');
+            barGradient.addColorStop(1, 'rgba(16, 185, 129, 0.15)');
+
             const lineGradient = ctx.createLinearGradient(0, 0, 0, 380);
-            lineGradient.addColorStop(0, 'rgba(99, 102, 241, 0.3)'); lineGradient.addColorStop(1, 'rgba(99, 102, 241, 0.01)');
+            lineGradient.addColorStop(0, 'rgba(99, 102, 241, 0.3)');
+            lineGradient.addColorStop(1, 'rgba(99, 102, 241, 0.01)');
+
             const isBar = msCurrentChartType === 'bar';
-            const dataset = isBar ? { label: 'المبيعات (﷼)', data: values, backgroundColor: barGradient, borderColor: 'rgba(16, 185, 129, 1)', borderWidth: 2, borderRadius: 6, borderSkipped: false, maxBarThickness: 50 } : { label: 'المبيعات (﷼)', data: values, borderColor: 'rgba(99, 102, 241, 1)', backgroundColor: lineGradient, borderWidth: 3, fill: true, tension: 0.4, pointBackgroundColor: 'rgba(99, 102, 241, 1)', pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 5, pointHoverRadius: 8 };
-            msChartInstance = new Chart(ctx, { type: isBar ? 'bar' : 'line', data: { labels: labels, datasets: [dataset] }, options: { responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' }, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1e293b', titleFont: { family: 'Tajawal', size: 12 }, bodyFont: { family: 'Tajawal', size: 13, weight: 'bold' }, padding: 12, cornerRadius: 8, displayColors: false, callbacks: { title: function(items) { return items[0].label; }, label: function(context) { return context.parsed.y.toLocaleString() + ' ﷼'; } } } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false }, ticks: { font: { family: 'Tajawal', size: 11 }, callback: function(value) { return value.toLocaleString(); } } }, x: { grid: { display: false }, ticks: { font: { family: 'Tajawal', size: 10 }, maxRotation: 60, minRotation: 0, maxTicksLimit: 30 } } }, animation: { duration: 800, easing: 'easeOutQuart' } } });
+
+            const dataset = isBar ? {
+                label: 'المبيعات (﷼)',
+                data: values,
+                backgroundColor: barGradient,
+                borderColor: 'rgba(16, 185, 129, 1)',
+                borderWidth: 2,
+                borderRadius: 6,
+                borderSkipped: false,
+                maxBarThickness: 50,
+            } : {
+                label: 'المبيعات (﷼)',
+                data: values,
+                borderColor: 'rgba(99, 102, 241, 1)',
+                backgroundColor: lineGradient,
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: 'rgba(99, 102, 241, 1)',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 8,
+            };
+
+            msChartInstance = new Chart(ctx, {
+                type: isBar ? 'bar' : 'line',
+                data: { labels: labels, datasets: [dataset] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleFont: { family: 'Tajawal', size: 12 },
+                            bodyFont: { family: 'Tajawal', size: 13, weight: 'bold' },
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                title: function(items) { return items[0].label; },
+                                label: function(context) { return context.parsed.y.toLocaleString() + ' ﷼'; }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
+                            ticks: { font: { family: 'Tajawal', size: 11 }, callback: function(value) { return value.toLocaleString(); } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Tajawal', size: 10 }, maxRotation: 60, minRotation: 0, maxTicksLimit: 30 }
+                        }
+                    },
+                    animation: { duration: 800, easing: 'easeOutQuart' }
+                }
+            });
         }
 
         window.calcMonthlySales = function() {
-            const startDate = document.getElementById('ms-start').value; const endDate = document.getElementById('ms-end').value;
+            const startDate = document.getElementById('ms-start').value;
+            const endDate = document.getElementById('ms-end').value;
             let data = window.dailyStatementsArr || [];
-            if(startDate) data = data.filter(d => d.date >= startDate); if(endDate) data = data.filter(d => d.date <= endDate);
+            if(startDate) data = data.filter(d => d.date >= startDate);
+            if(endDate) data = data.filter(d => d.date <= endDate);
+
             const sortedData = [...data].sort((a, b) => String(a.date).localeCompare(String(b.date)));
-            let totalBilled = 0; const tbody = document.getElementById('ms-table-body'); tbody.innerHTML = '';
-            if(sortedData.length === 0) { tbody.innerHTML = '<tr><td colspan="2" class="p-4 text-center text-slate-400">لا توجد بيانات</td></tr>'; document.getElementById('ms-total-card').classList.add('hidden'); document.getElementById('ms-chart-container').classList.add('hidden'); document.getElementById('ms-stats-cards').classList.add('hidden'); document.getElementById('ms-pdf-btn').style.display = 'none'; return; }
-            document.getElementById('ms-total-card').classList.remove('hidden'); document.getElementById('ms-chart-container').classList.remove('hidden'); document.getElementById('ms-stats-cards').classList.remove('hidden'); document.getElementById('ms-pdf-btn').style.display = 'flex';
-            const labels = []; const values = []; let maxVal = 0, minVal = Infinity, maxDate = '', minDate = ''; let operatingDaysCount = 0;
+
+            let totalBilled = 0;
+            const tbody = document.getElementById('ms-table-body');
+            tbody.innerHTML = '';
+
+            if(sortedData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="2" class="p-4 text-center text-slate-400">لا توجد بيانات لهذه الفترة</td></tr>';
+                document.getElementById('ms-total-card').classList.add('hidden');
+                document.getElementById('ms-chart-container').classList.add('hidden');
+                document.getElementById('ms-stats-cards').classList.add('hidden');
+                document.getElementById('ms-pdf-btn').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('ms-total-card').classList.remove('hidden');
+            document.getElementById('ms-chart-container').classList.remove('hidden');
+            document.getElementById('ms-stats-cards').classList.remove('hidden');
+            document.getElementById('ms-pdf-btn').style.display = 'flex';
+
+            const labels = [];
+            const values = [];
+            let maxVal = 0, minVal = Infinity, maxDate = '', minDate = '';
+            let operatingDaysCount = 0;
+
             let rowsHtml = '';
-            sortedData.forEach(item => { const billed = Number(item.customersBilled) || 0; totalBilled += billed; rowsHtml += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${item.date}</td><td class="p-4 text-emerald-700 font-bold">${billed.toLocaleString()} <span class="currency">﷼</span></td></tr>`; labels.push(item.date); values.push(billed); if (billed > maxVal) { maxVal = billed; maxDate = item.date; } if (billed > 0 && billed < minVal) { minVal = billed; minDate = item.date; } if (billed > 0) operatingDaysCount++; });
-            tbody.innerHTML = rowsHtml; document.getElementById('ms-total-val').innerHTML = `${totalBilled.toLocaleString()} <span class="text-lg font-bold opacity-80">﷼</span>`;
-            if (minVal === Infinity) { minVal = 0; } const avg = operatingDaysCount > 0 ? Math.round(totalBilled / operatingDaysCount) : 0;
-            document.getElementById('ms-max-val').innerHTML = `${maxVal.toLocaleString()} <span class="currency">﷼</span>`; document.getElementById('ms-max-date').innerHTML = maxDate ? `<i class="fa-regular fa-calendar ml-1"></i>${maxDate}` : '';
-            document.getElementById('ms-min-val').innerHTML = `${minVal.toLocaleString()} <span class="currency">﷼</span>`; document.getElementById('ms-min-date').innerHTML = minDate ? `<i class="fa-regular fa-calendar ml-1"></i>${minDate}` : '';
+            sortedData.forEach(item => {
+                const billed = Number(item.customersBilled) || 0;
+                totalBilled += billed;
+                rowsHtml += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${item.date}</td><td class="p-4 text-emerald-700 font-bold">${billed.toLocaleString()} <span class="currency">﷼</span></td></tr>`;
+                labels.push(item.date);
+                values.push(billed);
+                
+                if (billed > maxVal) { maxVal = billed; maxDate = item.date; }
+                if (billed > 0 && billed < minVal) { minVal = billed; minDate = item.date; }
+                if (billed > 0) operatingDaysCount++;
+            });
+
+            tbody.innerHTML = rowsHtml;
+            document.getElementById('ms-total-val').innerHTML = `${totalBilled.toLocaleString()} <span class="text-lg font-bold opacity-80">﷼</span>`;
+
+            if (minVal === Infinity) { minVal = 0; }
+
+            const avg = operatingDaysCount > 0 ? Math.round(totalBilled / operatingDaysCount) : 0;
+
+            document.getElementById('ms-max-val').innerHTML = `${maxVal.toLocaleString()} <span class="currency">﷼</span>`;
+            document.getElementById('ms-max-date').innerHTML = maxDate ? `<i class="fa-regular fa-calendar ml-1"></i>${maxDate}` : '';
+            document.getElementById('ms-min-val').innerHTML = `${minVal.toLocaleString()} <span class="currency">﷼</span>`;
+            document.getElementById('ms-min-date').innerHTML = minDate ? `<i class="fa-regular fa-calendar ml-1"></i>${minDate}` : '';
             document.getElementById('ms-avg-val').innerHTML = `${avg.toLocaleString()} <span class="currency">﷼</span>`;
-            msChartData = { labels, values }; buildChart(labels, values);
+
+            msChartData = { labels, values };
+            buildChart(labels, values);
         }
 
         window.exportMonthlySalesPDF = async function() {
-            if (msChartData.labels.length === 0) return alert('لا توجد بيانات للتصدير.');
-            const startDate = document.getElementById('ms-start').value; const endDate = document.getElementById('ms-end').value;
+            if (msChartData.labels.length === 0) return alert('لا توجد بيانات للتصدير. يرجى عرض المبيعات أولاً.');
+
+            const startDate = document.getElementById('ms-start').value;
+            const endDate = document.getElementById('ms-end').value;
+            const periodText = startDate && endDate ? `من ${startDate} إلى ${endDate}` 
+                : startDate ? `من ${startDate}` 
+                : endDate ? `إلى ${endDate}` 
+                : 'كل الفترة المتاحة';
+
             const chartImage = msChartInstance ? msChartInstance.toBase64Image('image/png', 1) : '';
-            const totalBilled = msChartData.values.reduce((s, v) => s + v, 0); const maxVal = Math.max(...msChartData.values); const positiveValues = msChartData.values.filter(v => v > 0); const minVal = positiveValues.length > 0 ? Math.min(...positiveValues) : 0; const avgVal = positiveValues.length > 0 ? Math.round(totalBilled / positiveValues.length) : 0;
-            let tableRows = ''; msChartData.labels.forEach((label, i) => { const val = msChartData.values[i]; tableRows += `<tr><td style="padding:8px 12px;border:1px solid #cbd5e1;font-size:14px;">${label}</td><td style="padding:8px 12px;border:1px solid #cbd5e1;font-size:14px;font-weight:700;color:#047857;text-align:right;">${val.toLocaleString()} ﷼</td></tr>`; });
-            const loadingEl = document.getElementById('pdf-loading-overlay'); loadingEl.style.display = 'flex';
-            const workspace = document.getElementById('pdf-workspace'); workspace.innerHTML = '';
-            const contentDiv = document.createElement('div'); contentDiv.style.cssText = 'direction:rtl;font-family:Tajawal,sans-serif;color:#1e293b;width:794px;margin:0 auto;background:white;padding:40px;';
-            let html = `<div style="text-align:center;border-bottom:3px solid #1e293b;padding-bottom:20px;margin-bottom:24px;"><h2 style="font-size:26px;font-weight:800;margin:0 0 4px;">زاد الجود للوجبات السريعة</h2><h3 style="font-size:20px;font-weight:700;color:#4f46e5;margin:8px 0 4px;">تقرير المبيعات الشهرية</h3><p style="font-size:16px;color:#64748b;margin:0;">الفترة: ${startDate || 'البداية'} إلى ${endDate || 'النهاية'}</p></div>`;
-            html += `<div style="background:#d1fae5;border:2px solid #6ee7b7;border-radius:10px;padding:20px;margin-bottom:20px;"><p style="font-size:16px;color:#059669;margin:0 0 6px;">إجمالي المبيعات</p><p style="font-size:32px;font-weight:800;color:#047857;margin:0;">${totalBilled.toLocaleString()} ﷼</p></div>`;
-            html += `<table style="width:100%;border-collapse:separate;border-spacing:10px;margin-bottom:24px;"><tr><td style="width:33.3%;background:#dbeafe;border-radius:8px;padding:14px;text-align:center;"><p style="font-size:14px;color:#2563eb;margin:0 0 4px;font-weight:600;">أعلى مبيعات</p><p style="font-size:22px;font-weight:800;color:#1d4ed8;margin:0;">${maxVal.toLocaleString()} ﷼</p></td><td style="width:33.3%;background:#fef3c7;border-radius:8px;padding:14px;text-align:center;"><p style="font-size:14px;color:#d97706;margin:0 0 4px;font-weight:600;">أقل مبيعات (العمل)</p><p style="font-size:22px;font-weight:800;color:#b45309;margin:0;">${minVal.toLocaleString()} ﷼</p></td><td style="width:33.3%;background:#ede9fe;border-radius:8px;padding:14px;text-align:center;"><p style="font-size:14px;color:#7c3aed;margin:0 0 4px;font-weight:600;">المتوسط اليومي</p><p style="font-size:22px;font-weight:800;color:#6d28d9;margin:0;">${avgVal.toLocaleString()} ﷼</p></td></tr></table>`;
-            if (chartImage) { html += `<div style="margin-bottom:24px;text-align:center;"><img src="${chartImage}" style="max-width:100%;max-height:350px;"></div>`; }
-            html += `<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f1f5f9;"><th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:14px;">التاريخ</th><th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:14px;text-align:right;">المبالغ المحررة</th></tr></thead><tbody>${tableRows}</tbody></table>`;
-            contentDiv.innerHTML = html; workspace.appendChild(contentDiv); workspace.style.display = 'block';
-            await new Promise(r => setTimeout(r, 1000));
-            try { const canvas = await html2canvas(contentDiv, { scale: 2, useCORS: true, backgroundColor: '#ffffff' }); const { jsPDF } = window.jspdf; const imgWidth = 210; const pageHeight = 297; const imgHeight = (canvas.height * imgWidth) / canvas.width; const pdf = new jsPDF('p', 'mm', 'a4'); let heightLeft = imgHeight; let position = 0; pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight); heightLeft -= pageHeight; while (heightLeft > 0) { position = -(imgHeight - heightLeft); pdf.addPage(); pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight); heightLeft -= pageHeight; } pdf.save(`تقرير_المبيعات.pdf`); } catch(err) { alert('حدث خطأ أثناء التصدير'); }
-            workspace.style.display = 'none'; workspace.innerHTML = ''; loadingEl.style.display = 'none';
+
+            const totalBilled = msChartData.values.reduce((s, v) => s + v, 0);
+            const maxVal = Math.max(...msChartData.values);
+            const positiveValues = msChartData.values.filter(v => v > 0);
+            const minVal = positiveValues.length > 0 ? Math.min(...positiveValues) : 0;
+            const avgVal = positiveValues.length > 0 ? Math.round(totalBilled / positiveValues.length) : 0;
+            
+            const maxIdx = msChartData.values.indexOf(maxVal);
+            const minIdx = msChartData.values.indexOf(minVal);
+
+            let tableRows = '';
+            msChartData.labels.forEach((label, i) => {
+                const val = msChartData.values[i];
+                const isMax = val === maxVal;
+                const isMin = val === minVal && msChartData.values.length > 1;
+                const rowBg = isMax ? 'background:#d1fae5;' : isMin ? 'background:#fef3c7;' : '';
+                tableRows += `<tr style="${rowBg}"><td style="padding:8px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:500;">${label}</td><td style="padding:8px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:700;color:#047857;text-align:right;">${val.toLocaleString()} <span style="font-weight:800;font-size:0.9em;">﷼</span>${isMax ? ' ▲' : ''}${isMin ? ' ▼' : ''}</td></tr>`;
+            });
+
+            const loadingEl = document.getElementById('pdf-loading-overlay');
+            loadingEl.style.display = 'flex';
+
+            const workspace = document.getElementById('pdf-workspace');
+            workspace.innerHTML = '';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.style.cssText = 'direction:rtl;font-family:Tajawal,sans-serif;color:#1e293b;width:760px;margin:0 auto;background:white;padding:30px;';
+
+            let html = '';
+            
+            html += `<div style="text-align:center;border-bottom:3px solid #1e293b;padding-bottom:20px;margin-bottom:24px;">`;
+            html += `<h2 style="font-size:22px;font-weight:800;color:#1e293b;margin:0 0 4px;">زاد الجود للوجبات السريعة</h2>`;
+            html += `<h3 style="font-size:17px;font-weight:700;color:#4f46e5;margin:8px 0 4px;">تقرير المبيعات الشهرية</h3>`;
+            html += `<p style="font-size:13px;color:#64748b;margin:0;font-weight:500;">الفترة: ${periodText}</p>`;
+            html += `</div>`;
+
+            html += `<div style="background:#d1fae5;border:2px solid #6ee7b7;border-radius:10px;padding:20px;margin-bottom:20px;">`;
+            html += `<p style="font-size:13px;color:#059669;margin:0 0 6px;font-weight:500;">إجمالي المبيعات خلال الفترة</p>`;
+            html += `<p style="font-size:28px;font-weight:800;color:#047857;margin:0;">${totalBilled.toLocaleString()} <span style="font-size:22px;font-weight:800;">﷼</span></p>`;
+            html += `</div>`;
+
+            html += `<table style="width:100%;border-collapse:separate;border-spacing:10px;margin-bottom:24px;"><tr>`;
+            html += `<td style="width:33.3%;background:#dbeafe;border:1px solid #93c5fd;border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#2563eb;margin:0 0 4px;font-weight:600;">أعلى مبيعات يومية</p><p style="font-size:18px;font-weight:800;color:#1d4ed8;margin:0;">${maxVal.toLocaleString()} <span style="font-size:0.85em;">﷼</span></p><p style="font-size:10px;color:#64748b;margin:4px 0 0;">${msChartData.labels[maxIdx] || ''}</p></td>`;
+            html += `<td style="width:33.3%;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#d97706;margin:0 0 4px;font-weight:600;">أقل مبيعات (أيام العمل)</p><p style="font-size:18px;font-weight:800;color:#b45309;margin:0;">${minVal.toLocaleString()} <span style="font-size:0.85em;">﷼</span></p><p style="font-size:10px;color:#64748b;margin:4px 0 0;">${msChartData.labels[minIdx] || ''}</p></td>`;
+            html += `<td style="width:33.3%;background:#ede9fe;border:1px solid #c4b5fd;border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#7c3aed;margin:0 0 4px;font-weight:600;">متوسط المبيعات (لأيام العمل)</p><p style="font-size:18px;font-weight:800;color:#6d28d9;margin:0;">${avgVal.toLocaleString()} <span style="font-size:0.85em;">﷼</span></p></td>`;
+            html += `</tr></table>`;
+
+            if (chartImage) {
+                html += `<div style="margin-bottom:24px;">`;
+                html += `<h4 style="font-size:14px;font-weight:700;color:#334155;margin:0 0 12px;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">الرسم البياني للمبيعات</h4>`;
+                html += `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center;">`;
+                html += `<img src="${chartImage}" style="max-width:100%;max-height:320px;">`;
+                html += `</div></div>`;
+            }
+
+            html += `<div style="margin-bottom:24px;">`;
+            html += `<h4 style="font-size:14px;font-weight:700;color:#334155;margin:0 0 12px;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">تفاصيل المبيعات اليومية</h4>`;
+            html += `<table style="width:100%;border-collapse:collapse;">`;
+            html += `<thead><tr style="background:#f1f5f9;"><th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:700;text-align:right;color:#475569;">التاريخ</th><th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:700;text-align:right;color:#475569;">المبالغ المحررة</th></tr></thead>`;
+            html += `<tbody>${tableRows}</tbody>`;
+            html += `<tfoot><tr style="background:#f1f5f9;font-weight:800;"><td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:13px;">الإجمالي</td><td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:13px;color:#047857;text-align:right;">${totalBilled.toLocaleString()} <span style="font-weight:800;font-size:0.9em;">﷼</span></td></tr></tfoot>`;
+            html += `</table></div>`;
+
+            html += `<div style="margin-top:48px;padding-top:24px;border-top:2px solid #e2e8f0;text-align:center;">`;
+            html += `<p style="font-size:12px;color:#64748b;margin:0 0 40px;">المدير المالى</p>`;
+            html += `<div style="border-bottom:1px solid #94a3b8;width:200px;margin:0 auto;"></div>`;
+            html += `<p style="font-size:13px;font-weight:700;color:#334155;margin:8px 0 0;">Reyad Hussein</p>`;
+            html += `</div>`;
+
+            contentDiv.innerHTML = html;
+            workspace.appendChild(contentDiv);
+            workspace.style.display = 'block';
+
+            await new Promise(r => setTimeout(r, 1500));
+
+            try {
+                const canvas = await html2canvas(contentDiv, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    width: contentDiv.scrollWidth,
+                    height: contentDiv.scrollHeight
+                });
+
+                const { jsPDF } = window.jspdf;
+                const imgWidth = 210;
+                const pageHeight = 297;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                const pdf = new jsPDF('p', 'mm', 'a4');
+
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                while (heightLeft > 0) {
+                    position = -(imgHeight - heightLeft);
+                    pdf.addPage();
+                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                
+                const fileName = `تقرير_المبيعات_${startDate || 'البداية'}_إلى_${endDate || 'النهاية'}.pdf`;
+                pdf.save(fileName);
+
+            } catch(err) {
+                console.error('PDF Export Error:', err);
+                alert('حدث خطأ أثناء تصدير PDF: ' + err.message);
+            }
+
+            workspace.style.display = 'none';
+            workspace.innerHTML = '';
+            loadingEl.style.display = 'none';
         }
 
         // =========================================
@@ -851,99 +1083,199 @@
             const newUserRef = push(ref(db, 'users'));
             set(newUserRef, { id: newUserRef.key, username, displayName: displayName || username, password, role, isActive: true }).then(() => { document.getElementById('u-username').value = ''; document.getElementById('u-displayname').value = ''; document.getElementById('u-password').value = ''; });
         }
+
         window.toggleUserStatus = function(id, currentStatus) { const updates = {}; updates['/users/' + id + '/isActive'] = !currentStatus; update(ref(db), updates); }
+
         onValue(ref(db, 'users'), (snapshot) => {
             const data = snapshot.val(); window.usersArr = data ? Object.values(data) : [];
             if(window.usersArr.length === 0) { set(ref(db, 'users/u1'), { id: 'u1', username: 'Reyad', displayName: 'Reyad Hussein', password: '1357', role: 'مدير', isActive: true }); }
             if(currentActivePage === 'users') { renderUsers(); }
         });
+
         function renderUsers() {
-            const tbody = document.getElementById('users-table-body'); if(!tbody) return; const data = window.usersArr || []; tbody.innerHTML = '';
+            const tbody = document.getElementById('users-table-body');
+            if(!tbody) return;
+            const data = window.usersArr || []; tbody.innerHTML = '';
             if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">لا يوجد مستخدمين</td></tr>'; return; }
-            let rowsHtml = ''; data.forEach(user => { const roleClass = user.role === 'مدير' ? 'bg-red-100 text-red-700' : user.role === 'محرر' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'; rowsHtml += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${user.username}</td><td class="p-4">${user.displayName}</td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs ${roleClass}">${user.role}</span></td><td class="p-4"><span class="text-xs ${user.isActive ? 'text-emerald-600' : 'text-red-600'}">${user.isActive ? 'نشط' : 'معطل'}</span></td><td class="p-4"><button onclick="toggleUserStatus('${user.id}', ${user.isActive})" class="text-sm ${user.isActive ? 'text-red-600' : 'text-emerald-600'}"><i class="fa-solid ${user.isActive ? 'fa-ban' : 'fa-check-circle'} ml-1"></i> ${user.isActive ? 'تعطيل' : 'تفعيل'}</button></td></tr>`; }); tbody.innerHTML = rowsHtml;
+            let rowsHtml = '';
+            data.forEach(user => {
+                const roleClass = user.role === 'مدير' ? 'bg-red-100 text-red-700' : user.role === 'محرر' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700';
+                const statusBtnClass = user.isActive ? 'text-red-600 hover:text-red-800' : 'text-emerald-600 hover:text-emerald-800';
+                rowsHtml += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${user.username}</td><td class="p-4">${user.displayName}</td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs ${roleClass}">${user.role}</span></td><td class="p-4"><span class="text-xs ${user.isActive ? 'text-emerald-600' : 'text-red-600'}">${user.isActive ? 'نشط' : 'معطل'}</span></td><td class="p-4"><button onclick="toggleUserStatus('${user.id}', ${user.isActive})" class="${statusBtnClass} text-sm"><i class="fa-solid ${user.isActive ? 'fa-ban' : 'fa-check-circle'} ml-1"></i> ${user.isActive ? 'تعطيل' : 'تفعيل'}</button></td></tr>`;
+            });
+            tbody.innerHTML = rowsHtml;
         }
 
         // =========================================
-        // ===  7. تقرير الإدارة (واجهة الموقع) ===
+        // ===  7. تقرير الإدارة (تم إصلاح حساب القيم السالبة والصفر) ===
         // =========================================
         window.generateAdminReport = async function() {
-            const dateInput = document.getElementById('ar-date').value; if(!dateInput) return alert('يرجى اختيار التاريخ أولاً');
-            const date = normalizeDate(dateInput); document.getElementById('ar-date-display').innerText = `التاريخ: ${date}`;
+            const dateInput = document.getElementById('ar-date').value;
+            if(!dateInput) return alert('يرجى اختيار التاريخ أولاً');
+            const date = normalizeDate(dateInput);
+            document.getElementById('ar-date-display').innerText = `التاريخ: ${date}`;
             const allData = window.dailyStatementsArr || [];
-            const selectedDateObj = new Date(date); const startDateObj = new Date(selectedDateObj); startDateObj.setDate(startDateObj.getDate() - 29); const startDateStr = startDateObj.toISOString().split('T')[0];
-            const data30 = allData.filter(d => d.date >= startDateStr && d.date <= date); const dayData = allData.find(d => d.date === date);
+            
+            const selectedDateObj = new Date(date);
+            const startDateObj = new Date(selectedDateObj);
+            startDateObj.setDate(startDateObj.getDate() - 29);
+            const startDateStr = startDateObj.toISOString().split('T')[0];
+            
+            const data30 = allData.filter(d => d.date >= startDateStr && d.date <= date);
+            const dayData = allData.find(d => d.date === date);
+            
             const dailyCards = document.getElementById('ar-daily-cards');
-            const fields = [ { key: 'bankBalance', label: 'الرصيد البنكي', color: 'text-blue-700 bg-blue-50 border-blue-200' }, { key: 'caravansBalance', label: 'رصيد القوافل', color: 'text-purple-700 bg-purple-50 border-purple-200' }, { key: 'vendorsBalance', label: 'رصيد الموردين', color: 'text-red-700 bg-red-50 border-red-200' }, { key: 'customersDue', label: 'مستحقة العملاء', color: 'text-amber-700 bg-amber-50 border-amber-200' }, { key: 'customersBilled', label: 'محررة العملاء', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' }, { key: 'collectionBalance', label: 'رصيد التحصيل', color: 'text-cyan-700 bg-cyan-50 border-cyan-200' } ];
+            const fields = [
+                { key: 'bankBalance', label: 'الرصيد البنكي', color: 'text-blue-700 bg-blue-50 border-blue-200' },
+                { key: 'caravansBalance', label: 'رصيد القوافل', color: 'text-purple-700 bg-purple-50 border-purple-200' },
+                { key: 'vendorsBalance', label: 'رصيد الموردين', color: 'text-red-700 bg-red-50 border-red-200' },
+                { key: 'customersDue', label: 'مستحقة العملاء', color: 'text-amber-700 bg-amber-50 border-amber-200' },
+                { key: 'customersBilled', label: 'محررة العملاء', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+                { key: 'collectionBalance', label: 'رصيد التحصيل', color: 'text-cyan-700 bg-cyan-50 border-cyan-200' }
+            ];
             let cardsHtml = '';
             fields.forEach(field => {
                 const currentValue = dayData ? (Number(dayData[field.key]) || 0) : 0;
-                const filteredData = field.key === 'customersBilled' ? data30.filter(d => Number(d[field.key]) !== 0) : data30.filter(d => !isNaN(Number(d[field.key])));
-                let max = 0, min = 0, maxDate = '', minDate = '';
-                if (filteredData.length > 0) { const maxItem = filteredData.reduce((prev, current) => (Math.abs(Number(prev[field.key])) > Math.abs(Number(current[field.key]))) ? prev : current); max = Number(maxItem[field.key]) || 0; maxDate = maxItem.date || ''; const minItem = filteredData.reduce((prev, current) => (Math.abs(Number(prev[field.key])) < Math.abs(Number(current[field.key]))) ? prev : current); min = Number(minItem[field.key]) || 0; minDate = minItem.date || ''; }
-                cardsHtml += `<div class="p-4 rounded-lg border ${field.color} shadow-sm"><span class="block text-xs font-medium mb-1">${field.label}</span><span class="block text-xl font-extrabold">${currentValue.toLocaleString()} <span class="currency">﷼</span></span><div class="mt-3 pt-2 border-t border-black/10 grid grid-cols-2 gap-2 text-[10px]"><div><span class="block font-bold text-emerald-800">▲ أعلى مبلغ</span><span class="font-bold">${max.toLocaleString()}</span>${maxDate ? `<span class="block text-slate-600 mt-0.5"><i class="fa-regular fa-calendar ml-0.5"></i>${maxDate}</span>` : ''}</div><div><span class="block font-bold text-red-800">▼ أقل مبلغ</span><span class="font-bold">${min.toLocaleString()}</span>${minDate ? `<span class="block text-slate-600 mt-0.5"><i class="fa-regular fa-calendar ml-0.5"></i>${minDate}</span>` : ''}</div></div></div>`;
-            }); dailyCards.innerHTML = cardsHtml;
+                
+                // تجاهل القيمة صفر للمبيعات (لأنها إجازة)، واحتسابها كأقل قيمة للأرصدة (لأنها رصيد حقيقي)
+                const filteredData = field.key === 'customersBilled' 
+                    ? data30.filter(d => Number(d[field.key]) !== 0) 
+                    : data30.filter(d => !isNaN(Number(d[field.key])));
 
-            const now = new Date(); const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; const selectedMonthKey = date.substring(0, 7); let monthlyData = [];
-            if (selectedMonthKey === currentMonthKey) { monthlyData = window.monthlyItemsArr || []; } else { try { const snapshot = await get(ref(db, `monthlyArchive/${selectedMonthKey}`)); if (snapshot.exists()) { monthlyData = Object.values(snapshot.val()); } } catch(e) { console.error(e); } }
-            const tbody = document.getElementById('ar-monthly-tbody'); const tfooter = document.getElementById('ar-monthly-footer'); let monthlyHtml = ''; let totalEstimated = 0, totalPaid = 0, totalRemaining = 0;
-            if (monthlyData.length === 0) { monthlyHtml = `<tr><td colspan="5" class="p-4 text-center text-slate-400">لا توجد بنود شهرية مسجلة لهذا الشهر</td></tr>`; } else { monthlyData.forEach(item => { const estimated = (item.totalAmount || 0); const paid = (item.paidAmount || 0); const remaining = estimated - paid; totalEstimated += estimated; totalPaid += paid; totalRemaining += remaining; const typeClass = item.type === 'التزام' ? 'text-orange-700' : 'text-blue-700'; monthlyHtml += `<tr class="hover:bg-slate-50"><td class="p-3 border border-slate-200 font-medium">${item.name}</td><td class="p-3 border border-slate-200 ${typeClass} text-center text-xs font-bold">${item.type}</td><td class="p-3 border border-slate-200 text-center">${estimated.toLocaleString()} <span class="currency">﷼</span></td><td class="p-3 border border-slate-200 text-center text-emerald-700">${paid.toLocaleString()} <span class="currency">﷼</span></td><td class="p-3 border border-slate-200 text-red-700 font-bold text-center">${remaining.toLocaleString()} <span class="currency">﷼</span></td></tr>`; }); }
-            tbody.innerHTML = monthlyHtml; tfooter.innerHTML = monthlyData.length > 0 ? `<tr><td class="p-3 border border-slate-200 font-extrabold" colspan="2">الإجمالي</td><td class="p-3 border border-slate-200 text-center font-extrabold">${totalEstimated.toLocaleString()} <span class="currency">﷼</span></td><td class="p-3 border border-slate-200 text-center font-extrabold text-emerald-700">${totalPaid.toLocaleString()} <span class="currency">﷼</span></td><td class="p-3 border border-slate-200 text-center font-extrabold text-red-900">${totalRemaining.toLocaleString()} <span class="currency">﷼</span></td></tr>` : '';
+                let max = 0, min = 0, maxDate = '', minDate = '';
+                if (filteredData.length > 0) {
+                    const maxItem = filteredData.reduce((prev, current) => (Math.abs(Number(prev[field.key])) > Math.abs(Number(current[field.key]))) ? prev : current);
+                    max = Number(maxItem[field.key]) || 0; maxDate = maxItem.date || '';
+                    const minItem = filteredData.reduce((prev, current) => (Math.abs(Number(prev[field.key])) < Math.abs(Number(current[field.key]))) ? prev : current);
+                    min = Number(minItem[field.key]) || 0; minDate = minItem.date || '';
+                }
+                cardsHtml += `<div class="p-4 rounded-lg border ${field.color} shadow-sm">
+                    <span class="block text-xs font-medium mb-1">${field.label}</span>
+                    <span class="block text-xl font-extrabold">${currentValue.toLocaleString()} <span class="currency">﷼</span></span>
+                    <div class="mt-3 pt-2 border-t border-black/10 grid grid-cols-2 gap-2 text-[10px]">
+                        <div><span class="block font-bold text-emerald-800">▲ أعلى مبلغ</span><span class="font-bold">${max.toLocaleString()}</span>${maxDate ? `<span class="block text-slate-600 mt-0.5"><i class="fa-regular fa-calendar ml-0.5"></i>${maxDate}</span>` : ''}</div>
+                        <div><span class="block font-bold text-red-800">▼ أقل مبلغ</span><span class="font-bold">${min.toLocaleString()}</span>${minDate ? `<span class="block text-slate-600 mt-0.5"><i class="fa-regular fa-calendar ml-0.5"></i>${minDate}</span>` : ''}</div>
+                    </div>
+                </div>`;
+            });
+            dailyCards.innerHTML = cardsHtml;
+
+            const now = new Date();
+            const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const selectedMonthKey = date.substring(0, 7);
+            let monthlyData = [];
+
+            if (selectedMonthKey === currentMonthKey) {
+                monthlyData = window.monthlyItemsArr || [];
+            } else {
+                try {
+                    const snapshot = await get(ref(db, `monthlyArchive/${selectedMonthKey}`));
+                    if (snapshot.exists()) {
+                        monthlyData = Object.values(snapshot.val());
+                    } else {
+                        monthlyData = [];
+                    }
+                } catch(e) {
+                    console.error('خطأ في تحميل الأرشيف:', e);
+                    monthlyData = [];
+                }
+            }
+
+            const tbody = document.getElementById('ar-monthly-tbody');
+            const tfooter = document.getElementById('ar-monthly-footer');
+            let monthlyHtml = '';
+            let totalEstimated = 0;
+            let totalPaid = 0;
+            let totalRemaining = 0;
+
+            if (monthlyData.length === 0) {
+                monthlyHtml = `<tr><td colspan="5" class="p-4 text-center text-slate-400">لا توجد بنود شهرية مسجلة لهذا الشهر في الأرشيف</td></tr>`;
+            } else {
+                monthlyData.forEach(item => {
+                    const estimated = (item.totalAmount || 0);
+                    const paid = (item.paidAmount || 0);
+                    const remaining = estimated - paid;
+                    
+                    totalEstimated += estimated;
+                    totalPaid += paid;
+                    totalRemaining += remaining;
+
+                    const typeClass = item.type === 'التزام' ? 'text-orange-700' : 'text-blue-700';
+                    monthlyHtml += `<tr class="hover:bg-slate-50">
+                        <td class="p-3 border border-slate-200 font-medium">${item.name}</td>
+                        <td class="p-3 border border-slate-200 ${typeClass} text-center text-xs font-bold">${item.type}</td>
+                        <td class="p-3 border border-slate-200 text-center">${estimated.toLocaleString()} <span class="currency">﷼</span></td>
+                        <td class="p-3 border border-slate-200 text-center text-emerald-700">${paid.toLocaleString()} <span class="currency">﷼</span></td>
+                        <td class="p-3 border border-slate-200 text-red-700 font-bold text-center">${remaining.toLocaleString()} <span class="currency">﷼</span></td>
+                    </tr>`;
+                });
+            }
+
+            tbody.innerHTML = monthlyHtml;
+            tfooter.innerHTML = monthlyData.length > 0 
+                ? `<tr>
+                    <td class="p-3 border border-slate-200 font-extrabold" colspan="2">الإجمالي</td>
+                    <td class="p-3 border border-slate-200 text-center font-extrabold">${totalEstimated.toLocaleString()} <span class="currency">﷼</span></td>
+                    <td class="p-3 border border-slate-200 text-center font-extrabold text-emerald-700">${totalPaid.toLocaleString()} <span class="currency">﷼</span></td>
+                    <td class="p-3 border border-slate-200 text-center font-extrabold text-red-900">${totalRemaining.toLocaleString()} <span class="currency">﷼</span></td>
+                   </tr>`
+                : '';
         }
         
-        // =========================================
-        // ===  7.1 تقرير الإدارة (تصدير PDF احترافي A4) ===
-        // =========================================
         window.exportAdminReportPDF = async function() {
             const dateInput = document.getElementById('ar-date').value;
             if(!dateInput) return alert('يرجى اختيار التاريخ وعرض التقرير أولاً');
-            if(!document.getElementById('ar-daily-cards').innerHTML.trim()) return alert('يرجى النقر على "عرض التقرير" أولاً');
 
-            const loadingEl = document.getElementById('pdf-loading-overlay'); loadingEl.style.display = 'flex';
+            const element = document.getElementById('admin-report-content');
+            
+            if(!element.querySelector('#ar-daily-cards').innerHTML.trim()) {
+                return alert('يرجى النقر على "عرض التقرير" أولاً قبل التصدير');
+            }
 
-            const date = normalizeDate(dateInput);
-            const allData = window.dailyStatementsArr || [];
-            const selectedDateObj = new Date(date); const startDateObj = new Date(selectedDateObj); startDateObj.setDate(startDateObj.getDate() - 29); const startDateStr = startDateObj.toISOString().split('T')[0];
-            const data30 = allData.filter(d => d.date >= startDateStr && d.date <= date); const dayData = allData.find(d => d.date === date);
-
-            const now = new Date(); const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; const selectedMonthKey = date.substring(0, 7); let monthlyData = [];
-            if (selectedMonthKey === currentMonthKey) { monthlyData = window.monthlyItemsArr || []; } else { try { const snapshot = await get(ref(db, `monthlyArchive/${selectedMonthKey}`)); if (snapshot.exists()) monthlyData = Object.values(snapshot.val()); } catch(e) { console.error(e); } }
-
-            const workspace = document.getElementById('pdf-workspace'); workspace.innerHTML = '';
-            const contentDiv = document.createElement('div'); contentDiv.style.cssText = 'direction:rtl; font-family:Tajawal,sans-serif; color:#1e293b; width:794px; margin:0 auto; background:white; padding:40px;';
-            let html = `<div style="text-align:center; border-bottom:4px solid #1e293b; padding-bottom:20px; margin-bottom:40px;"><h1 style="font-size:30px; font-weight:800; margin:0 0 5px;">زاد الجود للوجبات السريعة</h1><h2 style="font-size:24px; font-weight:700; color:#4f46e5; margin:10px 0 5px;">التقرير المالي اليومي</h2><p style="font-size:18px; color:#475569; margin:0; font-weight:600;">التاريخ: ${date}</p></div>`;
-
-            html += `<div style="margin-bottom:50px;"><h3 style="font-size:22px; font-weight:700; border-bottom:2px solid #cbd5e1; padding-bottom:10px; margin-bottom:25px; color:#334155;">أولاً: الأرصدة والبيان اليومي</h3><div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">`;
-            const fields = [ { key: 'bankBalance', label: 'الرصيد البنكي', color: '#1e40af', bg: '#eff6ff', border: '#bfdbfe' }, { key: 'caravansBalance', label: 'رصيد القوافل', color: '#6b21a8', bg: '#faf5ff', border: '#e9d5ff' }, { key: 'vendorsBalance', label: 'رصيد الموردين', color: '#991b1b', bg: '#fef2f2', border: '#fecaca' }, { key: 'customersDue', label: 'مستحقة العملاء', color: '#92400e', bg: '#fffbeb', border: '#fde68a' }, { key: 'customersBilled', label: 'محررة العملاء', color: '#065f46', bg: '#ecfdf5', border: '#a7f3d0' }, { key: 'collectionBalance', label: 'رصيد التحصيل', color: '#155e75', bg: '#ecfeff', border: '#a5f3fc' } ];
-            fields.forEach(field => {
-                const currentValue = dayData ? (Number(dayData[field.key]) || 0) : 0;
-                const filteredData = field.key === 'customersBilled' ? data30.filter(d => Number(d[field.key]) !== 0) : data30.filter(d => !isNaN(Number(d[field.key])));
-                let max = 0, min = 0, maxDate = '', minDate = '';
-                if (filteredData.length > 0) { const maxItem = filteredData.reduce((prev, current) => (Math.abs(Number(prev[field.key])) > Math.abs(Number(current[field.key]))) ? prev : current); max = Number(maxItem[field.key]) || 0; maxDate = maxItem.date || ''; const minItem = filteredData.reduce((prev, current) => (Math.abs(Number(prev[field.key])) < Math.abs(Number(current[field.key]))) ? prev : current); min = Number(minItem[field.key]) || 0; minDate = minItem.date || ''; }
-                html += `<div style="border:2px solid ${field.border}; border-radius:12px; padding:20px; background:${field.bg};"><p style="margin:0 0 10px; font-size:16px; color:${field.color}; font-weight:700;">${field.label}</p><p style="margin:0; font-size:28px; font-weight:800; color:${field.color};">${currentValue.toLocaleString()} <span style="font-size:20px;">﷼</span></p><div style="margin-top:15px; padding-top:10px; border-top:1px dashed ${field.border}; display:flex; justify-content:space-between; font-size:14px; color:#475569;"><div style="text-align:center; flex:1;"><span style="display:block; font-weight:700; color:#059669; margin-bottom:4px;">▲ أعلى مبلغ</span><span style="font-weight:600; font-size:16px;">${max.toLocaleString()}</span>${maxDate ? `<span style="display:block; font-size:11px; margin-top:2px; color:#64748b;">${maxDate}</span>` : ''}</div><div style="width:1px; background:#cbd5e1; margin:0 15px;"></div><div style="text-align:center; flex:1;"><span style="display:block; font-weight:700; color:#dc2626; margin-bottom:4px;">▼ أقل مبلغ</span><span style="font-weight:600; font-size:16px;">${min.toLocaleString()}</span>${minDate ? `<span style="display:block; font-size:11px; margin-top:2px; color:#64748b;">${minDate}</span>` : ''}</div></div></div>`;
-            }); html += `</div></div>`;
-
-            html += `<div style="margin-bottom:40px;"><h3 style="font-size:22px; font-weight:700; border-bottom:2px solid #cbd5e1; padding-bottom:10px; margin-bottom:25px; color:#334155;">ثانياً: المتبقي من الالتزامات والمصروفات الشهرية</h3><table style="width:100%; border-collapse:collapse; font-size:16px;"><thead><tr style="background:#f1f5f9; border-bottom:2px solid #94a3b8;"><th style="padding:15px; text-align:right; font-weight:700; border-left:1px solid #e2e8f0;">البند</th><th style="padding:15px; text-align:center; font-weight:700; border-left:1px solid #e2e8f0;">التصنيف</th><th style="padding:15px; text-align:center; font-weight:700; border-left:1px solid #e2e8f0;">المبلغ المقدر</th><th style="padding:15px; text-align:center; font-weight:700; border-left:1px solid #e2e8f0;">إجمالي المسدد</th><th style="padding:15px; text-align:center; font-weight:700;">المتبقي</th></tr></thead><tbody>`;
-            let totalEstimated = 0, totalPaid = 0, totalRemaining = 0;
-            if (monthlyData.length === 0) { html += `<tr><td colspan="5" style="padding:20px; text-align:center; color:#94a3b8;">لا توجد بنود شهرية مسجلة لهذا الشهر</td></tr>`; } else {
-                monthlyData.forEach(item => { const estimated = (item.totalAmount || 0); const paid = (item.paidAmount || 0); const remaining = estimated - paid; totalEstimated += estimated; totalPaid += paid; totalRemaining += remaining; const typeClass = item.type === 'التزام' ? 'color:#c2410c;' : 'color:#1d4ed8;'; html += `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:12px; font-weight:600;">${item.name}</td><td style="padding:12px; text-align:center; font-weight:700; ${typeClass}">${item.type}</td><td style="padding:12px; text-align:center;">${estimated.toLocaleString()} ﷼</td><td style="padding:12px; text-align:center; color:#059669; font-weight:700;">${paid.toLocaleString()} ﷼</td><td style="padding:12px; text-align:center; color:#dc2626; font-weight:800;">${remaining.toLocaleString()} ﷼</td></tr>`; });
-            } html += `</tbody>`;
-            if(monthlyData.length > 0) { html += `<tfoot><tr style="background:#f1f5f9; font-weight:800; border-top:3px solid #94a3b8;"><td style="padding:15px;" colspan="2">الإجمالي</td><td style="padding:15px; text-align:center;">${totalEstimated.toLocaleString()} ﷼</td><td style="padding:15px; text-align:center; color:#059669;">${totalPaid.toLocaleString()} ﷼</td><td style="padding:15px; text-align:center; color:#dc2626;">${totalRemaining.toLocaleString()} ﷼</td></tr></tfoot>`; }
-            html += `</table></div>`;
-
-            html += `<div style="margin-top:80px; padding-top:30px; border-top:2px solid #e2e8f0; text-align:center;"><p style="font-size:16px; color:#64748b; margin:0 0 60px;">المدير المالى</p><div style="border-bottom:1px solid #94a3b8; width:250px; margin:0 auto;"></div><p style="font-size:16px; font-weight:700; color:#334155; margin:12px 0 0;">Reyad Hussein</p></div>`;
-
-            contentDiv.innerHTML = html; workspace.appendChild(contentDiv); workspace.style.display = 'block';
-            await new Promise(r => setTimeout(r, 1000));
+            const loadingEl = document.getElementById('pdf-loading-overlay');
+            loadingEl.style.display = 'flex';
 
             try {
-                const canvas = await html2canvas(contentDiv, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-                const { jsPDF } = window.jspdf; const imgWidth = 210; const pageHeight = 297; const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                const pdf = new jsPDF('p', 'mm', 'a4'); let heightLeft = imgHeight; let position = 0;
-                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight); heightLeft -= pageHeight;
-                while (heightLeft > 0) { position = -(imgHeight - heightLeft); pdf.addPage(); pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight); heightLeft -= pageHeight; }
-                pdf.save(`تقرير_الإدارة_${date}.pdf`);
-            } catch(err) { console.error(err); alert('حدث خطأ أثناء تصدير PDF'); }
-            workspace.style.display = 'none'; workspace.innerHTML = ''; loadingEl.style.display = 'none';
+                await new Promise(r => setTimeout(r, 500));
+
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    width: element.scrollWidth,
+                    height: element.scrollHeight
+                });
+
+                const { jsPDF } = window.jspdf;
+                const imgWidth = 210;
+                const pageHeight = 297;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                const pdf = new jsPDF('p', 'mm', 'a4');
+
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                while (heightLeft > 0) {
+                    position = -(imgHeight - heightLeft);
+                    pdf.addPage();
+                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                const fileName = `تقرير_الإدارة_${dateInput}.pdf`;
+                pdf.save(fileName);
+
+            } catch(err) {
+                console.error('PDF Export Error:', err);
+                alert('حدث خطأ أثناء تصدير PDF: ' + err.message);
+            }
+
+            loadingEl.style.display = 'none';
         }
 
         // =========================================
