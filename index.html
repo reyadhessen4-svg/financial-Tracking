@@ -727,7 +727,7 @@
         }
 
         // =========================================
-        // ===   5. التقرير الشامل (تم إصلاح حساب القيم السالبة والصفر) ===
+        // ===   5. التقرير الشامل  ===
         // =========================================
         window.calcReportFull = async function() {
             const startDate = document.getElementById('rf-start').value; 
@@ -773,7 +773,6 @@
             
             const fields = [ { key: 'bankBalance', label: 'رصيد البنك' }, { key: 'caravansBalance', label: 'رصيد القوافل' }, { key: 'vendorsBalance', label: 'رصيد الموردين' }, { key: 'customersDue', label: 'مستحقة العملاء' }, { key: 'customersBilled', label: 'محررة العملاء' }, { key: 'collectionBalance', label: 'رصيد التحصيل' } ];
             fields.forEach(field => {
-                // تجاهل القيمة صفر للمبيعات (لأنها إجازة)، واحتسابها كأقل قيمة للأرصدة (لأنها رصيد حقيقي)
                 const filteredData = field.key === 'customersBilled' 
                     ? data.filter(d => Number(d[field.key]) !== 0) 
                     : data.filter(d => !isNaN(Number(d[field.key])));
@@ -790,7 +789,7 @@
         }
 
         // =========================================
-        // ===   5.5 المبيعات الشهرية (مطوّر)   ===
+        // ===   5.5 المبيعات الشهرية   ===
         // =========================================
 
         window.setChartType = function(type) {
@@ -1136,8 +1135,6 @@
             let cardsHtml = '';
             fields.forEach(field => {
                 const currentValue = dayData ? (Number(dayData[field.key]) || 0) : 0;
-                
-                // تجاهل القيمة صفر للمبيعات (لأنها إجازة)، واحتسابها كأقل قيمة للأرصدة (لأنها رصيد حقيقي)
                 const filteredData = field.key === 'customersBilled' 
                     ? data30.filter(d => Number(d[field.key]) !== 0) 
                     : data30.filter(d => !isNaN(Number(d[field.key])));
@@ -1226,81 +1223,116 @@
             const dateInput = document.getElementById('ar-date').value;
             if(!dateInput) return alert('يرجى اختيار التاريخ وعرض التقرير أولاً');
 
-            const element = document.getElementById('admin-report-content');
-            
-            if(!element.querySelector('#ar-daily-cards').innerHTML.trim()) {
+            if(!document.getElementById('ar-daily-cards').innerHTML.trim()) {
                 return alert('يرجى النقر على "عرض التقرير" أولاً قبل التصدير');
             }
 
             const loadingEl = document.getElementById('pdf-loading-overlay');
             loadingEl.style.display = 'flex';
 
-            try {
-                await new Promise(r => setTimeout(r, 500));
+            // --- جلب البيانات مرة أخرى لضمان دقة التقرير المصدّر ---
+            const date = normalizeDate(dateInput);
+            const allData = window.dailyStatementsArr || [];
+            const selectedDateObj = new Date(date);
+            const startDateObj = new Date(selectedDateObj);
+            startDateObj.setDate(startDateObj.getDate() - 29);
+            const startDateStr = startDateObj.toISOString().split('T')[0];
+            const data30 = allData.filter(d => d.date >= startDateStr && d.date <= date);
+            const dayData = allData.find(d => d.date === date);
 
-                const canvas = await html2canvas(element, {
-                    scale: 2,
-                    useCORS: true,
-                    backgroundColor: '#ffffff',
-                    logging: false,
-                    width: element.scrollWidth,
-                    height: element.scrollHeight
-                });
-
-                const { jsPDF } = window.jspdf;
-                const imgWidth = 210;
-                const pageHeight = 297;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-                const pdf = new jsPDF('p', 'mm', 'a4');
-
-                let heightLeft = imgHeight;
-                let position = 0;
-
-                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-
-                while (heightLeft > 0) {
-                    position = -(imgHeight - heightLeft);
-                    pdf.addPage();
-                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-                }
-
-                const fileName = `تقرير_الإدارة_${dateInput}.pdf`;
-                pdf.save(fileName);
-
-            } catch(err) {
-                console.error('PDF Export Error:', err);
-                alert('حدث خطأ أثناء تصدير PDF: ' + err.message);
+            const now = new Date();
+            const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const selectedMonthKey = date.substring(0, 7);
+            let monthlyData = [];
+            if (selectedMonthKey === currentMonthKey) {
+                monthlyData = window.monthlyItemsArr || [];
+            } else {
+                try {
+                    const snapshot = await get(ref(db, `monthlyArchive/${selectedMonthKey}`));
+                    if (snapshot.exists()) monthlyData = Object.values(snapshot.val());
+                } catch(e) { console.error(e); }
             }
 
-            loadingEl.style.display = 'none';
-        }
+            // --- بناء هيكل HTML مخصص للطباعة بحجم A4 وخطوط واضحة ---
+            const workspace = document.getElementById('pdf-workspace');
+            workspace.innerHTML = '';
 
-        // =========================================
-        // ===          تشغيل النظام             ===
-        // =========================================
-        function renderCurrentPage() {
-            try {
-                if(currentActivePage === 'history') renderHistory();
-                if(currentActivePage === 'monthly') renderMonthlyItems();
-                if(currentActivePage === 'report30') calcReport30();
-                if(currentActivePage === 'reportFull') calcReportFull();
-                if(currentActivePage === 'monthlySales') calcMonthlySales();
-                if(currentActivePage === 'users') renderUsers();
-            } catch (error) { console.error("Error rendering page:", error); }
-        }
+            const contentDiv = document.createElement('div');
+            contentDiv.style.cssText = 'direction:rtl; font-family:Tajawal,sans-serif; color:#1e293b; width:794px; margin:0 auto; background:white; padding:40px;';
 
-        function initApp() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('d-date').value = today;
-            document.getElementById('ar-date').value = today;
-            const dateObj = new Date(); const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('current-date-header').textContent = dateObj.toLocaleDateString('ar-EG', options);
-            showPage('daily');
-        }
+            let html = `
+                <div style="text-align:center; border-bottom:4px solid #1e293b; padding-bottom:20px; margin-bottom:40px;">
+                    <h1 style="font-size:30px; font-weight:800; margin:0 0 5px;">زاد الجود للوجبات السريعة</h1>
+                    <h2 style="font-size:24px; font-weight:700; color:#4f46e5; margin:10px 0 5px;">التقرير المالي اليومي</h2>
+                    <p style="font-size:18px; color:#475569; margin:0; font-weight:600;">التاريخ: ${date}</p>
+                </div>
 
-    </script>
-</body>
-</html>
+                <div style="margin-bottom:50px;">
+                    <h3 style="font-size:22px; font-weight:700; border-bottom:2px solid #cbd5e1; padding-bottom:10px; margin-bottom:25px; color:#334155;">أولاً: الأرصدة والبيان اليومي</h3>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+            `;
+
+            const fields = [
+                { key: 'bankBalance', label: 'الرصيد البنكي', color: '#1e40af', bg: '#eff6ff', border: '#bfdbfe' },
+                { key: 'caravansBalance', label: 'رصيد القوافل', color: '#6b21a8', bg: '#faf5ff', border: '#e9d5ff' },
+                { key: 'vendorsBalance', label: 'رصيد الموردين', color: '#991b1b', bg: '#fef2f2', border: '#fecaca' },
+                { key: 'customersDue', label: 'مستحقة العملاء', color: '#92400e', bg: '#fffbeb', border: '#fde68a' },
+                { key: 'customersBilled', label: 'محررة العملاء', color: '#065f46', bg: '#ecfdf5', border: '#a7f3d0' },
+                { key: 'collectionBalance', label: 'رصيد التحصيل', color: '#155e75', bg: '#ecfeff', border: '#a5f3fc' }
+            ];
+
+            fields.forEach(field => {
+                const currentValue = dayData ? (Number(dayData[field.key]) || 0) : 0;
+                const filteredData = field.key === 'customersBilled' 
+                    ? data30.filter(d => Number(d[field.key]) !== 0) 
+                    : data30.filter(d => !isNaN(Number(d[field.key])));
+
+                let max = 0, min = 0, maxDate = '', minDate = '';
+                if (filteredData.length > 0) {
+                    const maxItem = filteredData.reduce((prev, current) => (Math.abs(Number(prev[field.key])) > Math.abs(Number(current[field.key]))) ? prev : current);
+                    max = Number(maxItem[field.key]) || 0; maxDate = maxItem.date || '';
+                    const minItem = filteredData.reduce((prev, current) => (Math.abs(Number(prev[field.key])) < Math.abs(Number(current[field.key]))) ? prev : current);
+                    min = Number(minItem[field.key]) || 0; minDate = minItem.date || '';
+                }
+
+                html += `
+                    <div style="border:2px solid ${field.border}; border-radius:12px; padding:20px; background:${field.bg};">
+                        <p style="margin:0 0 10px; font-size:16px; color:${field.color}; font-weight:700;">${field.label}</p>
+                        <p style="margin:0; font-size:28px; font-weight:800; color:${field.color};">${currentValue.toLocaleString()} <span style="font-size:20px;">﷼</span></p>
+                        <div style="margin-top:15px; padding-top:10px; border-top:1px dashed ${field.border}; display:flex; justify-content:space-between; font-size:14px; color:#475569;">
+                            <div style="text-align:center; flex:1;">
+                                <span style="display:block; font-weight:700; color:#059669; margin-bottom:4px;">▲ أعلى مبلغ</span>
+                                <span style="font-weight:600; font-size:16px;">${max.toLocaleString()}</span>
+                                ${maxDate ? `<span style="display:block; font-size:11px; margin-top:2px; color:#64748b;">${maxDate}</span>` : ''}
+                            </div>
+                            <div style="width:1px; background:#cbd5e1; margin:0 15px;"></div>
+                            <div style="text-align:center; flex:1;">
+                                <span style="display:block; font-weight:700; color:#dc2626; margin-bottom:4px;">▼ أقل مبلغ</span>
+                                <span style="font-weight:600; font-size:16px;">${min.toLocaleString()}</span>
+                                ${minDate ? `<span style="display:block; font-size:11px; margin-top:2px; color:#64748b;">${minDate}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div></div>`; // نهاية قسم الأرصدة
+
+            // --- قسم البنود الشهرية ---
+            html += `
+                <div style="margin-bottom:40px;">
+                    <h3 style="font-size:22px; font-weight:700; border-bottom:2px solid #cbd5e1; padding-bottom:10px; margin-bottom:25px; color:#334155;">ثانياً: المتبقي من الالتزامات والمصروفات الشهرية</h3>
+                    <table style="width:100%; border-collapse:collapse; font-size:16px;">
+                        <thead>
+                            <tr style="background:#f1f5f9; border-bottom:2px solid #94a3b8;">
+                                <th style="padding:15px; text-align:right; font-weight:700; border-left:1px solid #e2e8f0;">البند</th>
+                                <th style="padding:15px; text-align:center; font-weight:700; border-left:1px solid #e2e8f0;">التصنيف</th>
+                                <th style="padding:15px; text-align:center; font-weight:700; border-left:1px solid #e2e8f0;">المبلغ المقدر</th>
+                                <th style="padding:15px; text-align:center; font-weight:700; border-left:1px solid #e2e8f0;">إجمالي المسدد</th>
+                                <th style="padding:15px; text-align:center; font-weight:700;">المتبقي</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            let totalEstimated = 0, totalPaid = 0
