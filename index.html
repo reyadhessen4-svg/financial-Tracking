@@ -173,7 +173,7 @@
                     </div>
                 </div>
 
-                <!-- 2. البنود الشهرية -->
+                <!-- 2. البنود الشهرية (معدل) -->
                 <div id="page-monthly" class="page space-y-6">
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6 editor-only-section">
                         <div class="flex justify-between items-center w-full mb-4">
@@ -190,6 +190,15 @@
                             <button onclick="addMonthlyItem()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium">إضافة</button>
                         </div>
                     </div>
+                    
+                    <!-- حقل البحث -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                        <div class="relative flex-1">
+                            <input type="text" id="m-search" oninput="renderMonthlyItems()" placeholder="ابحث عن بند شهرية..." class="w-full p-2 pr-10 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        </div>
+                    </div>
+
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
                         <table class="w-full text-sm text-right">
                             <thead class="bg-slate-50 text-slate-600"><tr><th class="p-4 font-medium">البند</th><th class="p-4 font-medium">التصنيف</th><th class="p-4 font-medium">المستحق</th><th class="p-4 font-medium">المسدد</th><th class="p-4 font-medium">المتبقي</th><th class="p-4 font-medium">إجراء</th></tr></thead>
@@ -370,6 +379,54 @@
         </div>
     </div>
 
+    <!-- نافذة تسديد بند شهري (جديد) -->
+    <div id="pay-modal" class="modal-overlay hidden">
+        <div class="modal-content max-w-md">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-money-bill-wave ml-2 text-emerald-600"></i> تسديد مبلغ</h3>
+                <button onclick="closePayModal()" class="text-slate-400 hover:text-red-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p class="text-sm text-slate-600 mb-4">بند: <span id="pay-item-name" class="font-bold text-indigo-700"></span></p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">تاريخ السداد</label>
+                    <input type="date" id="pay-date" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">مبلغ السداد</label>
+                    <input type="number" id="pay-amount" step="0.01" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="أدخل المبلغ">
+                </div>
+                <button onclick="savePayment()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                    <i class="fa-solid fa-check ml-2"></i> حفظ السداد
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة سجل السدادات (جديد) -->
+    <div id="history-pay-modal" class="modal-overlay hidden">
+        <div class="modal-content max-w-lg">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-clock-rotate-left ml-2 text-indigo-600"></i> سجل السدادات</h3>
+                <button onclick="closeHistoryPayModal()" class="text-slate-400 hover:text-red-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p class="text-sm text-slate-600 mb-4">بند: <span id="hist-item-name" class="font-bold text-indigo-700"></span></p>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-right border-collapse">
+                    <thead class="bg-slate-100">
+                        <tr>
+                            <th class="p-3 font-medium border border-slate-200">التاريخ</th>
+                            <th class="p-3 font-medium border border-slate-200">المبلغ المسدد</th>
+                            <th class="p-3 font-medium border border-slate-200">إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hist-pay-table-body" class="divide-y divide-slate-100"></tbody>
+                    <tfoot id="hist-pay-table-footer" class="bg-slate-50 font-bold"></tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <div id="pdf-workspace"></div>
     <div id="pdf-loading-overlay">
         <div style="width:48px;height:48px;border:4px solid rgba(255,255,255,0.2);border-top-color:white;border-radius:50%;" class="pdf-spinner"></div>
@@ -380,7 +437,7 @@
     <!-- Firebase & Core Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getDatabase, ref, set, push, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        import { getDatabase, ref, set, push, onValue, update, get, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyA9QBzup2EZJtiA291VynvLWtmaRyW9tCU",
@@ -406,6 +463,8 @@
         let msChartInstance = null;
         let msCurrentChartType = 'bar';
         let msChartData = { labels: [], values: [] };
+        
+        let currentPayingItemId = null; // لتخزين ID البند الحالي للسداد
 
         function normalizeDate(dateStr) {
             if (!dateStr) return '';
@@ -531,7 +590,7 @@
         });
 
         // =========================================
-        // ===        2. البنود الشهرية          ===
+        // ===        2. البنود الشهرية (معدل وجذري) ===
         // =========================================
         window.addMonthlyItem = function() {
             const name = document.getElementById('m-name').value;
@@ -539,20 +598,110 @@
             const total = parseFloat(document.getElementById('m-total').value) || 0;
             if(!name) return alert('أدخل اسم البند');
             const newItemRef = push(ref(db, 'monthlyItems'));
-            set(newItemRef, { id: newItemRef.key, name, type, totalAmount: total, paidAmount: 0 }).then(() => {
+            // إضافة مصفوفة payments فارغة افتراضياً
+            set(newItemRef, { id: newItemRef.key, name, type, totalAmount: total, paidAmount: 0, payments: [] }).then(() => {
                 document.getElementById('m-name').value = ''; document.getElementById('m-total').value = '';
             });
         }
 
+        // فتح نافذة السداد
         window.payItem = function(id) {
-            const amountStr = prompt('أدخل مبلغ السداد:');
-            if (!amountStr) return;
-            const amount = parseFloat(amountStr);
-            if (isNaN(amount) || amount <= 0) return alert('مبلغ غير صالح');
+            currentPayingItemId = id;
             const item = window.monthlyItemsArr.find(i => i.id === id);
-            if (item) {
-                const updates = {}; updates['/monthlyItems/' + id + '/paidAmount'] = item.paidAmount + amount;
-                update(ref(db), updates);
+            if(!item) return;
+            document.getElementById('pay-item-name').textContent = item.name;
+            document.getElementById('pay-date').value = new Date().toISOString().split('T')[0]; // تاريخ اليوم افتراضياً
+            document.getElementById('pay-amount').value = '';
+            document.getElementById('pay-modal').classList.remove('hidden');
+        }
+
+        window.closePayModal = function() {
+            document.getElementById('pay-modal').classList.add('hidden');
+            currentPayingItemId = null;
+        }
+
+        // حفظ السداد في قاعدة البيانات
+        window.savePayment = function() {
+            if(!currentPayingItemId) return;
+            const dateVal = document.getElementById('pay-date').value;
+            const amountVal = parseFloat(document.getElementById('pay-amount').value);
+            
+            if(!dateVal) return alert('يرجى تحديد تاريخ السداد');
+            if(isNaN(amountVal) || amountVal <= 0) return alert('يرجى إدخال مبلغ صحيح');
+            
+            const item = window.monthlyItemsArr.find(i => i.id === currentPayingItemId);
+            if(item) {
+                const currentPayments = item.payments || [];
+                currentPayments.push({ date: dateVal, amount: amountVal });
+                
+                const updates = {};
+                updates['/monthlyItems/' + item.id + '/payments'] = currentPayments;
+                updates['/monthlyItems/' + item.id + '/paidAmount'] = (item.paidAmount || 0) + amountVal;
+                
+                update(ref(db), updates).then(() => {
+                    closePayModal();
+                }).catch(err => alert('خطأ: ' + err));
+            }
+        }
+
+        // عرض سجل السدادات للبند
+        window.showItemHistory = function(id) {
+            const item = window.monthlyItemsArr.find(i => i.id === id);
+            if(!item) return;
+            
+            document.getElementById('hist-item-name').textContent = item.name;
+            const tbody = document.getElementById('hist-pay-table-body');
+            const tfooter = document.getElementById('hist-pay-table-footer');
+            const payments = item.payments || [];
+            
+            let html = '';
+            let totalPaid = 0;
+            
+            if(payments.length === 0) {
+                html = '<tr><td colspan="3" class="p-4 text-center text-slate-400">لا توجد سدادات مسجلة لهذا البند</td></tr>';
+            } else {
+                // ترتيب السدادات من الأحدث للأقدم
+                const sortedPayments = [...payments].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+                sortedPayments.forEach((p, idx) => {
+                    totalPaid += p.amount;
+                    const origIdx = payments.indexOf(p); // للحفاظ على الـ index الأصلي للحذف
+                    html += `<tr class="hover:bg-slate-50">
+                        <td class="p-3 border border-slate-200 font-medium">${p.date}</td>
+                        <td class="p-3 border border-slate-200 text-emerald-700 font-bold">${p.amount.toLocaleString()} <span class="currency">﷼</span></td>
+                        <td class="p-3 border border-slate-200 text-center">
+                            <button onclick="deletePayment('${id}', ${origIdx})" class="text-red-500 hover:text-red-700 text-xs" title="حذف السداد"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+                });
+            }
+            
+            tbody.innerHTML = html;
+            tfooter.innerHTML = payments.length > 0 ? `<tr><td class="p-3 border border-slate-200 font-extrabold">الإجمالي المسدد</td><td class="p-3 border border-slate-200 text-emerald-900 font-extrabold text-center">${totalPaid.toLocaleString()} <span class="currency">﷼</span></td><td></td></tr>` : '';
+            
+            document.getElementById('history-pay-modal').classList.remove('hidden');
+        }
+
+        window.closeHistoryPayModal = function() {
+            document.getElementById('history-pay-modal').classList.add('hidden');
+        }
+
+        // حذف سداد محدد من السجل
+        window.deletePayment = function(itemId, paymentIndex) {
+            if(!confirm('هل أنت متأكد من حذف هذا السداد؟ سيتم خصم المبلغ من إجمالي المسدد.')) return;
+            const item = window.monthlyItemsArr.find(i => i.id === itemId);
+            if(item && item.payments && item.payments[paymentIndex]) {
+                const paidToDelete = item.payments[paymentIndex].amount;
+                const currentPayments = [...item.payments];
+                currentPayments.splice(paymentIndex, 1);
+                
+                const updates = {};
+                updates['/monthlyItems/' + itemId + '/payments'] = currentPayments;
+                updates['/monthlyItems/' + itemId + '/paidAmount'] = (item.paidAmount || 0) - paidToDelete;
+                
+                update(ref(db), updates).then(() => {
+                    // تحديث النافذة المفتوحة
+                    showItemHistory(itemId);
+                });
             }
         }
 
@@ -585,7 +734,7 @@
                 const newItems = {};
                 currentItems.forEach(item => {
                     const newItemRef = push(ref(db, 'monthlyItems'));
-                    newItems[newItemRef.key] = { id: newItemRef.key, name: item.name, type: item.type, totalAmount: item.totalAmount, paidAmount: 0 };
+                    newItems[newItemRef.key] = { id: newItemRef.key, name: item.name, type: item.type, totalAmount: item.totalAmount, paidAmount: 0, payments: [] };
                 });
                 updates['/monthlyItems'] = newItems;
             } else { updates['/monthlyItems'] = null; }
@@ -635,7 +784,14 @@
 
         function renderMonthlyItems() {
             const tbody = document.getElementById('monthly-table-body');
-            const data = window.monthlyItemsArr || [];
+            let data = window.monthlyItemsArr || [];
+            const searchTerm = (document.getElementById('m-search')?.value || '').toLowerCase();
+            
+            // تصفية البنود بناءً على البحث
+            if(searchTerm) {
+                data = data.filter(item => item.name.toLowerCase().includes(searchTerm) || item.type.toLowerCase().includes(searchTerm));
+            }
+            
             tbody.innerHTML = '';
             if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">لا توجد بنود</td></tr>'; return; }
             data.forEach(item => {
@@ -643,7 +799,8 @@
                 const typeClass = item.type === 'التزام' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700';
                 const actionBtns = (window.currentUserRole === 'محرر' || window.currentUserRole === 'مدير') ? `
                     <div class="flex gap-2 items-center">
-                        <button onclick="payItem('${item.id}')" class="text-indigo-600 hover:text-indigo-800" title="سداد"><i class="fa-solid fa-money-bill-wave"></i></button>
+                        <button onclick="payItem('${item.id}')" class="text-emerald-600 hover:text-emerald-800" title="سداد"><i class="fa-solid fa-money-bill-wave"></i></button>
+                        <button onclick="showItemHistory('${item.id}')" class="text-indigo-600 hover:text-indigo-800" title="سجل السداد"><i class="fa-solid fa-clock-rotate-left"></i></button>
                         <button onclick="editItemAmount('${item.id}')" class="text-amber-600 hover:text-amber-800" title="تعديل المبلغ"><i class="fa-solid fa-pen-to-square"></i></button>
                         <button onclick="deleteItem('${item.id}')" class="text-red-600 hover:text-red-800" title="حذف البند"><i class="fa-solid fa-trash"></i></button>
                     </div>` : '-';
@@ -1106,7 +1263,7 @@
         }
 
         // =========================================
-        // ===  7. تقرير الإدارة (تم إصلاح حساب القيم السالبة والصفر) ===
+        // ===  7. تقرير الإدارة  ===
         // =========================================
         window.generateAdminReport = async function() {
             const dateInput = document.getElementById('ar-date').value;
@@ -1223,7 +1380,6 @@
             const dateInput = document.getElementById('ar-date').value;
             if(!dateInput) return alert('يرجى اختيار التاريخ وعرض التقرير أولاً');
             
-            // التحقق من وجود بيانات معروضة
             const dailyCards = document.getElementById('ar-daily-cards');
             if(!dailyCards.innerHTML.trim()) {
                 return alert('يرجى النقر على "عرض التقرير" أولاً قبل التصدير');
@@ -1232,7 +1388,6 @@
             const date = normalizeDate(dateInput);
             const allData = window.dailyStatementsArr || [];
             
-            // استخراج نفس البيانات المعروضة على الشاشة
             const selectedDateObj = new Date(date);
             const startDateObj = new Date(selectedDateObj);
             startDateObj.setDate(startDateObj.getDate() - 29);
@@ -1275,14 +1430,12 @@
 
             let html = '';
             
-            // 1. رأس التقرير
             html += `<div style="text-align:center;border-bottom:3px solid #1e293b;padding-bottom:20px;margin-bottom:30px;">`;
             html += `<h2 style="font-size:26px;font-weight:800;color:#1e293b;margin:0 0 6px;">زاد الجود للوجبات السريعة</h2>`;
             html += `<h3 style="font-size:20px;font-weight:700;color:#4f46e5;margin:10px 0 6px;">التقرير المالي اليومي</h3>`;
             html += `<p style="font-size:16px;color:#64748b;margin:0;font-weight:500;">التاريخ: ${date}</p>`;
             html += `</div>`;
 
-            // 2. الأرصدة اليومية (تم تحويلها لجدول عريض لتكون واضحة بالـ PDF)
             html += `<div style="margin-bottom:40px;">`;
             html += `<h4 style="font-size:18px;font-weight:700;color:#334155;margin:0 0 20px;border-bottom:2px solid #e2e8f0;padding-bottom:10px;">أولاً: الأرصدة والبيان اليومي</h4>`;
             html += `<table style="width:100%;border-collapse:collapse;font-size:15px;">`;
@@ -1317,7 +1470,6 @@
 
             html += `</tbody></table></div>`;
 
-            // 3. البنود الشهرية
             html += `<div style="margin-bottom:40px;">`;
             html += `<h4 style="font-size:18px;font-weight:700;color:#334155;margin:0 0 20px;border-bottom:2px solid #e2e8f0;padding-bottom:10px;">ثانياً: المتبقي من الالتزامات والمصروفات الشهرية</h4>`;
             html += `<table style="width:100%;border-collapse:collapse;font-size:15px;">`;
@@ -1367,7 +1519,6 @@
 
             html += `</table></div>`;
 
-            // 4. التوقيع
             html += `<div style="margin-top:80px;padding-top:30px;border-top:2px solid #e2e8f0;text-align:center;">`;
             html += `<p style="font-size:14px;color:#64748b;margin:0 0 60px;">المدير المالى</p>`;
             html += `<div style="border-bottom:1px solid #94a3b8;width:250px;margin:0 auto;"></div>`;
