@@ -119,6 +119,9 @@
                 <button onclick="showPage('monthlySales')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="monthlySales">
                     <i class="fa-solid fa-cart-shopping w-4 h-4"></i><span>المبيعات الشهرية</span>
                 </button>
+                <button onclick="showPage('salesCompare')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="salesCompare">
+                    <i class="fa-solid fa-scale-balanced w-4 h-4"></i><span>مقارنة المبيعات</span>
+                </button>
                 <button onclick="showPage('adminReport')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="adminReport">
                     <i class="fa-solid fa-file-pdf w-4 h-4"></i><span>تقرير الإدارة</span>
                 </button>
@@ -290,6 +293,58 @@
                             <thead class="bg-slate-50 text-slate-600"><tr><th class="p-4 font-medium">التاريخ</th><th class="p-4 font-medium">إجمالي المبالغ المحررة للعملاء</th></tr></thead>
                             <tbody id="ms-table-body" class="divide-y divide-slate-100"></tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- 5.7 مقارنة المبيعات -->
+                <div id="page-salesCompare" class="page space-y-6">
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
+                        <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-calendar-check text-indigo-600"></i> إضافة شهور بسرعة للمقارنة</h2>
+                        <div id="sc-months-list" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 mb-4"></div>
+                        <button onclick="addSelectedMonths()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium"><i class="fa-solid fa-plus ml-2"></i> إضافة الشهور المحددة للمقارنة</button>
+                    </div>
+
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
+                        <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-calendar-days text-indigo-600"></i> أو إضافة فترة مخصصة</h2>
+                        <div class="flex flex-wrap gap-4 items-end">
+                            <div class="flex-1 min-w-[150px]"><label class="block text-sm font-medium text-slate-600 mb-1">اسم الفترة (اختياري)</label><input type="text" id="sc-label" placeholder="مثال: موسم رمضان" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <div><label class="block text-sm font-medium text-slate-600 mb-1">من تاريخ</label><input type="date" id="sc-start" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <div><label class="block text-sm font-medium text-slate-600 mb-1">إلى تاريخ</label><input type="date" id="sc-end" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <button onclick="addCustomPeriod()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium h-10"><i class="fa-solid fa-plus ml-2"></i> إضافة للمقارنة</button>
+                        </div>
+                    </div>
+
+                    <div id="sc-empty-state" class="bg-white border border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-400">
+                        <i class="fa-solid fa-scale-balanced text-3xl mb-3"></i>
+                        <p>أضف شهرين أو أكثر (أو فترات مخصصة) من الأعلى لبدء المقارنة</p>
+                    </div>
+
+                    <div id="sc-results-wrap" class="hidden space-y-6">
+                        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-md font-bold text-slate-700"><i class="fa-solid fa-chart-column text-indigo-600 ml-2"></i> مقارنة إجمالي المبيعات</h3>
+                                <button onclick="clearComparePeriods()" class="text-red-500 hover:text-red-700 text-xs font-medium"><i class="fa-solid fa-trash ml-1"></i> مسح الكل</button>
+                            </div>
+                            <div class="chart-container-wrap"><canvas id="sc-chart"></canvas></div>
+                        </div>
+
+                        <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
+                            <table class="w-full text-sm text-right">
+                                <thead class="bg-slate-50 text-slate-600">
+                                    <tr>
+                                        <th class="p-3 font-medium">الفترة</th>
+                                        <th class="p-3 font-medium">النطاق</th>
+                                        <th class="p-3 font-medium">إجمالي المبيعات</th>
+                                        <th class="p-3 font-medium">متوسط اليوم</th>
+                                        <th class="p-3 font-medium">أعلى يوم</th>
+                                        <th class="p-3 font-medium">أقل يوم</th>
+                                        <th class="p-3 font-medium">أيام العمل</th>
+                                        <th class="p-3 font-medium">إجراء</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sc-table-body" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -471,6 +526,8 @@
         
         let currentPayingItemId = null; // لتخزين ID البند الحالي للسداد
         let currentArchiveSelectedKey = null; // لتخزين مفتاح الشهر المحدد حالياً فى الأرشيف
+        let comparePeriods = []; // الفترات المضافة لمقارنة المبيعات
+        let compareChartInstance = null;
 
         function normalizeDate(dateStr) {
             if (!dateStr) return '';
@@ -549,7 +606,7 @@
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             const navBtn = document.querySelector(`.nav-item[data-page="${pageId}"]`);
             if(navBtn) navBtn.classList.add('active');
-            const titles = { 'daily': 'البيان اليومي', 'monthly': 'البنود الشهرية', 'history': 'إدخال بيانات سابقة', 'report30': 'تقرير 30 يوم', 'reportFull': 'التقرير الشامل', 'monthlySales': 'المبيعات الشهرية', 'users': 'إدارة المستخدمين', 'adminReport': 'تقرير الإدارة' };
+            const titles = { 'daily': 'البيان اليومي', 'monthly': 'البنود الشهرية', 'history': 'إدخال بيانات سابقة', 'report30': 'تقرير 30 يوم', 'reportFull': 'التقرير الشامل', 'monthlySales': 'المبيعات الشهرية', 'salesCompare': 'مقارنة المبيعات', 'users': 'إدارة المستخدمين', 'adminReport': 'تقرير الإدارة' };
             document.getElementById('page-title').textContent = titles[pageId];
             toggleMobileMenu(true); 
             renderCurrentPage(); 
@@ -1281,6 +1338,168 @@
         }
 
         // =========================================
+        // ===   6. مقارنة المبيعات بين الشهور   ===
+        // =========================================
+        function getAvailableSalesMonths() {
+            const data = window.dailyStatementsArr || [];
+            const monthsSet = new Set();
+            data.forEach(d => { if (d.date && d.date.length >= 7) monthsSet.add(d.date.substring(0, 7)); });
+            return Array.from(monthsSet).sort().reverse();
+        }
+
+        window.renderSalesCompareMonthsList = function() {
+            const container = document.getElementById('sc-months-list');
+            if (!container) return;
+            const months = getAvailableSalesMonths();
+            if (months.length === 0) {
+                container.innerHTML = '<p class="text-slate-400 text-sm col-span-full text-center">لا توجد بيانات مبيعات مسجلة بعد</p>';
+                return;
+            }
+            let html = '';
+            months.forEach(m => {
+                html += `<label class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm cursor-pointer hover:bg-slate-100">
+                    <input type="checkbox" value="${m}" class="sc-month-checkbox w-4 h-4 accent-indigo-600">
+                    <span>${m.replace('-', '/')}</span>
+                </label>`;
+            });
+            container.innerHTML = html;
+        }
+
+        window.addSelectedMonths = function() {
+            const checked = document.querySelectorAll('.sc-month-checkbox:checked');
+            if (checked.length === 0) return alert('يرجى اختيار شهر واحد على الأقل');
+            checked.forEach(cb => {
+                const m = cb.value; // YYYY-MM
+                const [y, mo] = m.split('-').map(Number);
+                const start = `${m}-01`;
+                const lastDay = new Date(y, mo, 0).getDate();
+                const end = `${m}-${String(lastDay).padStart(2, '0')}`;
+                addComparePeriod(m.replace('-', '/'), start, end);
+                cb.checked = false;
+            });
+        }
+
+        window.addCustomPeriod = function() {
+            const label = document.getElementById('sc-label').value.trim();
+            const start = document.getElementById('sc-start').value;
+            const end = document.getElementById('sc-end').value;
+            if (!start || !end) return alert('يرجى تحديد الفترة من وإلى');
+            if (start > end) return alert('تاريخ البداية يجب أن يكون قبل تاريخ النهاية');
+            addComparePeriod(label || `${start} → ${end}`, start, end);
+            document.getElementById('sc-label').value = '';
+            document.getElementById('sc-start').value = '';
+            document.getElementById('sc-end').value = '';
+        }
+
+        function addComparePeriod(label, start, end) {
+            comparePeriods.push({ id: Date.now() + '-' + Math.random().toString(36).slice(2), label, start, end });
+            renderCompareResults();
+        }
+
+        window.removeComparePeriod = function(id) {
+            comparePeriods = comparePeriods.filter(p => p.id !== id);
+            renderCompareResults();
+        }
+
+        window.clearComparePeriods = function() {
+            if (comparePeriods.length === 0) return;
+            if (!confirm('هل تريد مسح كل الفترات المضافة للمقارنة؟')) return;
+            comparePeriods = [];
+            renderCompareResults();
+        }
+
+        function computePeriodSalesStats(period) {
+            const data = (window.dailyStatementsArr || []).filter(d => d.date >= period.start && d.date <= period.end);
+            let total = 0, max = 0, min = Infinity, maxDate = '', minDate = '', operatingDays = 0;
+            data.forEach(d => {
+                const billed = Number(d.customersBilled) || 0;
+                total += billed;
+                if (billed > max) { max = billed; maxDate = d.date; }
+                if (billed > 0 && billed < min) { min = billed; minDate = d.date; }
+                if (billed > 0) operatingDays++;
+            });
+            if (min === Infinity) min = 0;
+            const avg = operatingDays > 0 ? Math.round(total / operatingDays) : 0;
+            return { total, max, min, maxDate, minDate, avg, operatingDays };
+        }
+
+        function renderCompareResults() {
+            const emptyState = document.getElementById('sc-empty-state');
+            const resultsWrap = document.getElementById('sc-results-wrap');
+            const tbody = document.getElementById('sc-table-body');
+            if (!emptyState || !resultsWrap || !tbody) return;
+
+            if (comparePeriods.length === 0) {
+                emptyState.classList.remove('hidden');
+                resultsWrap.classList.add('hidden');
+                if (compareChartInstance) { compareChartInstance.destroy(); compareChartInstance = null; }
+                return;
+            }
+            emptyState.classList.add('hidden');
+            resultsWrap.classList.remove('hidden');
+
+            const statsArr = comparePeriods.map(p => ({ period: p, stats: computePeriodSalesStats(p) }));
+            const bestTotal = Math.max(...statsArr.map(s => s.stats.total));
+
+            let rowsHtml = '';
+            statsArr.forEach(({ period, stats }) => {
+                const isBest = stats.total === bestTotal && bestTotal > 0 && statsArr.length > 1;
+                rowsHtml += `<tr class="hover:bg-slate-50 ${isBest ? 'bg-emerald-50' : ''}">
+                    <td class="p-3 font-bold">${period.label}${isBest ? ' <span class="text-emerald-600 text-xs">🏆 الأعلى</span>' : ''}</td>
+                    <td class="p-3 text-xs text-slate-500">${period.start} → ${period.end}</td>
+                    <td class="p-3 font-bold text-emerald-700">${stats.total.toLocaleString()} <span class="currency">﷼</span></td>
+                    <td class="p-3">${stats.avg.toLocaleString()} <span class="currency">﷼</span></td>
+                    <td class="p-3 text-blue-700">${stats.max.toLocaleString()} <span class="currency">﷼</span>${stats.maxDate ? `<span class="block text-[10px] text-slate-400">${stats.maxDate}</span>` : ''}</td>
+                    <td class="p-3 text-amber-700">${stats.min.toLocaleString()} <span class="currency">﷼</span>${stats.minDate ? `<span class="block text-[10px] text-slate-400">${stats.minDate}</span>` : ''}</td>
+                    <td class="p-3">${stats.operatingDays}</td>
+                    <td class="p-3"><button onclick="removeComparePeriod('${period.id}')" class="text-red-500 hover:text-red-700" title="إزالة"><i class="fa-solid fa-trash"></i></button></td>
+                </tr>`;
+            });
+            tbody.innerHTML = rowsHtml;
+
+            buildCompareChart(statsArr);
+        }
+
+        function buildCompareChart(statsArr) {
+            if (compareChartInstance) { compareChartInstance.destroy(); compareChartInstance = null; }
+            const canvas = document.getElementById('sc-chart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            const labels = statsArr.map(s => s.period.label);
+            const totals = statsArr.map(s => s.stats.total);
+            const colors = ['#4f46e5', '#059669', '#d97706', '#dc2626', '#0891b2', '#7c3aed', '#db2777', '#65a30d'];
+            const barColors = labels.map((_, i) => colors[i % colors.length]);
+
+            compareChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{ label: 'إجمالي المبيعات', data: totals, backgroundColor: barColors, borderRadius: 6, maxBarThickness: 60 }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleFont: { family: 'Tajawal', size: 12 },
+                            bodyFont: { family: 'Tajawal', size: 13, weight: 'bold' },
+                            padding: 12, cornerRadius: 8, displayColors: false,
+                            callbacks: { label: function(c) { return c.parsed.y.toLocaleString() + ' ﷼'; } }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'Tajawal', size: 11 }, callback: v => v.toLocaleString() } },
+                        x: { grid: { display: false }, ticks: { font: { family: 'Tajawal', size: 11 } } }
+                    },
+                    animation: { duration: 800, easing: 'easeOutQuart' }
+                }
+            });
+        }
+
+        // =========================================
         // ===       6. إدارة المستخدمين         ===
         // =========================================
         window.addUser = function() {
@@ -1634,6 +1853,7 @@
                 if(currentActivePage === 'report30') calcReport30();
                 if(currentActivePage === 'reportFull') calcReportFull();
                 if(currentActivePage === 'monthlySales') calcMonthlySales();
+                if(currentActivePage === 'salesCompare') { renderSalesCompareMonthsList(); renderCompareResults(); }
                 if(currentActivePage === 'users') renderUsers();
             } catch (error) { console.error("Error rendering page:", error); }
         }
