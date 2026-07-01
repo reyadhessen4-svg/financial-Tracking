@@ -313,9 +313,20 @@
                         </div>
                     </div>
 
+                    <div class="bg-white border border-amber-200 shadow-sm rounded-xl p-6">
+                        <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><i class="fa-solid fa-pen-to-square text-amber-600"></i> إضافة رقم يدوياً (لبيانات غير متوفرة بالنظام)</h2>
+                        <p class="text-xs text-slate-500 mb-4">مفيد لو عايز تقارن مثلاً بمبيعات شهر من سنة سابقة مش مسجلة في النظام — أدخل الإجمالي بنفسك وهيدخل في المقارنة والرسم البياني.</p>
+                        <div class="flex flex-wrap gap-4 items-end">
+                            <div class="flex-1 min-w-[150px]"><label class="block text-sm font-medium text-slate-600 mb-1">اسم الفترة</label><input type="text" id="sc-manual-label" placeholder="مثال: يوليو 2025" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"></div>
+                            <div class="w-44"><label class="block text-sm font-medium text-slate-600 mb-1">إجمالي المبيعات</label><input type="number" step="0.01" id="sc-manual-total" placeholder="0" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"></div>
+                            <div class="w-40"><label class="block text-sm font-medium text-slate-600 mb-1">عدد أيام العمل (اختياري)</label><input type="number" id="sc-manual-days" placeholder="لحساب المتوسط" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"></div>
+                            <button onclick="addManualPeriod()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium h-10"><i class="fa-solid fa-plus ml-2"></i> إضافة للمقارنة</button>
+                        </div>
+                    </div>
+
                     <div id="sc-empty-state" class="bg-white border border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-400">
                         <i class="fa-solid fa-scale-balanced text-3xl mb-3"></i>
-                        <p>أضف شهرين أو أكثر (أو فترات مخصصة) من الأعلى لبدء المقارنة</p>
+                        <p>أضف شهرين أو أكثر (أو فترات مخصصة أو أرقام يدوية) من الأعلى لبدء المقارنة</p>
                     </div>
 
                     <div id="sc-results-wrap" class="hidden space-y-6">
@@ -1395,14 +1406,34 @@
             const end = document.getElementById('sc-end').value;
             if (!start || !end) return alert('يرجى تحديد الفترة من وإلى');
             if (start > end) return alert('تاريخ البداية يجب أن يكون قبل تاريخ النهاية');
-            addComparePeriod(label || `${start} → ${end}`, start, end);
+            addComparePeriod(label || `${start} → ${end}`, start, end, false);
             document.getElementById('sc-label').value = '';
             document.getElementById('sc-start').value = '';
             document.getElementById('sc-end').value = '';
         }
 
+        // إضافة فترة برقم يدوي لما تكون البيانات غير مسجلة في النظام
+        window.addManualPeriod = function() {
+            const label = document.getElementById('sc-manual-label').value.trim();
+            const totalVal = parseFloat(document.getElementById('sc-manual-total').value);
+            const daysVal = parseInt(document.getElementById('sc-manual-days').value) || 0;
+            if (!label) return alert('يرجى إدخال اسم للفترة (مثال: يوليو 2025)');
+            if (isNaN(totalVal) || totalVal < 0) return alert('يرجى إدخال إجمالي مبيعات صحيح');
+
+            comparePeriods.push({
+                id: Date.now() + '-' + Math.random().toString(36).slice(2),
+                label, start: '', end: '', manual: true,
+                manualTotal: totalVal, manualDays: daysVal
+            });
+            renderCompareResults();
+
+            document.getElementById('sc-manual-label').value = '';
+            document.getElementById('sc-manual-total').value = '';
+            document.getElementById('sc-manual-days').value = '';
+        }
+
         function addComparePeriod(label, start, end) {
-            comparePeriods.push({ id: Date.now() + '-' + Math.random().toString(36).slice(2), label, start, end });
+            comparePeriods.push({ id: Date.now() + '-' + Math.random().toString(36).slice(2), label, start, end, manual: false });
             renderCompareResults();
         }
 
@@ -1419,6 +1450,12 @@
         }
 
         function computePeriodSalesStats(period) {
+            if (period.manual) {
+                const total = period.manualTotal || 0;
+                const days = period.manualDays || 0;
+                const avg = days > 0 ? Math.round(total / days) : 0;
+                return { total, max: null, min: null, maxDate: '', minDate: '', avg, operatingDays: days, isManual: true };
+            }
             const data = (window.dailyStatementsArr || []).filter(d => d.date >= period.start && d.date <= period.end);
             let total = 0, max = 0, min = Infinity, maxDate = '', minDate = '', operatingDays = 0;
             data.forEach(d => {
@@ -1430,7 +1467,7 @@
             });
             if (min === Infinity) min = 0;
             const avg = operatingDays > 0 ? Math.round(total / operatingDays) : 0;
-            return { total, max, min, maxDate, minDate, avg, operatingDays };
+            return { total, max, min, maxDate, minDate, avg, operatingDays, isManual: false };
         }
 
         function renderCompareResults() {
@@ -1454,15 +1491,23 @@
             let rowsHtml = '';
             statsArr.forEach(({ period, stats }) => {
                 const isBest = stats.total === bestTotal && bestTotal > 0 && statsArr.length > 1;
-                rowsHtml += `<tr class="hover:bg-slate-50 ${isBest ? 'bg-emerald-50' : ''}" draggable="true" data-period-id="${period.id}">
+                const rangeLabel = stats.isManual
+                    ? `<span class="inline-flex items-center gap-1 text-amber-600"><i class="fa-solid fa-pen-to-square"></i> بيانات يدوية</span>`
+                    : `${period.start} → ${period.end}`;
+                const maxCell = stats.isManual ? '<span class="text-slate-400">—</span>' : `${stats.max.toLocaleString()} <span class="currency">﷼</span>${stats.maxDate ? `<span class="block text-[10px] text-slate-400">${stats.maxDate}</span>` : ''}`;
+                const minCell = stats.isManual ? '<span class="text-slate-400">—</span>' : `${stats.min.toLocaleString()} <span class="currency">﷼</span>${stats.minDate ? `<span class="block text-[10px] text-slate-400">${stats.minDate}</span>` : ''}`;
+                const daysCell = stats.isManual && stats.operatingDays === 0 ? '<span class="text-slate-400">—</span>' : stats.operatingDays;
+                const avgCell = (stats.isManual && stats.operatingDays === 0) ? '<span class="text-slate-400">—</span>' : `${stats.avg.toLocaleString()} <span class="currency">﷼</span>`;
+
+                rowsHtml += `<tr class="hover:bg-slate-50 ${isBest ? 'bg-emerald-50' : ''} ${stats.isManual ? 'bg-amber-50/40' : ''}" draggable="true" data-period-id="${period.id}">
                     <td class="p-3 text-slate-300 cursor-grab active:cursor-grabbing text-center" title="اسحب لإعادة الترتيب"><i class="fa-solid fa-grip-vertical"></i></td>
                     <td class="p-3 font-bold">${period.label}${isBest ? ' <span class="text-emerald-600 text-xs">🏆 الأعلى</span>' : ''}</td>
-                    <td class="p-3 text-xs text-slate-500">${period.start} → ${period.end}</td>
+                    <td class="p-3 text-xs text-slate-500">${rangeLabel}</td>
                     <td class="p-3 font-bold text-emerald-700">${stats.total.toLocaleString()} <span class="currency">﷼</span></td>
-                    <td class="p-3">${stats.avg.toLocaleString()} <span class="currency">﷼</span></td>
-                    <td class="p-3 text-blue-700">${stats.max.toLocaleString()} <span class="currency">﷼</span>${stats.maxDate ? `<span class="block text-[10px] text-slate-400">${stats.maxDate}</span>` : ''}</td>
-                    <td class="p-3 text-amber-700">${stats.min.toLocaleString()} <span class="currency">﷼</span>${stats.minDate ? `<span class="block text-[10px] text-slate-400">${stats.minDate}</span>` : ''}</td>
-                    <td class="p-3">${stats.operatingDays}</td>
+                    <td class="p-3">${avgCell}</td>
+                    <td class="p-3 text-blue-700">${maxCell}</td>
+                    <td class="p-3 text-amber-700">${minCell}</td>
+                    <td class="p-3">${daysCell}</td>
                     <td class="p-3"><button onclick="removeComparePeriod('${period.id}')" class="text-red-500 hover:text-red-700" title="إزالة"><i class="fa-solid fa-trash"></i></button></td>
                 </tr>`;
             });
@@ -1557,14 +1602,19 @@
             let tableRows = '';
             statsArr.forEach(({ period, stats }) => {
                 const isBest = stats.total === bestTotal && bestTotal > 0 && statsArr.length > 1;
-                tableRows += `<tr style="${isBest ? 'background:#d1fae5;' : ''}">
+                const rangeText = stats.isManual ? 'بيانات يدوية 🖊️' : `${period.start} → ${period.end}`;
+                const maxText = stats.isManual ? '—' : `${stats.max.toLocaleString()}<br><span style="font-size:9px;color:#94a3b8;">${stats.maxDate}</span>`;
+                const minText = stats.isManual ? '—' : `${stats.min.toLocaleString()}<br><span style="font-size:9px;color:#94a3b8;">${stats.minDate}</span>`;
+                const daysText = (stats.isManual && stats.operatingDays === 0) ? '—' : stats.operatingDays;
+                const avgText = (stats.isManual && stats.operatingDays === 0) ? '—' : `${stats.avg.toLocaleString()} <span style="font-size:0.9em;">﷼</span>`;
+                tableRows += `<tr style="${isBest ? 'background:#d1fae5;' : (stats.isManual ? 'background:#fffbeb;' : '')}">
                     <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:700;">${period.label}${isBest ? ' 🏆' : ''}</td>
-                    <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;color:#64748b;">${period.start} → ${period.end}</td>
+                    <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;color:#64748b;">${rangeText}</td>
                     <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:800;color:#047857;text-align:center;">${stats.total.toLocaleString()} <span style="font-weight:800;font-size:0.9em;">﷼</span></td>
-                    <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;text-align:center;">${stats.avg.toLocaleString()} <span style="font-size:0.9em;">﷼</span></td>
-                    <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:center;color:#1d4ed8;">${stats.max.toLocaleString()}<br><span style="font-size:9px;color:#94a3b8;">${stats.maxDate}</span></td>
-                    <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:center;color:#b45309;">${stats.min.toLocaleString()}<br><span style="font-size:9px;color:#94a3b8;">${stats.minDate}</span></td>
-                    <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;text-align:center;">${stats.operatingDays}</td>
+                    <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;text-align:center;">${avgText}</td>
+                    <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:center;color:#1d4ed8;">${maxText}</td>
+                    <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:center;color:#b45309;">${minText}</td>
+                    <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;text-align:center;">${daysText}</td>
                 </tr>`;
             });
 
@@ -1615,6 +1665,10 @@
             html += `<th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:center;color:#475569;">أيام العمل</th>`;
             html += `</tr></thead><tbody>${tableRows}</tbody>`;
             html += `</table></div>`;
+
+            if (statsArr.some(s => s.stats.isManual)) {
+                html += `<p style="font-size:10px;color:#b45309;margin:-14px 0 20px;">🖊️ الفترات المُعلَّمة "بيانات يدوية" تم إدخال إجماليها يدوياً لعدم توفر بياناتها في النظام، ولا تحتوي على تفاصيل أعلى/أقل يوم.</p>`;
+            }
 
             html += `<div style="margin-top:48px;padding-top:24px;border-top:2px solid #e2e8f0;text-align:center;">`;
             html += `<p style="font-size:12px;color:#64748b;margin:0 0 40px;">المدير المالى</p>`;
