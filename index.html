@@ -330,6 +330,8 @@
                     </div>
 
                     <div id="sc-results-wrap" class="hidden space-y-6">
+                        <div id="sc-growth-summary" class="hidden bg-gradient-to-l from-indigo-50 to-white border border-indigo-100 rounded-xl p-5"></div>
+
                         <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                             <div class="flex items-center justify-between mb-4">
                                 <h3 class="text-md font-bold text-slate-700"><i class="fa-solid fa-chart-column text-indigo-600 ml-2"></i> مقارنة إجمالي المبيعات</h3>
@@ -341,7 +343,7 @@
                             <div class="chart-container-wrap"><canvas id="sc-chart"></canvas></div>
                         </div>
 
-                        <p class="text-xs text-slate-400 flex items-center gap-1.5 px-1"><i class="fa-solid fa-hand"></i> اسحب أي صف من مقبض <i class="fa-solid fa-grip-vertical"></i> لإعادة ترتيب الفترات كما تحب، والترتيب سينعكس تلقائياً على الرسم البياني وملف الـ PDF.</p>
+                        <p class="text-xs text-slate-400 flex items-center gap-1.5 px-1"><i class="fa-solid fa-hand"></i> اسحب أي صف من مقبض <i class="fa-solid fa-grip-vertical"></i> لإعادة ترتيب الفترات كما تحب، وهيتحسب نمو كل فترة بالنسبة للفترة اللي قبلها في نفس الترتيب، وينعكس على الرسم البياني وملف الـ PDF.</p>
 
                         <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
                             <table class="w-full text-sm text-right">
@@ -350,7 +352,8 @@
                                         <th class="p-3 font-medium w-8"></th>
                                         <th class="p-3 font-medium">الفترة</th>
                                         <th class="p-3 font-medium">النطاق</th>
-                                        <th class="p-3 font-medium">إجمالي المبيعات</th>
+                                        <th class="p-3 font-medium">إجمالي المبيعات <span class="block text-[10px] font-normal text-slate-400">شامل الضريبة</span></th>
+                                        <th class="p-3 font-medium">نسبة النمو</th>
                                         <th class="p-3 font-medium">متوسط اليوم</th>
                                         <th class="p-3 font-medium">أعلى يوم</th>
                                         <th class="p-3 font-medium">أقل يوم</th>
@@ -360,6 +363,7 @@
                                 </thead>
                                 <tbody id="sc-table-body" class="divide-y divide-slate-100"></tbody>
                             </table>
+                            <p class="text-[11px] text-slate-400 px-4 py-2 border-t border-slate-100">* جميع مبالغ المبيعات الموضحة أعلاه شاملة ضريبة القيمة المضافة.</p>
                         </div>
                     </div>
                 </div>
@@ -1470,6 +1474,66 @@
             return { total, max, min, maxDate, minDate, avg, operatingDays, isManual: false };
         }
 
+        // حساب نسبة النمو لكل فترة بالنسبة للفترة اللي قبلها في نفس الترتيب الحالي
+        function attachGrowthToStatsArr(statsArr) {
+            return statsArr.map((item, idx) => {
+                if (idx === 0) return { ...item, growth: null };
+                const prevTotal = statsArr[idx - 1].stats.total;
+                let growth = null;
+                if (prevTotal > 0) growth = ((item.stats.total - prevTotal) / prevTotal) * 100;
+                else if (prevTotal === 0 && item.stats.total > 0) growth = Infinity;
+                return { ...item, growth };
+            });
+        }
+
+        function growthBadgeHtml(growth) {
+            if (growth === null) return `<span class="text-slate-400 text-xs">الأساس</span>`;
+            if (growth === Infinity) return `<span class="text-emerald-600 font-bold text-xs">▲ جديد</span>`;
+            const positive = growth >= 0;
+            return `<span class="${positive ? 'text-emerald-600' : 'text-red-600'} font-bold text-xs">${positive ? '▲' : '▼'} ${Math.abs(growth).toFixed(1)}%</span>`;
+        }
+
+        function renderGrowthSummary(statsArr) {
+            const box = document.getElementById('sc-growth-summary');
+            if (!box) return;
+            if (statsArr.length < 2) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+            box.classList.remove('hidden');
+
+            const first = statsArr[0];
+            const last = statsArr[statsArr.length - 1];
+            let overallGrowth = null;
+            if (first.stats.total > 0) overallGrowth = ((last.stats.total - first.stats.total) / first.stats.total) * 100;
+
+            let bestGrowth = null, bestGrowthPeriod = null, worstGrowth = null, worstGrowthPeriod = null;
+            statsArr.forEach(item => {
+                if (item.growth === null || item.growth === Infinity) return;
+                if (bestGrowth === null || item.growth > bestGrowth) { bestGrowth = item.growth; bestGrowthPeriod = item.period; }
+                if (worstGrowth === null || item.growth < worstGrowth) { worstGrowth = item.growth; worstGrowthPeriod = item.period; }
+            });
+
+            let html = `<div class="flex flex-wrap items-center gap-6">`;
+            html += `<div>
+                <p class="text-xs text-slate-500 mb-1"><i class="fa-solid fa-arrow-trend-up ml-1 text-indigo-500"></i> نسبة النمو من "${first.period.label}" إلى "${last.period.label}"</p>
+                <p class="text-2xl font-extrabold ${overallGrowth === null ? 'text-slate-400' : (overallGrowth >= 0 ? 'text-emerald-600' : 'text-red-600')}">
+                    ${overallGrowth === null ? '—' : `${overallGrowth >= 0 ? '▲' : '▼'} ${Math.abs(overallGrowth).toFixed(1)}%`}
+                </p>
+            </div>`;
+            if (bestGrowthPeriod && statsArr.length > 2) {
+                html += `<div class="border-r border-indigo-100 pr-6">
+                    <p class="text-xs text-slate-500 mb-1">أعلى نمو مسجل</p>
+                    <p class="text-sm font-bold text-emerald-600">▲ ${bestGrowth.toFixed(1)}% <span class="text-slate-500 font-normal">(${bestGrowthPeriod.label})</span></p>
+                </div>`;
+            }
+            if (worstGrowthPeriod && statsArr.length > 2 && worstGrowth < 0) {
+                html += `<div>
+                    <p class="text-xs text-slate-500 mb-1">أكبر انخفاض مسجل</p>
+                    <p class="text-sm font-bold text-red-600">▼ ${Math.abs(worstGrowth).toFixed(1)}% <span class="text-slate-500 font-normal">(${worstGrowthPeriod.label})</span></p>
+                </div>`;
+            }
+            html += `</div>`;
+            box.innerHTML = html;
+        }
+
         function renderCompareResults() {
             const emptyState = document.getElementById('sc-empty-state');
             const resultsWrap = document.getElementById('sc-results-wrap');
@@ -1485,11 +1549,13 @@
             emptyState.classList.add('hidden');
             resultsWrap.classList.remove('hidden');
 
-            const statsArr = comparePeriods.map(p => ({ period: p, stats: computePeriodSalesStats(p) }));
+            let statsArr = comparePeriods.map(p => ({ period: p, stats: computePeriodSalesStats(p) }));
             const bestTotal = Math.max(...statsArr.map(s => s.stats.total));
+            statsArr = attachGrowthToStatsArr(statsArr);
+            renderGrowthSummary(statsArr);
 
             let rowsHtml = '';
-            statsArr.forEach(({ period, stats }) => {
+            statsArr.forEach(({ period, stats, growth }) => {
                 const isBest = stats.total === bestTotal && bestTotal > 0 && statsArr.length > 1;
                 const rangeLabel = stats.isManual
                     ? `<span class="inline-flex items-center gap-1 text-amber-600"><i class="fa-solid fa-pen-to-square"></i> بيانات يدوية</span>`
@@ -1504,6 +1570,7 @@
                     <td class="p-3 font-bold">${period.label}${isBest ? ' <span class="text-emerald-600 text-xs">🏆 الأعلى</span>' : ''}</td>
                     <td class="p-3 text-xs text-slate-500">${rangeLabel}</td>
                     <td class="p-3 font-bold text-emerald-700">${stats.total.toLocaleString()} <span class="currency">﷼</span></td>
+                    <td class="p-3">${growthBadgeHtml(growth)}</td>
                     <td class="p-3">${avgCell}</td>
                     <td class="p-3 text-blue-700">${maxCell}</td>
                     <td class="p-3 text-amber-700">${minCell}</td>
@@ -1595,12 +1662,20 @@
         window.exportSalesComparePDF = async function() {
             if (comparePeriods.length === 0) return alert('أضف فترتين على الأقل للمقارنة قبل التصدير');
 
-            const statsArr = comparePeriods.map(p => ({ period: p, stats: computePeriodSalesStats(p) }));
+            let statsArr = comparePeriods.map(p => ({ period: p, stats: computePeriodSalesStats(p) }));
             const bestTotal = Math.max(...statsArr.map(s => s.stats.total));
+            statsArr = attachGrowthToStatsArr(statsArr);
             const chartImage = compareChartInstance ? compareChartInstance.toBase64Image('image/png', 1) : '';
 
+            function growthPdfText(growth) {
+                if (growth === null) return '<span style="color:#94a3b8;">الأساس</span>';
+                if (growth === Infinity) return '<span style="color:#047857;font-weight:800;">▲ جديد</span>';
+                const positive = growth >= 0;
+                return `<span style="color:${positive ? '#047857' : '#b91c1c'};font-weight:800;">${positive ? '▲' : '▼'} ${Math.abs(growth).toFixed(1)}%</span>`;
+            }
+
             let tableRows = '';
-            statsArr.forEach(({ period, stats }) => {
+            statsArr.forEach(({ period, stats, growth }) => {
                 const isBest = stats.total === bestTotal && bestTotal > 0 && statsArr.length > 1;
                 const rangeText = stats.isManual ? 'بيانات يدوية 🖊️' : `${period.start} → ${period.end}`;
                 const maxText = stats.isManual ? '—' : `${stats.max.toLocaleString()}<br><span style="font-size:9px;color:#94a3b8;">${stats.maxDate}</span>`;
@@ -1611,6 +1686,7 @@
                     <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:700;">${period.label}${isBest ? ' 🏆' : ''}</td>
                     <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;color:#64748b;">${rangeText}</td>
                     <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:800;color:#047857;text-align:center;">${stats.total.toLocaleString()} <span style="font-weight:800;font-size:0.9em;">﷼</span></td>
+                    <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:center;">${growthPdfText(growth)}</td>
                     <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;text-align:center;">${avgText}</td>
                     <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:center;color:#1d4ed8;">${maxText}</td>
                     <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:center;color:#b45309;">${minText}</td>
@@ -1620,6 +1696,12 @@
 
             const bestPeriod = statsArr.find(s => s.stats.total === bestTotal);
             const generatedOn = new Date().toISOString().split('T')[0];
+
+            // نسبة النمو الإجمالية من أول فترة لآخر فترة فى نفس ترتيب المقارنة
+            let overallGrowth = null;
+            if (statsArr.length > 1 && statsArr[0].stats.total > 0) {
+                overallGrowth = ((statsArr[statsArr.length - 1].stats.total - statsArr[0].stats.total) / statsArr[0].stats.total) * 100;
+            }
 
             const loadingEl = document.getElementById('pdf-loading-overlay');
             loadingEl.style.display = 'flex';
@@ -1634,14 +1716,23 @@
             html += `<div style="text-align:center;border-bottom:3px solid #1e293b;padding-bottom:20px;margin-bottom:24px;">`;
             html += `<img src="${LOGO_DATA_URL}" alt="V-SHAPE Healthy Meals" style="height:50px;width:auto;margin:0 auto 8px;display:block;">`;
             html += `<h3 style="font-size:17px;font-weight:700;color:#4f46e5;margin:8px 0 4px;">تقرير مقارنة المبيعات</h3>`;
-            html += `<p style="font-size:12px;color:#64748b;margin:0;font-weight:500;">تاريخ الإصدار: ${generatedOn} — عدد الفترات: ${statsArr.length}</p>`;
+            html += `<p style="font-size:12px;color:#64748b;margin:0;font-weight:500;">تاريخ الإصدار: ${generatedOn} — عدد الفترات: ${statsArr.length} — المبالغ شاملة الضريبة</p>`;
             html += `</div>`;
 
             if (bestPeriod && statsArr.length > 1) {
-                html += `<div style="background:#d1fae5;border:2px solid #6ee7b7;border-radius:10px;padding:18px;margin-bottom:20px;">`;
-                html += `<p style="font-size:12px;color:#059669;margin:0 0 4px;font-weight:600;">🏆 الفترة الأعلى مبيعاً</p>`;
-                html += `<p style="font-size:20px;font-weight:800;color:#047857;margin:0;">${bestPeriod.period.label} — ${bestPeriod.stats.total.toLocaleString()} <span style="font-size:16px;">﷼</span></p>`;
-                html += `</div>`;
+                html += `<table style="width:100%;border-collapse:separate;border-spacing:10px 0;margin-bottom:20px;"><tr>`;
+                html += `<td style="width:${overallGrowth === null ? '100%' : '50%'};background:#d1fae5;border:2px solid #6ee7b7;border-radius:10px;padding:16px;vertical-align:top;">`;
+                html += `<p style="font-size:11px;color:#059669;margin:0 0 4px;font-weight:600;">🏆 الفترة الأعلى مبيعاً</p>`;
+                html += `<p style="font-size:18px;font-weight:800;color:#047857;margin:0;">${bestPeriod.period.label} — ${bestPeriod.stats.total.toLocaleString()} <span style="font-size:14px;">﷼</span></p>`;
+                html += `</td>`;
+                if (overallGrowth !== null) {
+                    const positive = overallGrowth >= 0;
+                    html += `<td style="width:50%;background:${positive ? '#eef2ff' : '#fef2f2'};border:2px solid ${positive ? '#c7d2fe' : '#fecaca'};border-radius:10px;padding:16px;vertical-align:top;">`;
+                    html += `<p style="font-size:11px;color:${positive ? '#4338ca' : '#b91c1c'};margin:0 0 4px;font-weight:600;">نسبة النمو من "${statsArr[0].period.label}" إلى "${statsArr[statsArr.length-1].period.label}"</p>`;
+                    html += `<p style="font-size:18px;font-weight:800;color:${positive ? '#4338ca' : '#b91c1c'};margin:0;">${positive ? '▲' : '▼'} ${Math.abs(overallGrowth).toFixed(1)}%</p>`;
+                    html += `</td>`;
+                }
+                html += `</tr></table>`;
             }
 
             if (chartImage) {
@@ -1653,12 +1744,13 @@
             }
 
             html += `<div style="margin-bottom:24px;">`;
-            html += `<h4 style="font-size:14px;font-weight:700;color:#334155;margin:0 0 12px;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">تفاصيل المقارنة</h4>`;
+            html += `<h4 style="font-size:14px;font-weight:700;color:#334155;margin:0 0 12px;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">تفاصيل المقارنة <span style="font-size:11px;font-weight:500;color:#94a3b8;">(المبالغ شاملة ضريبة القيمة المضافة)</span></h4>`;
             html += `<table style="width:100%;border-collapse:collapse;">`;
             html += `<thead><tr style="background:#f1f5f9;">`;
             html += `<th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:right;color:#475569;">الفترة</th>`;
             html += `<th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:right;color:#475569;">النطاق</th>`;
             html += `<th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:center;color:#475569;">الإجمالي</th>`;
+            html += `<th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:center;color:#475569;">نسبة النمو</th>`;
             html += `<th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:center;color:#475569;">متوسط اليوم</th>`;
             html += `<th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:center;color:#475569;">أعلى يوم</th>`;
             html += `<th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:center;color:#475569;">أقل يوم</th>`;
@@ -1666,8 +1758,10 @@
             html += `</tr></thead><tbody>${tableRows}</tbody>`;
             html += `</table></div>`;
 
+            html += `<p style="font-size:10px;color:#94a3b8;margin:-14px 0 8px;">* نسبة النمو محسوبة لكل فترة بالنسبة للفترة السابقة لها في نفس ترتيب المقارنة. جميع مبالغ المبيعات شاملة ضريبة القيمة المضافة.</p>`;
+
             if (statsArr.some(s => s.stats.isManual)) {
-                html += `<p style="font-size:10px;color:#b45309;margin:-14px 0 20px;">🖊️ الفترات المُعلَّمة "بيانات يدوية" تم إدخال إجماليها يدوياً لعدم توفر بياناتها في النظام، ولا تحتوي على تفاصيل أعلى/أقل يوم.</p>`;
+                html += `<p style="font-size:10px;color:#b45309;margin:0 0 20px;">🖊️ الفترات المُعلَّمة "بيانات يدوية" تم إدخال إجماليها يدوياً لعدم توفر بياناتها في النظام، ولا تحتوي على تفاصيل أعلى/أقل يوم.</p>`;
             }
 
             html += `<div style="margin-top:48px;padding-top:24px;border-top:2px solid #e2e8f0;text-align:center;">`;
