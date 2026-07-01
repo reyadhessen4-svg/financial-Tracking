@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -370,11 +369,16 @@
                 <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-box-archive ml-2 text-indigo-600"></i> أرشيف البنود الشهرية</h3>
                 <button onclick="closeArchiveModal()" class="text-slate-400 hover:text-red-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-slate-600 mb-1">اختر الشهر</label>
-                <select id="archive-select" onchange="loadArchivedMonth(this.value)" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
-                    <option value="">-- اختر شهراً من الأرشيف --</option>
-                </select>
+            <div class="mb-4 flex flex-wrap gap-2 items-end">
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-sm font-medium text-slate-600 mb-1">اختر الشهر</label>
+                    <select id="archive-select" onchange="loadArchivedMonth(this.value)" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                        <option value="">-- اختر شهراً من الأرشيف --</option>
+                    </select>
+                </div>
+                <button id="archive-rename-btn" onclick="renameArchivedMonth()" disabled class="bg-amber-600 hover:bg-amber-700 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm whitespace-nowrap">
+                    <i class="fa-solid fa-pen-to-square ml-2"></i> تعديل تاريخ الشهر
+                </button>
             </div>
             <div id="archive-table-container" class="text-center text-slate-400 text-sm">اختر شهراً لعرض بنوده</div>
         </div>
@@ -466,6 +470,7 @@
         let msChartData = { labels: [], values: [] };
         
         let currentPayingItemId = null; // لتخزين ID البند الحالي للسداد
+        let currentArchiveSelectedKey = null; // لتخزين مفتاح الشهر المحدد حالياً فى الأرشيف
 
         function normalizeDate(dateStr) {
             if (!dateStr) return '';
@@ -746,6 +751,8 @@
             document.getElementById('archive-modal').classList.remove('hidden');
             const select = document.getElementById('archive-select');
             select.innerHTML = '<option value="">-- اختر شهراً من الأرشيف --</option>';
+            currentArchiveSelectedKey = null;
+            document.getElementById('archive-rename-btn').disabled = true;
             try {
                 const snapshot = await get(ref(db, 'monthlyArchive'));
                 if (snapshot.exists()) {
@@ -757,6 +764,9 @@
 
         window.loadArchivedMonth = async function(monthKey) {
             const container = document.getElementById('archive-table-container');
+            const renameBtn = document.getElementById('archive-rename-btn');
+            currentArchiveSelectedKey = monthKey || null;
+            renameBtn.disabled = !monthKey;
             if(!monthKey) { container.innerHTML = '<p class="text-center text-slate-400 text-sm">اختر شهراً لعرض بنوده</p>'; return; }
             try {
                 const snapshot = await get(ref(db, `monthlyArchive/${monthKey}`));
@@ -770,6 +780,45 @@
                     html += '</tbody></table>'; container.innerHTML = html;
                 } else { container.innerHTML = '<p class="text-center text-red-500 text-sm">لا توجد بيانات لهذا الشهر</p>'; }
             } catch(e) { container.innerHTML = '<p class="text-center text-red-500 text-sm">خطأ في تحميل البيانات</p>'; }
+        }
+
+        // تعديل (إعادة تسمية) تاريخ الشهر المأرشف - مثلاً لو تم أرشفة يونيو بالخطأ باسم يوليو
+        window.renameArchivedMonth = async function() {
+            const oldKey = currentArchiveSelectedKey;
+            if(!oldKey) return alert('يرجى اختيار شهر من القائمة أولاً');
+
+            const newKeyRaw = prompt(`أدخل التاريخ الصحيح للشهر المأرشف (بصيغة سنة-شهر مثل 2026-06)\nالتاريخ الحالي: ${oldKey}`, oldKey);
+            if (newKeyRaw === null) return; // المستخدم ألغى العملية
+
+            const newKey = newKeyRaw.trim();
+            if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(newKey)) {
+                return alert('صيغة غير صحيحة. يجب إدخال التاريخ بصيغة سنة-شهر مثل 2026-06');
+            }
+            if (newKey === oldKey) return alert('لم يتم تغيير أي شيء، التاريخ الجديد مطابق للتاريخ الحالي');
+
+            try {
+                const oldSnapshot = await get(ref(db, `monthlyArchive/${oldKey}`));
+                if (!oldSnapshot.exists()) return alert('تعذر العثور على بيانات هذا الشهر');
+
+                const newSnapshot = await get(ref(db, `monthlyArchive/${newKey}`));
+                if (newSnapshot.exists()) {
+                    if (!confirm(`يوجد بالفعل أرشيف بتاريخ ${newKey}. هل تريد استبداله ببيانات ${oldKey}؟`)) return;
+                }
+
+                const dataToMove = oldSnapshot.val();
+                const updates = {};
+                updates[`/monthlyArchive/${newKey}`] = dataToMove;
+                updates[`/monthlyArchive/${oldKey}`] = null;
+
+                await update(ref(db), updates);
+                alert('تم تعديل تاريخ الشهر المأرشف بنجاح');
+                await openArchiveModal();
+                document.getElementById('archive-select').value = newKey;
+                await loadArchivedMonth(newKey);
+            } catch(e) {
+                console.error(e);
+                alert('حدث خطأ أثناء تعديل التاريخ: ' + e);
+            }
         }
 
         window.closeArchiveModal = function() {
