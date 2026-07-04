@@ -793,6 +793,18 @@
             }
         }
 
+        window.editItemName = function(id) {
+            const item = window.monthlyItemsArr.find(i => i.id === id);
+            if(!item) return;
+            const newNameRaw = prompt(`تعديل اسم البند`, item.name);
+            if (newNameRaw === null) return; // المستخدم ألغى العملية
+            const newName = newNameRaw.trim();
+            if (!newName) return alert('يرجى إدخال اسم صحيح للبند');
+            if (newName === item.name) return; // لم يتغير شيء
+            const updates = {}; updates['/monthlyItems/' + id + '/name'] = newName;
+            update(ref(db), updates).catch(err => alert('حدث خطأ أثناء تعديل الاسم: ' + err));
+        }
+
         window.editItemAmount = function(id) {
             const item = window.monthlyItemsArr.find(i => i.id === id);
             if(!item) return;
@@ -933,6 +945,7 @@
                     <div class="flex gap-2 items-center">
                         <button onclick="payItem('${item.id}')" class="text-emerald-600 hover:text-emerald-800" title="سداد"><i class="fa-solid fa-money-bill-wave"></i></button>
                         <button onclick="showItemHistory('${item.id}')" class="text-indigo-600 hover:text-indigo-800" title="سجل السداد"><i class="fa-solid fa-clock-rotate-left"></i></button>
+                        <button onclick="editItemName('${item.id}')" class="text-slate-500 hover:text-slate-700" title="تعديل اسم البند"><i class="fa-solid fa-i-cursor"></i></button>
                         <button onclick="editItemAmount('${item.id}')" class="text-amber-600 hover:text-amber-800" title="تعديل المبلغ"><i class="fa-solid fa-pen-to-square"></i></button>
                         <button onclick="deleteItem('${item.id}')" class="text-red-600 hover:text-red-800" title="حذف البند"><i class="fa-solid fa-trash"></i></button>
                     </div>` : '-';
