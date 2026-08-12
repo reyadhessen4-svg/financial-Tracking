@@ -99,6 +99,9 @@
                     <button onclick="showPage('users')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="users">
                         <i class="fa-solid fa-shield-halved w-4 h-4"></i><span>إدارة المستخدمين</span>
                     </button>
+                    <button onclick="showPage('backup')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="backup">
+                        <i class="fa-solid fa-database w-4 h-4"></i><span>النسخ الاحتياطي</span>
+                    </button>
                 </div>
                 <p class="px-3 py-2 text-slate-500 text-xs font-bold">المتابعة اليومية</p>
                 <button onclick="showPage('daily')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="daily">
@@ -436,6 +439,29 @@
                     </div>
                 </div>
 
+                <!-- 8. النسخ الاحتياطي -->
+                <div id="page-backup" class="page space-y-6">
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
+                        <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><i class="fa-solid fa-shield-halved text-indigo-600"></i> النسخ الاحتياطي الكامل</h2>
+                        <p class="text-sm text-slate-500 mb-6">قم بتنزيل نسخة احتياطية شاملة لكل البيانات المسجلة في النظام (البيان اليومي، البنود الشهرية والسدادات، أرشيف الشهور، المستخدمين) بصيغة JSON. احتفظ بهذا الملف في مكان آمن، ويمكن استخدامه لاحقاً لاستعادة كامل البيانات في حال حدوث أي مشكلة.</p>
+                        <div class="flex flex-wrap gap-3">
+                            <button onclick="downloadFullBackup()" id="backup-json-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 transition-colors"><i class="fa-solid fa-download"></i> تنزيل نسخة احتياطية (JSON)</button>
+                            <button onclick="exportBackupExcel()" id="backup-excel-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 transition-colors"><i class="fa-solid fa-file-excel"></i> نسخة قابلة للقراءة (Excel)</button>
+                        </div>
+                        <div id="backup-status" class="hidden mt-4 text-sm rounded-lg px-4 py-2.5 border"></div>
+                        <p class="text-xs text-slate-400 mt-4"><i class="fa-solid fa-circle-info ml-1"></i> ملف الـ JSON هو النسخة الوحيدة الصالحة لإعادة الاستعادة الكاملة للنظام. أما ملف الإكسيل فهو للقراءة والمراجعة فقط ولا يمكن استخدامه للاستعادة.</p>
+                    </div>
+
+                    <div class="bg-white border border-red-200 shadow-sm rounded-xl p-6">
+                        <h2 class="text-lg font-bold mb-2 flex items-center gap-2 text-red-700"><i class="fa-solid fa-triangle-exclamation"></i> استعادة نسخة احتياطية</h2>
+                        <p class="text-sm text-slate-500 mb-4">تحذير: استعادة نسخة احتياطية سيقوم <span class="font-bold text-red-600">باستبدال كل البيانات الحالية</span> في النظام (البيان اليومي، البنود الشهرية، الأرشيف، المستخدمين) بالبيانات الموجودة في الملف المرفوع. هذه العملية <span class="font-bold text-red-600">لا يمكن التراجع عنها</span>. تأكد من تنزيل نسخة احتياطية للبيانات الحالية أولاً قبل الاستعادة.</p>
+                        <label class="inline-flex items-center gap-2 border border-red-400 text-red-600 hover:bg-red-50 px-5 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-colors">
+                            <i class="fa-solid fa-upload"></i> اختر ملف النسخة الاحتياطية (JSON)
+                            <input type="file" id="restore-file-input" accept=".json,application/json" class="hidden" onchange="restoreFromBackup(event)">
+                        </label>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
@@ -631,7 +657,7 @@
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             const navBtn = document.querySelector(`.nav-item[data-page="${pageId}"]`);
             if(navBtn) navBtn.classList.add('active');
-            const titles = { 'daily': 'البيان اليومي', 'monthly': 'البنود الشهرية', 'history': 'إدخال بيانات سابقة', 'report30': 'تقرير 30 يوم', 'reportFull': 'التقرير الشامل', 'monthlySales': 'المبيعات الشهرية', 'salesCompare': 'مقارنة المبيعات', 'users': 'إدارة المستخدمين', 'adminReport': 'تقرير الإدارة' };
+            const titles = { 'daily': 'البيان اليومي', 'monthly': 'البنود الشهرية', 'history': 'إدخال بيانات سابقة', 'report30': 'تقرير 30 يوم', 'reportFull': 'التقرير الشامل', 'monthlySales': 'المبيعات الشهرية', 'salesCompare': 'مقارنة المبيعات', 'users': 'إدارة المستخدمين', 'adminReport': 'تقرير الإدارة', 'backup': 'النسخ الاحتياطي' };
             document.getElementById('page-title').textContent = titles[pageId];
             toggleMobileMenu(true); 
             renderCurrentPage(); 
@@ -2211,6 +2237,205 @@
             workspace.style.display = 'none';
             workspace.innerHTML = '';
             loadingEl.style.display = 'none';
+        }
+
+        // =========================================
+        // ===        8. النسخ الاحتياطي         ===
+        // =========================================
+        const BACKUP_KEYS = ['dailyStatements', 'monthlyItems', 'monthlyArchive', 'users'];
+
+        // ينشئ نص تاريخ ووقت مناسب لاستخدامه في اسم ملف النسخة الاحتياطية (مثال: 2026-08-12_14-35-02)
+        function getBackupTimestamp() {
+            const now = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            const datePart = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+            const timePart = `${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+            return `${datePart}_${timePart}`;
+        }
+
+        function showBackupStatus(message, type) {
+            const statusEl = document.getElementById('backup-status');
+            if (!statusEl) return;
+            const styles = {
+                success: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                error: 'bg-red-50 text-red-700 border-red-200',
+                info: 'bg-indigo-50 text-indigo-700 border-indigo-200'
+            };
+            const icons = { success: 'fa-circle-check', error: 'fa-triangle-exclamation', info: 'fa-circle-info' };
+            statusEl.className = `mt-4 text-sm rounded-lg px-4 py-2.5 border ${styles[type] || styles.info}`;
+            statusEl.innerHTML = `<i class="fa-solid ${icons[type] || icons.info} ml-2"></i>${message}`;
+            statusEl.classList.remove('hidden');
+        }
+
+        async function fetchAllBackupData() {
+            const data = {};
+            for (const key of BACKUP_KEYS) {
+                const snap = await get(ref(db, key));
+                data[key] = snap.exists() ? snap.val() : null;
+            }
+            return data;
+        }
+
+        // تنزيل نسخة احتياطية كاملة بصيغة JSON (صالحة لإعادة الاستعادة)
+        window.downloadFullBackup = async function() {
+            const btn = document.getElementById('backup-json-btn');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري التجهيز...';
+            try {
+                const data = await fetchAllBackupData();
+                const backupObj = {
+                    system: 'V-SHAPE Healthy Meals - المتابعة المالية',
+                    exportedAt: new Date().toISOString(),
+                    exportedBy: window.currentUserName || '',
+                    version: 1,
+                    data
+                };
+                const jsonStr = JSON.stringify(backupObj, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const stamp = getBackupTimestamp();
+                a.href = url;
+                a.download = `financial-Tracking_${stamp}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showBackupStatus(`تم تنزيل النسخة الاحتياطية بنجاح — ${stamp}`, 'success');
+            } catch (err) {
+                console.error('Backup Error:', err);
+                showBackupStatus('حدث خطأ أثناء إنشاء النسخة الاحتياطية: ' + err, 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+
+        // تصدير نسخة قابلة للقراءة بصيغة إكسيل (للمراجعة فقط، لا تُستخدم للاستعادة)
+        window.exportBackupExcel = async function() {
+            const btn = document.getElementById('backup-excel-btn');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري التجهيز...';
+            try {
+                const data = await fetchAllBackupData();
+                const wb = XLSX.utils.book_new();
+
+                // ورقة البيان اليومي
+                const dailyArr = data.dailyStatements ? Object.values(data.dailyStatements) : [];
+                dailyArr.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+                const dailySheetData = dailyArr.map(d => ({
+                    'التاريخ': d.date || '',
+                    'رصيد البنك الأهلي': Number(d.bankAlahli) || 0,
+                    'رصيد بنك الإنماء': Number(d.bankAlinma) || 0,
+                    'إجمالي الرصيد البنكي': Number(d.bankBalance) || 0,
+                    'رصيد القوافل': Number(d.caravansBalance) || 0,
+                    'رصيد الموردين': Number(d.vendorsBalance) || 0,
+                    'مستحقة العملاء': Number(d.customersDue) || 0,
+                    'محررة العملاء': Number(d.customersBilled) || 0,
+                    'رصيد التحصيل': Number(d.collectionBalance) || 0
+                }));
+                const dailySheet = XLSX.utils.json_to_sheet(dailySheetData.length ? dailySheetData : [{ 'ملاحظة': 'لا توجد بيانات' }]);
+                XLSX.utils.book_append_sheet(wb, dailySheet, 'البيان اليومي');
+
+                // ورقة البنود الشهرية الحالية
+                const monthlyArr = data.monthlyItems ? Object.values(data.monthlyItems) : [];
+                const monthlySheetData = monthlyArr.map(i => ({
+                    'البند': i.name || '',
+                    'التصنيف': i.type || '',
+                    'المستحق': Number(i.totalAmount) || 0,
+                    'المسدد': Number(i.paidAmount) || 0,
+                    'المتبقي': (Number(i.totalAmount) || 0) - (Number(i.paidAmount) || 0),
+                    'عدد السدادات': (i.payments || []).length
+                }));
+                const monthlySheet = XLSX.utils.json_to_sheet(monthlySheetData.length ? monthlySheetData : [{ 'ملاحظة': 'لا توجد بنود' }]);
+                XLSX.utils.book_append_sheet(wb, monthlySheet, 'البنود الشهرية');
+
+                // ورقة تفاصيل السدادات
+                const paymentsSheetData = [];
+                monthlyArr.forEach(i => {
+                    (i.payments || []).forEach(p => {
+                        paymentsSheetData.push({ 'البند': i.name || '', 'تاريخ السداد': p.date || '', 'المبلغ المسدد': Number(p.amount) || 0 });
+                    });
+                });
+                const paymentsSheet = XLSX.utils.json_to_sheet(paymentsSheetData.length ? paymentsSheetData : [{ 'ملاحظة': 'لا توجد سدادات' }]);
+                XLSX.utils.book_append_sheet(wb, paymentsSheet, 'سجل السدادات');
+
+                // ورقة أرشيف الشهور
+                const archiveSheetData = [];
+                if (data.monthlyArchive) {
+                    Object.keys(data.monthlyArchive).sort().forEach(monthKey => {
+                        const items = Object.values(data.monthlyArchive[monthKey] || {});
+                        items.forEach(i => {
+                            archiveSheetData.push({
+                                'الشهر': monthKey,
+                                'البند': i.name || '',
+                                'التصنيف': i.type || '',
+                                'المستحق': Number(i.totalAmount) || 0,
+                                'المسدد': Number(i.paidAmount) || 0,
+                                'المتبقي': (Number(i.totalAmount) || 0) - (Number(i.paidAmount) || 0)
+                            });
+                        });
+                    });
+                }
+                const archiveSheet = XLSX.utils.json_to_sheet(archiveSheetData.length ? archiveSheetData : [{ 'ملاحظة': 'لا يوجد أرشيف' }]);
+                XLSX.utils.book_append_sheet(wb, archiveSheet, 'أرشيف الشهور');
+
+                // ورقة المستخدمين (بدون كلمات المرور لأسباب أمنية)
+                const usersArr2 = data.users ? Object.values(data.users) : [];
+                const usersSheetData = usersArr2.map(u => ({
+                    'اسم المستخدم': u.username || '',
+                    'الاسم المعروض': u.displayName || '',
+                    'الصلاحية': u.role || '',
+                    'الحالة': u.isActive ? 'نشط' : 'معطل'
+                }));
+                const usersSheet = XLSX.utils.json_to_sheet(usersSheetData.length ? usersSheetData : [{ 'ملاحظة': 'لا يوجد مستخدمين' }]);
+                XLSX.utils.book_append_sheet(wb, usersSheet, 'المستخدمين');
+
+                const stamp = getBackupTimestamp();
+                XLSX.writeFile(wb, `financial-Tracking_${stamp}.xlsx`);
+                showBackupStatus(`تم تصدير النسخة القابلة للقراءة بنجاح — ${stamp}`, 'success');
+            } catch (err) {
+                console.error('Excel Backup Error:', err);
+                showBackupStatus('حدث خطأ أثناء تصدير ملف الإكسيل: ' + err, 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+
+        // استعادة نسخة احتياطية كاملة من ملف JSON (تستبدل كل البيانات الحالية)
+        window.restoreFromBackup = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (!parsed || typeof parsed !== 'object' || !parsed.data || typeof parsed.data !== 'object') {
+                        alert('ملف غير صالح: لا يحتوي على بيانات نسخة احتياطية صحيحة لهذا النظام');
+                        event.target.value = '';
+                        return;
+                    }
+
+                    const exportedAtText = parsed.exportedAt ? new Date(parsed.exportedAt).toLocaleString('ar-EG') : 'غير معروف';
+                    const exportedByText = parsed.exportedBy ? ` — بواسطة: ${parsed.exportedBy}` : '';
+                    const confirmMsg = `تحذير هام جداً:\n\nسيتم استبدال كل البيانات الحالية في النظام بالكامل (البيان اليومي، البنود الشهرية والسدادات، أرشيف الشهور، المستخدمين) بالبيانات الموجودة في هذا الملف.\n\nتاريخ إنشاء النسخة الاحتياطية: ${exportedAtText}${exportedByText}\n\nهذه العملية لا يمكن التراجع عنها نهائياً. هل أنت متأكد تماماً من المتابعة؟`;
+                    if (!confirm(confirmMsg)) { event.target.value = ''; return; }
+                    if (!confirm('تأكيد أخير: هل تريد فعلاً استبدال كل بيانات النظام الحالية بالنسخة الاحتياطية المرفوعة؟')) { event.target.value = ''; return; }
+
+                    const updates = {};
+                    BACKUP_KEYS.forEach(key => { updates['/' + key] = parsed.data[key] !== undefined ? parsed.data[key] : null; });
+
+                    await update(ref(db), updates);
+                    alert('تم استعادة النسخة الاحتياطية بنجاح! سيتم إعادة تحميل الصفحة الآن.');
+                    location.reload();
+                } catch (err) {
+                    console.error('Restore Error:', err);
+                    alert('حدث خطأ أثناء قراءة أو استعادة الملف. تأكد أن الملف نسخة احتياطية صحيحة بصيغة JSON.\n\n' + err);
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
         }
 
         // =========================================
