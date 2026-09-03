@@ -1463,7 +1463,7 @@
             let html = '';
             
             html += `<div style="text-align:center;border-bottom:3px solid #1e293b;padding-bottom:20px;margin-bottom:24px;">`;
-            html += `<h2 style="font-size:22px;font-weight:800;color:#1e293b;margin:0 0 4px;">V-SHAPE Healthy Meals</h2>`;
+            html += `<h2 style="font-size:22px;font-weight:800;color:#1e293b;margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;letter-spacing:0.5px;">V-SHAPE Healthy Meals</h2>`;
             html += `<h3 style="font-size:17px;font-weight:700;color:#4f46e5;margin:8px 0 4px;">تقرير المبيعات الشهرية</h3>`;
             html += `<p style="font-size:13px;color:#64748b;margin:0;font-weight:500;">الفترة: ${periodText}</p>`;
             html += `</div>`;
@@ -1928,7 +1928,7 @@
 
             let html = '';
             html += `<div style="text-align:center;border-bottom:3px solid #1e293b;padding-bottom:20px;margin-bottom:24px;">`;
-            html += `<h2 style="font-size:22px;font-weight:800;color:#1e293b;margin:0 0 4px;">V-SHAPE Healthy Meals</h2>`;
+            html += `<h2 style="font-size:22px;font-weight:800;color:#1e293b;margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;letter-spacing:0.5px;">V-SHAPE Healthy Meals</h2>`;
             html += `<h3 style="font-size:17px;font-weight:700;color:#4f46e5;margin:8px 0 4px;">تقرير مقارنة المبيعات</h3>`;
             html += `<p style="font-size:12px;color:#64748b;margin:0;font-weight:500;">تاريخ الإصدار: ${generatedOn} — عدد الفترات: ${statsArr.length} — المبالغ ${scVatMode === 'net' ? 'بدون ضريبة القيمة المضافة (صافي)' : 'شاملة ضريبة القيمة المضافة'}</p>`;
             html += `</div>`;
@@ -2323,28 +2323,23 @@
             const chartImage = sgChartInstance ? sgChartInstance.toBase64Image('image/png', 1) : '';
 
             function growthPdfText(growth) {
-                if (growth === null) return '<span style="color:#94a3b8;">الشهر الأول</span>';
-                if (growth === Infinity) return '<span style="color:#047857;font-weight:800;">▲ جديد</span>';
+                if (growth === null) return '<span style="color:#94a3b8;font-family:Arial,Helvetica,sans-serif;">الشهر الأول</span>';
+                if (growth === Infinity) return '<span style="color:#047857;font-weight:800;font-family:Arial,Helvetica,sans-serif;white-space:nowrap;">▲ جديد</span>';
                 const positive = growth >= 0;
-                return `<span style="color:${positive ? '#047857' : '#b91c1c'};font-weight:800;">${positive ? '▲' : '▼'} ${Math.abs(growth).toFixed(1)}%</span>`;
+                return `<span style="color:${positive ? '#047857' : '#b91c1c'};font-weight:800;font-family:Arial,Helvetica,sans-serif;white-space:nowrap;">${positive ? '▲' : '▼'} ${Math.abs(growth).toFixed(1)}%</span>`;
             }
 
             let tableRows = '';
             sgData.forEach(item => {
                 const diffText = item.diff === null ? '—' : `${item.diff >= 0 ? '+' : ''}${item.diff.toLocaleString()} <span style="font-size:0.85em;">﷼</span>`;
                 const diffColor = item.diff === null ? '#94a3b8' : (item.diff >= 0 ? '#047857' : '#b91c1c');
-                const manualTag = item.isManual ? ' <span style="font-size:9px;color:#b45309;font-weight:600;">🖊️ يدوي</span>' : '';
                 tableRows += `<tr style="${item.isManual ? 'background:#fffbeb;' : ''}">
-                    <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:700;">${item.label}${manualTag}</td>
+                    <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:700;">${item.label}</td>
                     <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:800;color:#047857;text-align:center;">${item.total.toLocaleString()} <span style="font-weight:800;font-size:0.9em;">﷼</span></td>
                     <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;text-align:center;color:${diffColor};font-weight:700;">${diffText}</td>
                     <td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:center;">${growthPdfText(item.growth)}</td>
                 </tr>`;
             });
-
-            if (sgData.some(i => i.isManual)) {
-                tableRows += `<tr><td colspan="4" style="padding:6px 12px;border:1px solid #cbd5e1;font-size:9px;color:#b45309;background:#fffbeb;">🖊️ الشهور المُعلَّمة "يدوي" تم إدخال إجماليها يدوياً لعدم وجود بيانات فعلية مسجلة في النظام لها.</td></tr>`;
-            }
 
             const growthValues = sgData.filter(i => i.growth !== null && i.growth !== Infinity).map(i => i.growth);
             const avgGrowth = growthValues.length > 0 ? (growthValues.reduce((a, b) => a + b, 0) / growthValues.length) : null;
@@ -2365,15 +2360,15 @@
 
             let html = '';
             html += `<div style="text-align:center;border-bottom:3px solid #1e293b;padding-bottom:20px;margin-bottom:24px;">`;
-            html += `<h2 style="font-size:22px;font-weight:800;color:#1e293b;margin:0 0 4px;">V-SHAPE Healthy Meals</h2>`;
+            html += `<h2 style="font-size:22px;font-weight:800;color:#1e293b;margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;letter-spacing:0.5px;">V-SHAPE Healthy Meals</h2>`;
             html += `<h3 style="font-size:17px;font-weight:700;color:#4f46e5;margin:8px 0 4px;">تقرير نمو المبيعات شهر بعد شهر</h3>`;
             html += `<p style="font-size:12px;color:#64748b;margin:0;font-weight:500;">الفترة: ${periodText} — تاريخ الإصدار: ${generatedOn} — المبالغ ${sgVatMode === 'net' ? 'بدون ضريبة القيمة المضافة (صافي)' : 'شاملة ضريبة القيمة المضافة'}</p>`;
             html += `</div>`;
 
             html += `<table style="width:100%;border-collapse:separate;border-spacing:10px;margin-bottom:20px;"><tr>`;
             html += `<td style="width:33.3%;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#4338ca;margin:0 0 4px;font-weight:600;">عدد الشهور المحللة</p><p style="font-size:20px;font-weight:800;color:#3730a3;margin:0;">${sgData.length}</p></td>`;
-            html += `<td style="width:33.3%;background:${avgGrowth === null ? '#f1f5f9' : (avgGrowth >= 0 ? '#d1fae5' : '#fee2e2')};border:1px solid ${avgGrowth === null ? '#e2e8f0' : (avgGrowth >= 0 ? '#6ee7b7' : '#fca5a5')};border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#475569;margin:0 0 4px;font-weight:600;">متوسط النمو شهر بعد شهر</p><p style="font-size:18px;font-weight:800;color:${avgGrowth === null ? '#64748b' : (avgGrowth >= 0 ? '#047857' : '#b91c1c')};margin:0;">${avgGrowth === null ? '—' : `${avgGrowth >= 0 ? '▲' : '▼'} ${Math.abs(avgGrowth).toFixed(1)}%`}</p></td>`;
-            html += `<td style="width:33.3%;background:${cumulativeGrowth === null ? '#f1f5f9' : (cumulativeGrowth >= 0 ? '#d1fae5' : '#fee2e2')};border:1px solid ${cumulativeGrowth === null ? '#e2e8f0' : (cumulativeGrowth >= 0 ? '#6ee7b7' : '#fca5a5')};border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#475569;margin:0 0 4px;font-weight:600;">النمو التراكمي (${first.label} → ${last.label})</p><p style="font-size:18px;font-weight:800;color:${cumulativeGrowth === null ? '#64748b' : (cumulativeGrowth >= 0 ? '#047857' : '#b91c1c')};margin:0;">${cumulativeGrowth === null ? '—' : `${cumulativeGrowth >= 0 ? '▲' : '▼'} ${Math.abs(cumulativeGrowth).toFixed(1)}%`}</p></td>`;
+            html += `<td style="width:33.3%;background:${avgGrowth === null ? '#f1f5f9' : (avgGrowth >= 0 ? '#d1fae5' : '#fee2e2')};border:1px solid ${avgGrowth === null ? '#e2e8f0' : (avgGrowth >= 0 ? '#6ee7b7' : '#fca5a5')};border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#475569;margin:0 0 4px;font-weight:600;">متوسط النمو شهر بعد شهر</p><p style="font-size:18px;font-weight:800;font-family:Arial,Helvetica,sans-serif;white-space:nowrap;color:${avgGrowth === null ? '#64748b' : (avgGrowth >= 0 ? '#047857' : '#b91c1c')};margin:0;">${avgGrowth === null ? '—' : `${avgGrowth >= 0 ? '▲' : '▼'} ${Math.abs(avgGrowth).toFixed(1)}%`}</p></td>`;
+            html += `<td style="width:33.3%;background:${cumulativeGrowth === null ? '#f1f5f9' : (cumulativeGrowth >= 0 ? '#d1fae5' : '#fee2e2')};border:1px solid ${cumulativeGrowth === null ? '#e2e8f0' : (cumulativeGrowth >= 0 ? '#6ee7b7' : '#fca5a5')};border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#475569;margin:0 0 4px;font-weight:600;">النمو التراكمي (${first.label} → ${last.label})</p><p style="font-size:18px;font-weight:800;font-family:Arial,Helvetica,sans-serif;white-space:nowrap;color:${cumulativeGrowth === null ? '#64748b' : (cumulativeGrowth >= 0 ? '#047857' : '#b91c1c')};margin:0;">${cumulativeGrowth === null ? '—' : `${cumulativeGrowth >= 0 ? '▲' : '▼'} ${Math.abs(cumulativeGrowth).toFixed(1)}%`}</p></td>`;
             html += `</tr></table>`;
 
             if (chartImage) {
@@ -2648,7 +2643,7 @@
             let html = '';
             
             html += `<div style="text-align:center;border-bottom:3px solid #1e293b;padding-bottom:20px;margin-bottom:30px;">`;
-            html += `<h2 style="font-size:26px;font-weight:800;color:#1e293b;margin:0 0 6px;">V-SHAPE Healthy Meals</h2>`;
+            html += `<h2 style="font-size:26px;font-weight:800;color:#1e293b;margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;letter-spacing:0.5px;">V-SHAPE Healthy Meals</h2>`;
             html += `<h3 style="font-size:20px;font-weight:700;color:#4f46e5;margin:10px 0 6px;">التقرير المالي اليومي</h3>`;
             html += `<p style="font-size:16px;color:#64748b;margin:0;font-weight:500;">التاريخ: ${date}</p>`;
             html += `</div>`;
