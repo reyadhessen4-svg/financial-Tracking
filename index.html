@@ -414,10 +414,15 @@
 
                     <div class="bg-white border border-amber-200 shadow-sm rounded-xl p-6">
                         <h2 class="text-lg font-bold mb-2 flex items-center gap-2 text-amber-700"><i class="fa-solid fa-pen-to-square"></i> إضافة مبيعات شهور سابقة يدوياً (قبل بدء تسجيل النظام)</h2>
-                        <p class="text-xs text-slate-500 mb-4">النظام بدأ تسجيل البيانات اليومية من منتصف أبريل 2026. لو عايز تضيف إجمالي مبيعات شهور قبل كده (مارس، فبراير... إلخ)، أضفها هنا وهتتحفظ بشكل دائم وتدخل تلقائياً في تحليل النمو الشهري وفي مقارنة المبيعات.</p>
+                        <p class="text-xs text-slate-500 mb-2">النظام بدأ تسجيل البيانات اليومية من منتصف أبريل 2026. لو عايز تضيف إجمالي مبيعات شهور قبل كده (مارس، فبراير... إلخ)، أضفها هنا وهتتحفظ بشكل دائم وتدخل تلقائياً في تحليل النمو الشهري وفي مقارنة المبيعات.</p>
+                        <p class="text-xs text-slate-500 mb-4"><i class="fa-solid fa-circle-info ml-1 text-amber-500"></i> لو الشهر مسجل جزئياً في النظام (زي أبريل 2026 اللي بدأ تسجيله من 16 الشهر)، وعايز تدخل إجمالي الشهر كامل بنفسك ليحل محل البيانات الجزئية، فعّل خيار "استبدال البيانات الفعلية" تحت.</p>
                         <div class="flex flex-wrap gap-4 items-end">
                             <div><label class="block text-sm font-medium text-slate-600 mb-1">الشهر</label><input type="month" id="mms-month" class="p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"></div>
                             <div class="w-44"><label class="block text-sm font-medium text-slate-600 mb-1">إجمالي المبيعات</label><input type="number" step="0.01" id="mms-total" placeholder="0" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"></div>
+                            <div class="flex items-center gap-2 pb-2">
+                                <input type="checkbox" id="mms-override" class="w-4 h-4 accent-amber-600">
+                                <label for="mms-override" class="text-xs text-slate-600 max-w-[220px]">استبدال البيانات الفعلية المسجلة لهذا الشهر بالكامل (لو الشهر مسجل جزئياً)</label>
+                            </div>
                             <button onclick="saveManualMonthlySales()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium h-10"><i class="fa-solid fa-floppy-disk ml-2"></i> حفظ الشهر</button>
                         </div>
                         <div class="mt-5 overflow-x-auto">
@@ -1580,18 +1585,21 @@
             checked.forEach(cb => {
                 const m = cb.value; // YYYY-MM
                 const hasReal = (window.dailyStatementsArr || []).some(d => d.date && d.date.startsWith(m));
-                if (hasReal) {
+                const manualRaw = (window.manualMonthlySalesObj || {})[m];
+                const manualOverride = manualRaw !== undefined && getManualEntryOverride(manualRaw);
+
+                if (hasReal && !manualOverride) {
                     const [y, mo] = m.split('-').map(Number);
                     const start = `${m}-01`;
                     const lastDay = new Date(y, mo, 0).getDate();
                     const end = `${m}-${String(lastDay).padStart(2, '0')}`;
                     addComparePeriod(m.replace('-', '/'), start, end);
-                } else if (window.manualMonthlySalesObj && window.manualMonthlySalesObj[m] !== undefined) {
-                    // شهر مضاف يدوياً (قبل بدء تسجيل النظام) وليس له بيانات يومية فعلية
+                } else if (manualRaw !== undefined) {
+                    // شهر مضاف يدوياً: إما ليس له بيانات فعلية، أو مفعّل عليه "استبدال" البيانات الفعلية بالكامل
                     comparePeriods.push({
                         id: Date.now() + '-' + Math.random().toString(36).slice(2),
                         label: m.replace('-', '/'), start: '', end: '', manual: true,
-                        manualTotal: Number(window.manualMonthlySalesObj[m]) || 0, manualDays: 0
+                        manualTotal: getManualEntryAmount(manualRaw), manualDays: 0
                     });
                     renderCompareResults();
                 }
@@ -2019,6 +2027,18 @@
         // =========================================
         // ===  5.7.5 مبيعات الشهور السابقة (يدوي) ===
         // =========================================
+        // بنية التخزين: manualMonthlySales/{YYYY-MM} = رقم بسيط (للتوافق مع الإصدارات القديمة)
+        // أو كائن { amount, overrideReal } لو تم تفعيل خيار الاستبدال
+        function getManualEntryAmount(raw) {
+            if (raw === null || raw === undefined) return 0;
+            if (typeof raw === 'object') return Number(raw.amount) || 0;
+            return Number(raw) || 0;
+        }
+        function getManualEntryOverride(raw) {
+            if (raw && typeof raw === 'object') return !!raw.overrideReal;
+            return false;
+        }
+
         onValue(ref(db, 'manualMonthlySales'), (snapshot) => {
             const data = snapshot.val();
             window.manualMonthlySalesObj = data || {};
@@ -2029,17 +2049,24 @@
         window.saveManualMonthlySales = function() {
             const monthVal = document.getElementById('mms-month').value; // YYYY-MM
             const totalVal = parseFloat(document.getElementById('mms-total').value);
+            const overrideChecked = document.getElementById('mms-override').checked;
             if (!monthVal) return alert('يرجى اختيار الشهر');
             if (isNaN(totalVal) || totalVal < 0) return alert('يرجى إدخال إجمالي مبيعات صحيح');
 
             const hasRealData = (window.dailyStatementsArr || []).some(d => d.date && d.date.startsWith(monthVal));
-            if (hasRealData) {
-                if (!confirm('تنبيه: يوجد بالفعل بيانات يومية فعلية مسجلة لهذا الشهر في النظام.\n\nسيتم الاعتماد دائماً على البيانات الفعلية المسجلة يومياً في التقارير والتحليلات، ولن يُستخدم هذا الرقم اليدوي إلا كأرشفة فقط. هل تريد المتابعة؟')) return;
+
+            if (hasRealData && !overrideChecked) {
+                if (!confirm('تنبيه: يوجد بالفعل بيانات يومية فعلية مسجلة لهذا الشهر في النظام.\n\nسيتم الاعتماد دائماً على البيانات الفعلية المسجلة يومياً في التقارير والتحليلات، ولن يُستخدم هذا الرقم اليدوي إلا كأرشفة فقط.\n\nلو عايز الرقم اليدوي يحل محل بيانات الشهر بالكامل (مثلاً لأن الشهر بدأ تسجيله جزئياً في النظام)، فعّل خيار "استبدال البيانات الفعلية" قبل الحفظ.\n\nهل تريد المتابعة كأرشفة فقط؟')) return;
+            }
+            if (hasRealData && overrideChecked) {
+                if (!confirm(`تأكيد: سيتم استخدام هذا الرقم (${totalVal.toLocaleString()} ﷼) كإجمالي كامل لشهر ${monthVal.replace('-', '/')} في كل التقارير والتحليلات، متجاهلاً البيانات اليومية الفعلية المسجلة لنفس الشهر في النظام.\n\nهل أنت متأكد من المتابعة؟`)) return;
             }
 
-            set(ref(db, 'manualMonthlySales/' + monthVal), totalVal).then(() => {
+            const entryData = overrideChecked ? { amount: totalVal, overrideReal: true } : totalVal;
+            set(ref(db, 'manualMonthlySales/' + monthVal), entryData).then(() => {
                 document.getElementById('mms-month').value = '';
                 document.getElementById('mms-total').value = '';
+                document.getElementById('mms-override').checked = false;
             }).catch(err => alert('حدث خطأ أثناء الحفظ: ' + err));
         }
 
@@ -2060,10 +2087,17 @@
             let html = '';
             keys.forEach(k => {
                 const hasRealData = (window.dailyStatementsArr || []).some(d => d.date && d.date.startsWith(k));
-                const noteHtml = hasRealData ? '<span class="block text-[10px] text-amber-600 mt-0.5"><i class="fa-solid fa-circle-info ml-0.5"></i>يوجد بيانات فعلية لهذا الشهر، لن يُستخدم هذا الرقم في التحليل</span>' : '';
+                const amount = getManualEntryAmount(obj[k]);
+                const isOverride = getManualEntryOverride(obj[k]);
+                let noteHtml = '';
+                if (hasRealData && isOverride) {
+                    noteHtml = '<span class="block text-[10px] text-emerald-600 mt-0.5"><i class="fa-solid fa-circle-check ml-0.5"></i>هذا الرقم يحل محل البيانات الفعلية لهذا الشهر بالكامل في كل التقارير</span>';
+                } else if (hasRealData && !isOverride) {
+                    noteHtml = '<span class="block text-[10px] text-amber-600 mt-0.5"><i class="fa-solid fa-circle-info ml-0.5"></i>يوجد بيانات فعلية لهذا الشهر، لن يُستخدم هذا الرقم في التحليل (أرشفة فقط)</span>';
+                }
                 html += `<tr class="hover:bg-slate-50">
-                    <td class="p-3 border border-slate-200 font-medium">${k.replace('-', '/')}</td>
-                    <td class="p-3 border border-slate-200 text-emerald-700 font-bold">${Number(obj[k]).toLocaleString()} <span class="currency">﷼</span>${noteHtml}</td>
+                    <td class="p-3 border border-slate-200 font-medium">${k.replace('-', '/')}${isOverride ? ' <span class="text-[10px] text-emerald-600 font-normal">(استبدال)</span>' : ''}</td>
+                    <td class="p-3 border border-slate-200 text-emerald-700 font-bold">${amount.toLocaleString()} <span class="currency">﷼</span>${noteHtml}</td>
                     <td class="p-3 border border-slate-200"><button onclick="deleteManualMonthlySales('${k}')" class="text-red-500 hover:text-red-700 text-xs" title="حذف"><i class="fa-solid fa-trash"></i></button></td>
                 </tr>`;
             });
@@ -2097,14 +2131,16 @@
                 monthTotalsRaw[mKey] = (monthTotalsRaw[mKey] || 0) + (Number(d.customersBilled) || 0);
             });
 
-            // إضافة الشهور المُدخلة يدوياً (قبل بدء تسجيل النظام) لأي شهر ليس له بيانات فعلية بعد
+            // إضافة الشهور المُدخلة يدوياً: تملأ أي شهر ليس له بيانات فعلية، أو تستبدل بيانات الشهر بالكامل لو كان مفعّل عليها "استبدال"
             const manualMonthKeysSet = new Set();
             const manualObj = window.manualMonthlySalesObj || {};
             Object.keys(manualObj).forEach(mKey => {
                 if (startMonth && mKey < startMonth) return;
                 if (endMonth && mKey > endMonth) return;
-                if (monthTotalsRaw[mKey] === undefined) {
-                    monthTotalsRaw[mKey] = Number(manualObj[mKey]) || 0;
+                const amount = getManualEntryAmount(manualObj[mKey]);
+                const override = getManualEntryOverride(manualObj[mKey]);
+                if (monthTotalsRaw[mKey] === undefined || override) {
+                    monthTotalsRaw[mKey] = amount;
                     manualMonthKeysSet.add(mKey);
                 }
             });
