@@ -466,6 +466,17 @@
                         <p class="text-sm text-slate-500 mb-4">هذا التقرير يقارن مبيعات <span class="font-bold text-slate-700">كل شهر (يناير، فبراير...) بمبيعات نفس الشهر في سنة أو أكثر تختارها</span> (مثلاً أبريل 2024 و2025 و2026 مع بعض)، ويحسب نسبة النمو لكل سنة بالمقارنة بالسنة اللي قبلها مباشرة من السنوات المختارة. يعتمد على البيانات الفعلية المسجلة بالنظام والأرقام المضافة يدوياً للسنوات السابقة.</p>
                         <p class="text-sm font-medium text-slate-600 mb-2">اختر سنتين أو أكثر للمقارنة:</p>
                         <div id="yoy-years-checklist" class="flex flex-wrap gap-2 mb-4"></div>
+
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm font-medium text-slate-600">اختر الشهور المطلوب مقارنتها:</p>
+                            <div class="flex gap-2">
+                                <button onclick="toggleAllYoyMonths(true)" class="text-xs text-indigo-600 hover:underline">تحديد الكل</button>
+                                <span class="text-slate-300">|</span>
+                                <button onclick="toggleAllYoyMonths(false)" class="text-xs text-slate-500 hover:underline">إلغاء الكل</button>
+                            </div>
+                        </div>
+                        <div id="yoy-months-checklist" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 mb-4"></div>
+
                         <div class="flex flex-wrap gap-4 items-end">
                             <div>
                                 <label class="block text-sm text-slate-500 mb-1">طريقة عرض المبلغ</label>
@@ -2630,6 +2641,31 @@
             container.innerHTML = html;
         }
 
+        window.renderYoyMonthsChecklist = function() {
+            const container = document.getElementById('yoy-months-checklist');
+            if (!container) return;
+            // الاحتفاظ بالاختيارات السابقة لو موجودة، وإلا تحديد كل الشهور افتراضياً
+            const existingBoxes = container.querySelectorAll('.yoy-month-checkbox');
+            const previouslyChecked = existingBoxes.length > 0
+                ? new Set(Array.from(existingBoxes).filter(cb => cb.checked).map(cb => Number(cb.value)))
+                : new Set(YOY_MONTH_NAMES.map((_, i) => i + 1));
+
+            let html = '';
+            YOY_MONTH_NAMES.forEach((name, i) => {
+                const monthNum = i + 1;
+                const isChecked = previouslyChecked.has(monthNum);
+                html += `<label class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm cursor-pointer hover:bg-slate-100">
+                    <input type="checkbox" value="${monthNum}" class="yoy-month-checkbox w-4 h-4 accent-indigo-600" ${isChecked ? 'checked' : ''}>
+                    <span>${name}</span>
+                </label>`;
+            });
+            container.innerHTML = html;
+        }
+
+        window.toggleAllYoyMonths = function(checkedState) {
+            document.querySelectorAll('.yoy-month-checkbox').forEach(cb => { cb.checked = checkedState; });
+        }
+
         window.setYoyVatMode = function(mode) {
             yoyVatMode = mode;
             setVatToggleButtons('yoy', mode);
@@ -2643,6 +2679,9 @@
             const checked = document.querySelectorAll('.yoy-year-checkbox:checked');
             const years = Array.from(checked).map(cb => Number(cb.value)).sort((a, b) => a - b);
 
+            const checkedMonths = document.querySelectorAll('.yoy-month-checkbox:checked');
+            const selectedMonths = Array.from(checkedMonths).map(cb => Number(cb.value)).sort((a, b) => a - b);
+
             const tbody = document.getElementById('yoy-table-body');
             const theadRow = document.getElementById('yoy-table-head-row');
             const tfoot = document.getElementById('yoy-table-foot');
@@ -2652,6 +2691,10 @@
 
             if (years.length < 2) {
                 alert('يرجى اختيار سنتين على الأقل للمقارنة');
+                return;
+            }
+            if (selectedMonths.length === 0) {
+                alert('يرجى اختيار شهر واحد على الأقل للمقارنة');
                 return;
             }
 
@@ -2666,19 +2709,19 @@
 
             const vatLabel = vatModeLabel(yoyVatMode);
             const footnote = document.getElementById('yoy-footnote');
-            if (footnote) footnote.textContent = `* نسبة النمو محسوبة لكل سنة بالمقارنة مع السنة اللي قبلها مباشرة من السنوات المختارة (${years.join('، ')}) لنفس الشهر. جميع مبالغ المبيعات ${yoyVatMode === 'net' ? 'بدون ضريبة القيمة المضافة (صافي)' : 'شاملة ضريبة القيمة المضافة'}.`;
+            if (footnote) footnote.textContent = `* نسبة النمو محسوبة لكل سنة بالمقارنة مع السنة اللي قبلها مباشرة من السنوات المختارة (${years.join('، ')}) لنفس الشهر، وبالنسبة للشهور المختارة فقط (${selectedMonths.length} من 12). جميع مبالغ المبيعات ${yoyVatMode === 'net' ? 'بدون ضريبة القيمة المضافة (صافي)' : 'شاملة ضريبة القيمة المضافة'}.`;
 
             const rawTotals = getAllMergedMonthTotalsRaw();
 
-            // بناء بيانات كل شهر عبر كل السنوات المختارة
+            // بناء بيانات الشهور المختارة فقط عبر كل السنوات المختارة
             yoyData = [];
-            for (let m = 1; m <= 12; m++) {
+            selectedMonths.forEach(m => {
                 const mm = String(m).padStart(2, '0');
                 const yearAmounts = years.map(y => {
                     const raw = rawTotals[`${y}-${mm}`];
                     return raw !== undefined ? applyVatMode(raw, yoyVatMode) : null;
                 });
-                if (yearAmounts.every(v => v === null)) continue; // تخطي الشهور الفاضية في كل السنوات المختارة
+                if (yearAmounts.every(v => v === null)) return; // تخطي الشهور الفاضية في كل السنوات المختارة
 
                 // نمو كل سنة عن السنة اللي قبلها في نفس الشهر
                 const growths = yearAmounts.map((amt, idx) => {
@@ -2691,10 +2734,10 @@
                 });
 
                 yoyData.push({ monthNum: m, monthName: YOY_MONTH_NAMES[m - 1], years, yearAmounts, growths });
-            }
+            });
 
             if (yoyData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="${years.length + 1}" class="p-4 text-center text-slate-400">لا توجد بيانات لأي شهر في السنوات المختارة (${years.join('، ')})</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="${years.length + 1}" class="p-4 text-center text-slate-400">لا توجد بيانات لأي شهر من الشهور المختارة في السنوات المختارة (${years.join('، ')})</td></tr>`;
                 tfoot.innerHTML = '';
                 summaryCards.classList.add('hidden');
                 chartContainer.classList.add('hidden');
@@ -3504,7 +3547,7 @@
                 if(currentActivePage === 'monthlySales') calcMonthlySales();
                 if(currentActivePage === 'salesCompare') { renderSalesCompareMonthsList(); renderCompareResults(); }
                 if(currentActivePage === 'salesGrowth' && sgData.length > 0) calcSalesGrowth();
-                if(currentActivePage === 'yoyCompare') { renderYoyYearsChecklist(); if (yoyData.length > 0) calcYoyCompare(); }
+                if(currentActivePage === 'yoyCompare') { renderYoyYearsChecklist(); renderYoyMonthsChecklist(); if (yoyData.length > 0) calcYoyCompare(); }
                 if(currentActivePage === 'users') renderUsers();
             } catch (error) { console.error("Error rendering page:", error); }
         }
