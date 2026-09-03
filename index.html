@@ -2884,10 +2884,10 @@
                 if (prevT === 0 && t > 0) return Infinity;
                 return null;
             });
-            let footCells = `<td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:800;line-height:1.6;">الإجمالي</td>`;
+            let footCells = `<td style="padding:10px 12px;border:1px solid #cbd5e1;border-top:2px solid #1e293b;font-size:12px;font-weight:800;line-height:1.6;">الإجمالي</td>`;
             yearTotals.forEach((t, idx) => {
                 const growthHtml = (idx > 0 && yearTotalsGrowth[idx] !== null) ? `<div style="margin-top:4px;">${growthPdfText(yearTotalsGrowth[idx])}</div>` : '';
-                footCells += `<td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:800;color:#3730a3;text-align:center;background:#f1f5f9;line-height:1.6;"><div>${t.toLocaleString()} <span style="font-size:0.85em;">﷼</span></div>${growthHtml}</td>`;
+                footCells += `<td style="padding:10px 12px;border:1px solid #cbd5e1;border-top:2px solid #1e293b;font-size:12px;font-weight:800;color:#3730a3;text-align:center;background:#f1f5f9;line-height:1.6;"><div>${t.toLocaleString()} <span style="font-size:0.85em;">﷼</span></div>${growthHtml}</td>`;
             });
 
             const allGrowths = [];
@@ -2931,8 +2931,7 @@
             html += `<div style="margin-bottom:20px;">`;
             html += `<h4 style="font-size:14px;font-weight:700;color:#334155;margin:0 0 12px;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">تفاصيل المقارنة الشهرية</h4>`;
             html += `<table style="width:100%;border-collapse:collapse;">`;
-            html += `<thead><tr style="background:#f1f5f9;">${tableHeadCells}</tr></thead><tbody>${tableRows}</tbody>`;
-            html += `<tfoot><tr>${footCells}</tr></tfoot>`;
+            html += `<thead><tr style="background:#f1f5f9;">${tableHeadCells}</tr></thead><tbody>${tableRows}<tr>${footCells}</tr></tbody>`;
             html += `</table></div>`;
 
             html += `<p style="font-size:10px;color:#94a3b8;margin:-10px 0 20px;">* نسبة النمو محسوبة لكل سنة بالمقارنة مع السنة اللي قبلها مباشرة من السنوات المختارة (${years.join('، ')}) لنفس الشهر. جميع مبالغ المبيعات ${yoyVatMode === 'net' ? 'بدون ضريبة القيمة المضافة (صافي)' : 'شاملة ضريبة القيمة المضافة'}.</p>`;
