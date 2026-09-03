@@ -1486,6 +1486,78 @@
             }
         }
 
+        // =========================================
+        // ===   مساعد مشترك لتصدير PDF بدون قطع الصفوف بين الصفحات   ===
+        // =========================================
+        // يلتقط contentDiv كصورة واحدة، ثم يقسّمها لصفحات A4 مع تفادي قطع أي صف جدول (tr) بين صفحتين،
+        // عن طريق البحث عن أقرب حد آمن (نهاية صف) قبل نقطة القطع الطبيعية لكل صفحة.
+        async function renderContentDivToPDF(contentDiv, filename) {
+            const canvas = await html2canvas(contentDiv, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                logging: false,
+                width: contentDiv.scrollWidth,
+                height: contentDiv.scrollHeight
+            });
+
+            const imgWidthMM = 210;
+            const pageHeightMM = 297;
+            const scaleFactor = canvas.width / contentDiv.scrollWidth; // نسبة تحويل من بكسل DOM لبكسل الكانفاس (عادة 2)
+            const pxPerMM = canvas.width / imgWidthMM;
+            const pageHeightPx = pageHeightMM * pxPerMM;
+
+            // جمع حدود الصفوف (نهاية كل tr) بالبكسل داخل الكانفاس، كنقاط قطع آمنة
+            const containerTop = contentDiv.getBoundingClientRect().top;
+            const rowElements = contentDiv.querySelectorAll('tr');
+            const safeBoundaries = [];
+            rowElements.forEach(row => {
+                const rect = row.getBoundingClientRect();
+                safeBoundaries.push((rect.bottom - containerTop) * scaleFactor);
+            });
+            safeBoundaries.sort((a, b) => a - b);
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+
+            let currentY = 0;
+            let pageIndex = 0;
+
+            while (currentY < canvas.height - 1) {
+                const naiveCut = currentY + pageHeightPx;
+                let cut = Math.min(naiveCut, canvas.height);
+
+                if (naiveCut < canvas.height) {
+                    // ابحث عن أقرب حد آمن (نهاية صف) لا يتجاوز نقطة القطع الطبيعية، وقريب بما يكفي عشان نتفادى صفحات فاضية كبيرة
+                    let bestBoundary = null;
+                    for (const b of safeBoundaries) {
+                        if (b > currentY && b <= naiveCut) bestBoundary = b;
+                        if (b > naiveCut) break;
+                    }
+                    if (bestBoundary && bestBoundary > currentY + pageHeightPx * 0.5) {
+                        cut = bestBoundary;
+                    }
+                }
+
+                const sliceHeightPx = Math.max(1, Math.round(cut - currentY));
+                const pageCanvas = document.createElement('canvas');
+                pageCanvas.width = canvas.width;
+                pageCanvas.height = sliceHeightPx;
+                const ctx = pageCanvas.getContext('2d');
+                ctx.drawImage(canvas, 0, currentY, canvas.width, sliceHeightPx, 0, 0, canvas.width, sliceHeightPx);
+
+                const sliceHeightMM = sliceHeightPx / pxPerMM;
+
+                if (pageIndex > 0) pdf.addPage();
+                pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, imgWidthMM, sliceHeightMM);
+
+                currentY = cut;
+                pageIndex++;
+            }
+
+            pdf.save(filename);
+        }
+
         window.exportMonthlySalesPDF = async function() {
             if (msChartData.labels.length === 0) return alert('لا توجد بيانات للتصدير. يرجى عرض المبيعات أولاً.');
 
@@ -1573,39 +1645,10 @@
             await new Promise(r => setTimeout(r, 1500));
 
             try {
-                const canvas = await html2canvas(contentDiv, {
-                    scale: 2,
-                    useCORS: true,
-                    backgroundColor: '#ffffff',
-                    logging: false,
-                    width: contentDiv.scrollWidth,
-                    height: contentDiv.scrollHeight
-                });
-
-                const { jsPDF } = window.jspdf;
-                const imgWidth = 210;
-                const pageHeight = 297;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-                const pdf = new jsPDF('p', 'mm', 'a4');
-
-                let heightLeft = imgHeight;
-                let position = 0;
-
-                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-
-                while (heightLeft > 0) {
-                    position = -(imgHeight - heightLeft);
-                    pdf.addPage();
-                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-                }
-                
                 const fileName = `تقرير_المبيعات_${startDate || 'البداية'}_إلى_${endDate || 'النهاية'}.pdf`;
-                pdf.save(fileName);
+                await renderContentDivToPDF(contentDiv, fileName);
 
-            } catch(err) {
+            } catch(err){
                 console.error('PDF Export Error:', err);
                 alert('حدث خطأ أثناء تصدير PDF: ' + err.message);
             }
@@ -2056,29 +2099,7 @@
             await new Promise(r => setTimeout(r, 1500));
 
             try {
-                const canvas = await html2canvas(contentDiv, {
-                    scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
-                    width: contentDiv.scrollWidth, height: contentDiv.scrollHeight
-                });
-
-                const { jsPDF } = window.jspdf;
-                const imgWidth = 210;
-                const pageHeight = 297;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                const pdf = new jsPDF('p', 'mm', 'a4');
-
-                let heightLeft = imgHeight;
-                let position = 0;
-                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-                while (heightLeft > 0) {
-                    position = -(imgHeight - heightLeft);
-                    pdf.addPage();
-                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-                }
-
-                pdf.save(`مقارنة_المبيعات_${generatedOn}.pdf`);
+                await renderContentDivToPDF(contentDiv, `مقارنة_المبيعات_${generatedOn}.pdf`);
             } catch (err) {
                 console.error('PDF Export Error:', err);
                 alert('حدث خطأ أثناء تصدير PDF: ' + err.message);
@@ -2550,29 +2571,7 @@
             await new Promise(r => setTimeout(r, 1500));
 
             try {
-                const canvas = await html2canvas(contentDiv, {
-                    scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
-                    width: contentDiv.scrollWidth, height: contentDiv.scrollHeight
-                });
-
-                const { jsPDF } = window.jspdf;
-                const imgWidth = 210;
-                const pageHeight = 297;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                const pdf = new jsPDF('p', 'mm', 'a4');
-
-                let heightLeft = imgHeight;
-                let position = 0;
-                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-                while (heightLeft > 0) {
-                    position = -(imgHeight - heightLeft);
-                    pdf.addPage();
-                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-                }
-
-                pdf.save(`نمو_المبيعات_الشهري_${generatedOn}.pdf`);
+                await renderContentDivToPDF(contentDiv, `نمو_المبيعات_الشهري_${generatedOn}.pdf`);
             } catch (err) {
                 console.error('PDF Export Error:', err);
                 alert('حدث خطأ أثناء تصدير PDF: ' + err.message);
@@ -2949,29 +2948,7 @@
             await new Promise(r => setTimeout(r, 1500));
 
             try {
-                const canvas = await html2canvas(contentDiv, {
-                    scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
-                    width: contentDiv.scrollWidth, height: contentDiv.scrollHeight
-                });
-
-                const { jsPDF } = window.jspdf;
-                const imgWidth = 210;
-                const pageHeight = 297;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                const pdf = new jsPDF('p', 'mm', 'a4');
-
-                let heightLeft = imgHeight;
-                let position = 0;
-                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-                while (heightLeft > 0) {
-                    position = -(imgHeight - heightLeft);
-                    pdf.addPage();
-                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-                }
-
-                pdf.save(`المقارنة_السنوية_${years.join('_')}_${generatedOn}.pdf`);
+                await renderContentDivToPDF(contentDiv, `المقارنة_السنوية_${years.join('_')}_${generatedOn}.pdf`);
             } catch (err) {
                 console.error('PDF Export Error:', err);
                 alert('حدث خطأ أثناء تصدير PDF: ' + err.message);
@@ -3294,37 +3271,8 @@
             await new Promise(r => setTimeout(r, 1500));
 
             try {
-                const canvas = await html2canvas(contentDiv, {
-                    scale: 2,
-                    useCORS: true,
-                    backgroundColor: '#ffffff',
-                    logging: false,
-                    width: contentDiv.scrollWidth,
-                    height: contentDiv.scrollHeight
-                });
-
-                const { jsPDF } = window.jspdf;
-                const imgWidth = 210;
-                const pageHeight = 297;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-                const pdf = new jsPDF('p', 'mm', 'a4');
-
-                let heightLeft = imgHeight;
-                let position = 0;
-
-                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-
-                while (heightLeft > 0) {
-                    position = -(imgHeight - heightLeft);
-                    pdf.addPage();
-                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-                }
-
                 const fileName = `تقرير_الإدارة_${date}.pdf`;
-                pdf.save(fileName);
+                await renderContentDivToPDF(contentDiv, fileName);
 
             } catch(err) {
                 console.error('PDF Export Error:', err);
