@@ -2707,8 +2707,8 @@
             yoyData.forEach(item => {
                 let cellsHtml = `<td class="p-4 font-bold">${item.monthName}</td>`;
                 item.yearAmounts.forEach((amt, idx) => {
-                    const valueHtml = amt === null ? '<span class="text-slate-400 text-xs">لا توجد بيانات</span>' : `<span class="font-bold text-emerald-700">${amt.toLocaleString()}</span> <span class="currency">﷼</span>`;
-                    const growthHtml = idx > 0 ? `<div class="mt-1">${growthBadgeHtml(item.growths[idx])}</div>` : '';
+                    const valueHtml = amt === null ? '' : `<span class="font-bold text-emerald-700">${amt.toLocaleString()}</span> <span class="currency">﷼</span>`;
+                    const growthHtml = (idx > 0 && item.growths[idx] !== null) ? `<div class="mt-1">${growthBadgeHtml(item.growths[idx])}</div>` : '';
                     cellsHtml += `<td class="p-4">${valueHtml}${growthHtml}</td>`;
                 });
                 rowsHtml += `<tr class="hover:bg-slate-50">${cellsHtml}</tr>`;
@@ -2726,7 +2726,7 @@
             });
             let footHtml = '<tr class="bg-slate-50 font-bold"><td class="p-4">الإجمالي</td>';
             yearTotals.forEach((t, idx) => {
-                const growthHtml = idx > 0 ? `<div class="mt-1">${growthBadgeHtml(yearTotalsGrowth[idx])}</div>` : '';
+                const growthHtml = (idx > 0 && yearTotalsGrowth[idx] !== null) ? `<div class="mt-1">${growthBadgeHtml(yearTotalsGrowth[idx])}</div>` : '';
                 footHtml += `<td class="p-4"><span class="text-indigo-700">${t.toLocaleString()}</span> <span class="currency">﷼</span>${growthHtml}</td>`;
             });
             footHtml += '</tr>';
@@ -2825,8 +2825,8 @@
             yoyData.forEach(item => {
                 let rowCells = `<td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:700;">${item.monthName}</td>`;
                 item.yearAmounts.forEach((amt, idx) => {
-                    const valueText = amt === null ? '—' : `${amt.toLocaleString()} <span style="font-size:0.85em;">﷼</span>`;
-                    const growthText = idx > 0 ? `<br>${growthPdfText(item.growths[idx])}` : '';
+                    const valueText = amt === null ? '' : `${amt.toLocaleString()} <span style="font-size:0.85em;">﷼</span>`;
+                    const growthText = (idx > 0 && item.growths[idx] !== null) ? `<br>${growthPdfText(item.growths[idx])}` : '';
                     rowCells += `<td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:700;color:#047857;text-align:center;">${valueText}${growthText}</td>`;
                 });
                 tableRows += `<tr>${rowCells}</tr>`;
@@ -2842,7 +2842,7 @@
             });
             let footCells = `<td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:800;">الإجمالي</td>`;
             yearTotals.forEach((t, idx) => {
-                const growthText = idx > 0 ? `<br>${growthPdfText(yearTotalsGrowth[idx])}` : '';
+                const growthText = (idx > 0 && yearTotalsGrowth[idx] !== null) ? `<br>${growthPdfText(yearTotalsGrowth[idx])}` : '';
                 footCells += `<td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:800;color:#3730a3;text-align:center;background:#f1f5f9;">${t.toLocaleString()} <span style="font-size:0.85em;">﷼</span>${growthText}</td>`;
             });
 
