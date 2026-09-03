@@ -128,6 +128,9 @@
                 <button onclick="showPage('salesGrowth')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="salesGrowth">
                     <i class="fa-solid fa-arrow-trend-up w-4 h-4"></i><span>نمو المبيعات الشهري</span>
                 </button>
+                <button onclick="showPage('yoyCompare')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="yoyCompare">
+                    <i class="fa-solid fa-calendar-week w-4 h-4"></i><span>المقارنة السنوية</span>
+                </button>
                 <button onclick="showPage('adminReport')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="adminReport">
                     <i class="fa-solid fa-file-pdf w-4 h-4"></i><span>تقرير الإدارة</span>
                 </button>
@@ -425,6 +428,13 @@
                             </div>
                             <button onclick="saveManualMonthlySales()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium h-10"><i class="fa-solid fa-floppy-disk ml-2"></i> حفظ الشهر</button>
                         </div>
+
+                        <div class="mt-4 pt-4 border-t border-amber-100 flex flex-wrap items-center gap-3">
+                            <p class="text-xs text-slate-500 flex-1 min-w-[200px]"><i class="fa-solid fa-file-excel ml-1 text-emerald-600"></i> عندك بيانات شهور كتير (زي سنة كاملة)؟ نزّل القالب، عبّيه، وارفعه دفعة واحدة بدل ما تدخلها شهر بشهر.</p>
+                            <button onclick="downloadManualMonthlyTemplate()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium"><i class="fa-solid fa-download ml-2"></i> تنزيل قالب إكسيل</button>
+                            <label class="border border-amber-600 text-amber-700 hover:bg-amber-50 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer"><i class="fa-solid fa-upload ml-2"></i> رفع ملف إكسيل<input type="file" id="mms-excel-upload" accept=".xlsx, .xls" class="hidden" onchange="handleManualMonthlyExcelUpload(event)"></label>
+                        </div>
+
                         <div class="mt-5 overflow-x-auto">
                             <table class="w-full text-sm text-right border-collapse">
                                 <thead class="bg-slate-50"><tr><th class="p-3 font-medium border border-slate-200">الشهر</th><th class="p-3 font-medium border border-slate-200">إجمالي المبيعات (يدوي)</th><th class="p-3 font-medium border border-slate-200">إجراء</th></tr></thead>
@@ -446,6 +456,48 @@
                             <tbody id="sg-table-body" class="divide-y divide-slate-100"><tr><td colspan="4" class="p-4 text-center text-slate-400">اضغط "تحليل النمو الشهري" لعرض البيانات</td></tr></tbody>
                         </table>
                         <p id="sg-footnote" class="text-[11px] text-slate-400 px-4 py-2 border-t border-slate-100">* جميع مبالغ المبيعات الموضحة أعلاه شاملة ضريبة القيمة المضافة، ونسبة النمو محسوبة دائماً بالمقارنة مع الشهر التقويمي السابق مباشرة لكل شهر.</p>
+                    </div>
+                </div>
+
+                <!-- 5.9 المقارنة السنوية (تقرير منفصل: مقارنة سنتين أو أكثر لنفس الشهور) -->
+                <div id="page-yoyCompare" class="page space-y-6">
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
+                        <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><i class="fa-solid fa-calendar-week text-indigo-600"></i> مقارنة كل شهر بنظيره عبر عدة سنوات</h2>
+                        <p class="text-sm text-slate-500 mb-4">هذا التقرير يقارن مبيعات <span class="font-bold text-slate-700">كل شهر (يناير، فبراير...) بمبيعات نفس الشهر في سنة أو أكثر تختارها</span> (مثلاً أبريل 2024 و2025 و2026 مع بعض)، ويحسب نسبة النمو لكل سنة بالمقارنة بالسنة اللي قبلها مباشرة من السنوات المختارة. يعتمد على البيانات الفعلية المسجلة بالنظام والأرقام المضافة يدوياً للسنوات السابقة.</p>
+                        <p class="text-sm font-medium text-slate-600 mb-2">اختر سنتين أو أكثر للمقارنة:</p>
+                        <div id="yoy-years-checklist" class="flex flex-wrap gap-2 mb-4"></div>
+                        <div class="flex flex-wrap gap-4 items-end">
+                            <div>
+                                <label class="block text-sm text-slate-500 mb-1">طريقة عرض المبلغ</label>
+                                <div class="flex gap-2">
+                                    <button onclick="setYoyVatMode('gross')" id="yoy-vat-gross-btn" class="px-3 py-2 text-xs rounded-lg bg-indigo-100 text-indigo-700 font-medium transition-colors">شامل الضريبة</button>
+                                    <button onclick="setYoyVatMode('net')" id="yoy-vat-net-btn" class="px-3 py-2 text-xs rounded-lg bg-slate-100 text-slate-600 font-medium transition-colors">بدون الضريبة</button>
+                                </div>
+                            </div>
+                            <button onclick="calcYoyCompare()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg h-10 font-medium transition-colors"><i class="fa-solid fa-magnifying-glass ml-1"></i> مقارنة</button>
+                            <button id="yoy-pdf-btn" onclick="exportYoyComparePDF()" class="hidden bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg h-10 font-medium transition-colors items-center gap-2"><i class="fa-solid fa-file-pdf"></i> تصدير PDF</button>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-3"><i class="fa-solid fa-circle-info ml-1"></i> لإدخال مبيعات سنة سابقة غير مسجلة بالنظام (مثل 2025)، استخدم بطاقة "إضافة مبيعات شهور سابقة يدوياً" أو قالب الإكسيل الموجودين في صفحة "نمو المبيعات الشهري" — نفس البيانات هتظهر تلقائياً هنا.</p>
+                    </div>
+
+                    <div id="yoy-summary-cards" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in-up"></div>
+
+                    <div id="yoy-chart-container" class="hidden animate-fade-in-up bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h3 id="yoy-chart-title" class="text-md font-bold text-slate-700 mb-4"><i class="fa-solid fa-chart-column text-indigo-600 ml-2"></i> مقارنة المبيعات شهرياً بين السنوات المختارة</h3>
+                        <div class="chart-container-wrap"><canvas id="yoy-chart"></canvas></div>
+                    </div>
+
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-x-auto">
+                        <table class="w-full text-sm text-right">
+                            <thead class="bg-slate-50 text-slate-600">
+                                <tr id="yoy-table-head-row">
+                                    <th class="p-4 font-medium">الشهر</th>
+                                </tr>
+                            </thead>
+                            <tbody id="yoy-table-body" class="divide-y divide-slate-100"><tr><td class="p-4 text-center text-slate-400">اختر سنتين أو أكثر ثم اضغط "مقارنة" لعرض البيانات</td></tr></tbody>
+                            <tfoot id="yoy-table-foot"></tfoot>
+                        </table>
+                        <p id="yoy-footnote" class="text-[11px] text-slate-400 px-4 py-2 border-t border-slate-100">* نسبة النمو محسوبة لكل سنة بالمقارنة مع السنة اللي قبلها مباشرة من السنوات المختارة لنفس الشهر. جميع مبالغ المبيعات شاملة ضريبة القيمة المضافة.</p>
                     </div>
                 </div>
 
@@ -675,6 +727,8 @@
         let msChartInstance = null;
         let msCurrentChartType = 'bar';
         let msChartData = { labels: [], values: [] };
+        let yoyChartInstance = null;
+        let yoyData = []; // بيانات المقارنة السنوية الحالية
         
         let currentPayingItemId = null; // لتخزين ID البند الحالي للسداد
         let currentArchiveSelectedKey = null; // لتخزين مفتاح الشهر المحدد حالياً فى الأرشيف
@@ -758,7 +812,7 @@
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             const navBtn = document.querySelector(`.nav-item[data-page="${pageId}"]`);
             if(navBtn) navBtn.classList.add('active');
-            const titles = { 'daily': 'البيان اليومي', 'monthly': 'البنود الشهرية', 'history': 'إدخال بيانات سابقة', 'report30': 'تقرير 30 يوم', 'reportFull': 'التقرير الشامل', 'monthlySales': 'المبيعات الشهرية', 'salesCompare': 'مقارنة المبيعات', 'salesGrowth': 'نمو المبيعات الشهري', 'users': 'إدارة المستخدمين', 'adminReport': 'تقرير الإدارة', 'backup': 'النسخ الاحتياطي' };
+            const titles = { 'daily': 'البيان اليومي', 'monthly': 'البنود الشهرية', 'history': 'إدخال بيانات سابقة', 'report30': 'تقرير 30 يوم', 'reportFull': 'التقرير الشامل', 'monthlySales': 'المبيعات الشهرية', 'salesCompare': 'مقارنة المبيعات', 'salesGrowth': 'نمو المبيعات الشهري', 'yoyCompare': 'المقارنة السنوية', 'users': 'إدارة المستخدمين', 'adminReport': 'تقرير الإدارة', 'backup': 'النسخ الاحتياطي' };
             document.getElementById('page-title').textContent = titles[pageId];
             toggleMobileMenu(true); 
             renderCurrentPage(); 
@@ -2075,6 +2129,86 @@
             set(ref(db, 'manualMonthlySales/' + monthKey), null).catch(err => alert('حدث خطأ أثناء الحذف: ' + err));
         }
 
+        // تنزيل قالب إكسيل لتعبئة مبيعات شهور سابقة (سنوات كاملة) دفعة واحدة
+        window.downloadManualMonthlyTemplate = function() {
+            const headers = [['month', 'totalSales', 'overrideReal']];
+            const ws = XLSX.utils.aoa_to_sheet(headers);
+            ws['!cols'] = [{ wch: 14 }, { wch: 16 }, { wch: 16 }];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'مبيعات الشهور');
+
+            const instructionsData = [
+                ['تعليمات تعبئة قالب مبيعات الشهور السابقة'],
+                [''],
+                ['1) عمود month: اكتب الشهر بصيغة سنة-شهر بالظبط، مثال: 2025-01 (يعني يناير 2025)'],
+                ['2) عمود totalSales: إجمالي مبيعات هذا الشهر بالريال (رقم فقط بدون فواصل أو رموز)'],
+                ['3) عمود overrideReal: اكتب "نعم" فقط لو الشهر ده مسجل جزئياً بالفعل في النظام وعايز رقمك يحل محله بالكامل. اتركه فاضي أو اكتب "لا" في باقي الحالات (وده الغالب دايماً مع السنوات القديمة زي 2025)'],
+                ['4) لا تغيّر أسماء الأعمدة الموجودة في الصف الأول من ورقة "مبيعات الشهور"'],
+                ['5) بعد التعبئة، ارفع الملف من نفس مكان تنزيل هذا القالب في صفحة "نمو المبيعات الشهري"']
+            ];
+            const wsInstructions = XLSX.utils.aoa_to_sheet(instructionsData);
+            wsInstructions['!cols'] = [{ wch: 90 }];
+            XLSX.utils.book_append_sheet(wb, wsInstructions, 'تعليمات');
+
+            XLSX.writeFile(wb, 'قالب_مبيعات_الشهور_السابقة.xlsx');
+        }
+
+        // رفع ملف إكسيل مُعبّأ لإضافة/تحديث مبيعات شهور سابقة كتيرة دفعة واحدة
+        window.handleManualMonthlyExcelUpload = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    const sheetName = workbook.SheetNames.includes('مبيعات الشهور') ? 'مبيعات الشهور' : workbook.SheetNames[0];
+                    const jsonArr = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { raw: false });
+
+                    const updates = {};
+                    let count = 0, skipped = 0;
+
+                    jsonArr.forEach(row => {
+                        const monthRaw = row.month !== undefined ? row.month : row['الشهر'];
+                        const totalRaw = row.totalSales !== undefined ? row.totalSales : row['إجمالي المبيعات'];
+                        const overrideRaw = row.overrideReal !== undefined ? row.overrideReal : row['استبدال البيانات الفعلية'];
+
+                        if (!monthRaw) return;
+                        const monthStr = String(monthRaw).trim().replace(/\//g, '-');
+                        if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(monthStr)) { skipped++; return; }
+
+                        const total = parseFloat(String(totalRaw).replace(/,/g, ''));
+                        if (isNaN(total) || total < 0) { skipped++; return; }
+
+                        const overrideVal = String(overrideRaw || '').trim().toLowerCase();
+                        const override = ['نعم', 'yes', 'true', '1'].includes(overrideVal);
+
+                        updates['/manualMonthlySales/' + monthStr] = override ? { amount: total, overrideReal: true } : total;
+                        count++;
+                    });
+
+                    if (count === 0) {
+                        alert('لم يتم العثور على بيانات صالحة في الملف. تأكد من أن عمود "month" بصيغة سنة-شهر (مثال 2025-01) وعمود "totalSales" يحتوي على رقم صحيح.');
+                        event.target.value = '';
+                        return;
+                    }
+
+                    const confirmMsg = `تم العثور على ${count} شهر صالح في الملف${skipped > 0 ? ` (وتم تجاهل ${skipped} صف لعدم صحة بياناته)` : ''}.\n\nملحوظة: أي شهر مُدخل مسبقاً في قائمة الشهور اليدوية سيتم استبدال قيمته بالقيمة الجديدة من الملف.\n\nهل تريد المتابعة ورفع البيانات؟`;
+                    if (!confirm(confirmMsg)) { event.target.value = ''; return; }
+
+                    update(ref(db), updates).then(() => {
+                        alert(`تم رفع ${count} شهر بنجاح!`);
+                    }).catch(err => alert('حدث خطأ أثناء رفع البيانات: ' + err));
+                } catch (err) {
+                    console.error(err);
+                    alert('حدث خطأ أثناء قراءة الملف. تأكد أنه ملف إكسيل صحيح مبني على نفس القالب.');
+                }
+                event.target.value = '';
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
         function renderManualMonthlySalesTable() {
             const tbody = document.getElementById('mms-table-body');
             if (!tbody) return;
@@ -2428,6 +2562,373 @@
                 }
 
                 pdf.save(`نمو_المبيعات_الشهري_${generatedOn}.pdf`);
+            } catch (err) {
+                console.error('PDF Export Error:', err);
+                alert('حدث خطأ أثناء تصدير PDF: ' + err.message);
+            }
+
+            workspace.style.display = 'none';
+            workspace.innerHTML = '';
+            loadingEl.style.display = 'none';
+        }
+
+        // =========================================
+        // ===   5.9 المقارنة السنوية (متعددة السنوات) ===
+        // =========================================
+        let yoyVatMode = 'gross';
+        let yoySelectedYears = []; // السنوات المختارة حالياً للمقارنة، كأرقام، بدون ترتيب معين
+
+        // تجميع إجمالي كل شهر (بدون فلترة بفترة) من البيانات الفعلية، مع دمج الأرقام اليدوية
+        // (تستخدم قيمة يدوية فقط لو الشهر مالوش بيانات فعلية، أو كان عليه "استبدال" مفعّل)
+        function getAllMergedMonthTotalsRaw() {
+            const raw = {};
+            (window.dailyStatementsArr || []).forEach(d => {
+                if (!d.date || d.date.length < 7) return;
+                const mKey = d.date.substring(0, 7);
+                raw[mKey] = (raw[mKey] || 0) + (Number(d.customersBilled) || 0);
+            });
+            const manualObj = window.manualMonthlySalesObj || {};
+            Object.keys(manualObj).forEach(mKey => {
+                const amount = getManualEntryAmount(manualObj[mKey]);
+                const override = getManualEntryOverride(manualObj[mKey]);
+                if (raw[mKey] === undefined || override) raw[mKey] = amount;
+            });
+            return raw;
+        }
+
+        function getAvailableSalesYears() {
+            const raw = getAllMergedMonthTotalsRaw();
+            const yearsSet = new Set();
+            Object.keys(raw).forEach(mKey => yearsSet.add(mKey.substring(0, 4)));
+            return Array.from(yearsSet).sort();
+        }
+
+        window.renderYoyYearsChecklist = function() {
+            const container = document.getElementById('yoy-years-checklist');
+            if (!container) return;
+
+            const currentYear = new Date().getFullYear();
+            const dataYears = getAvailableSalesYears().map(Number);
+            const minYear = Math.min(currentYear - 3, ...(dataYears.length ? dataYears : [currentYear]));
+            const maxYear = Math.max(currentYear + 1, ...(dataYears.length ? dataYears : [currentYear]));
+
+            const years = [];
+            for (let y = maxYear; y >= minYear; y--) years.push(y);
+
+            // الاحتفاظ بالاختيارات السابقة لو لسه ضمن النطاق
+            const previouslyChecked = new Set(yoySelectedYears);
+
+            let html = '';
+            years.forEach(y => {
+                const hasData = dataYears.includes(y);
+                const isChecked = previouslyChecked.has(y) || (previouslyChecked.size === 0 && hasData && (y === currentYear || y === currentYear - 1));
+                html += `<label class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm cursor-pointer hover:bg-slate-100 ${!hasData ? 'opacity-60' : ''}">
+                    <input type="checkbox" value="${y}" class="yoy-year-checkbox w-4 h-4 accent-indigo-600" ${isChecked ? 'checked' : ''}>
+                    <span>${y}</span>${!hasData ? '<span class="text-[10px] text-slate-400">(لا بيانات بعد)</span>' : ''}
+                </label>`;
+            });
+            container.innerHTML = html;
+        }
+
+        window.setYoyVatMode = function(mode) {
+            yoyVatMode = mode;
+            setVatToggleButtons('yoy', mode);
+            if (yoyData && yoyData.length > 0) calcYoyCompare();
+        }
+
+        const YOY_MONTH_NAMES = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+        const YOY_YEAR_COLORS = ['#94a3b8', '#4f46e5', '#059669', '#d97706', '#dc2626', '#0891b2', '#7c3aed', '#db2777'];
+
+        window.calcYoyCompare = function() {
+            const checked = document.querySelectorAll('.yoy-year-checkbox:checked');
+            const years = Array.from(checked).map(cb => Number(cb.value)).sort((a, b) => a - b);
+
+            const tbody = document.getElementById('yoy-table-body');
+            const theadRow = document.getElementById('yoy-table-head-row');
+            const tfoot = document.getElementById('yoy-table-foot');
+            const summaryCards = document.getElementById('yoy-summary-cards');
+            const chartContainer = document.getElementById('yoy-chart-container');
+            const pdfBtn = document.getElementById('yoy-pdf-btn');
+
+            if (years.length < 2) {
+                alert('يرجى اختيار سنتين على الأقل للمقارنة');
+                return;
+            }
+
+            yoySelectedYears = years;
+
+            // عناوين الجدول الديناميكية حسب عدد السنوات المختارة
+            let headHtml = '<th class="p-4 font-medium">الشهر</th>';
+            years.forEach((y, idx) => {
+                headHtml += `<th class="p-4 font-medium">${y}${idx > 0 ? ' <span class="block text-[10px] font-normal text-slate-400">والنمو عن ' + years[idx - 1] + '</span>' : ''}</th>`;
+            });
+            theadRow.innerHTML = headHtml;
+
+            const vatLabel = vatModeLabel(yoyVatMode);
+            const footnote = document.getElementById('yoy-footnote');
+            if (footnote) footnote.textContent = `* نسبة النمو محسوبة لكل سنة بالمقارنة مع السنة اللي قبلها مباشرة من السنوات المختارة (${years.join('، ')}) لنفس الشهر. جميع مبالغ المبيعات ${yoyVatMode === 'net' ? 'بدون ضريبة القيمة المضافة (صافي)' : 'شاملة ضريبة القيمة المضافة'}.`;
+
+            const rawTotals = getAllMergedMonthTotalsRaw();
+
+            // بناء بيانات كل شهر عبر كل السنوات المختارة
+            yoyData = [];
+            for (let m = 1; m <= 12; m++) {
+                const mm = String(m).padStart(2, '0');
+                const yearAmounts = years.map(y => {
+                    const raw = rawTotals[`${y}-${mm}`];
+                    return raw !== undefined ? applyVatMode(raw, yoyVatMode) : null;
+                });
+                if (yearAmounts.every(v => v === null)) continue; // تخطي الشهور الفاضية في كل السنوات المختارة
+
+                // نمو كل سنة عن السنة اللي قبلها في نفس الشهر
+                const growths = yearAmounts.map((amt, idx) => {
+                    if (idx === 0) return null;
+                    const prevAmt = yearAmounts[idx - 1];
+                    if (amt === null || prevAmt === null) return null;
+                    if (prevAmt > 0) return ((amt - prevAmt) / prevAmt) * 100;
+                    if (prevAmt === 0 && amt > 0) return Infinity;
+                    return null;
+                });
+
+                yoyData.push({ monthNum: m, monthName: YOY_MONTH_NAMES[m - 1], years, yearAmounts, growths });
+            }
+
+            if (yoyData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${years.length + 1}" class="p-4 text-center text-slate-400">لا توجد بيانات لأي شهر في السنوات المختارة (${years.join('، ')})</td></tr>`;
+                tfoot.innerHTML = '';
+                summaryCards.classList.add('hidden');
+                chartContainer.classList.add('hidden');
+                pdfBtn.classList.add('hidden');
+                if (yoyChartInstance) { yoyChartInstance.destroy(); yoyChartInstance = null; }
+                return;
+            }
+
+            let rowsHtml = '';
+            yoyData.forEach(item => {
+                let cellsHtml = `<td class="p-4 font-bold">${item.monthName}</td>`;
+                item.yearAmounts.forEach((amt, idx) => {
+                    const valueHtml = amt === null ? '<span class="text-slate-400 text-xs">لا توجد بيانات</span>' : `<span class="font-bold text-emerald-700">${amt.toLocaleString()}</span> <span class="currency">﷼</span>`;
+                    const growthHtml = idx > 0 ? `<div class="mt-1">${growthBadgeHtml(item.growths[idx])}</div>` : '';
+                    cellsHtml += `<td class="p-4">${valueHtml}${growthHtml}</td>`;
+                });
+                rowsHtml += `<tr class="hover:bg-slate-50">${cellsHtml}</tr>`;
+            });
+            tbody.innerHTML = rowsHtml;
+
+            // صف إجمالي كل سنة في أسفل الجدول
+            const yearTotals = years.map((y, idx) => yoyData.reduce((sum, item) => sum + (item.yearAmounts[idx] || 0), 0));
+            const yearTotalsGrowth = yearTotals.map((t, idx) => {
+                if (idx === 0) return null;
+                const prevT = yearTotals[idx - 1];
+                if (prevT > 0) return ((t - prevT) / prevT) * 100;
+                if (prevT === 0 && t > 0) return Infinity;
+                return null;
+            });
+            let footHtml = '<tr class="bg-slate-50 font-bold"><td class="p-4">الإجمالي</td>';
+            yearTotals.forEach((t, idx) => {
+                const growthHtml = idx > 0 ? `<div class="mt-1">${growthBadgeHtml(yearTotalsGrowth[idx])}</div>` : '';
+                footHtml += `<td class="p-4"><span class="text-indigo-700">${t.toLocaleString()}</span> <span class="currency">﷼</span>${growthHtml}</td>`;
+            });
+            footHtml += '</tr>';
+            tfoot.innerHTML = footHtml;
+
+            // بطاقات الملخص
+            const allGrowths = [];
+            yoyData.forEach(item => item.growths.forEach(g => { if (g !== null && g !== Infinity) allGrowths.push(g); }));
+            const avgGrowth = allGrowths.length > 0 ? (allGrowths.reduce((a, b) => a + b, 0) / allGrowths.length) : null;
+
+            let cumulativeGrowth = null;
+            if (yearTotals.length > 1 && yearTotals[0] > 0) {
+                cumulativeGrowth = ((yearTotals[yearTotals.length - 1] - yearTotals[0]) / yearTotals[0]) * 100;
+            }
+
+            summaryCards.classList.remove('hidden');
+            summaryCards.innerHTML = `
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs text-slate-500 mb-1"><i class="fa-solid fa-calendar-check ml-1 text-slate-400"></i> عدد السنوات المقارنة</p>
+                    <p class="text-xl font-bold text-slate-700">${years.length} <span class="text-sm font-normal text-slate-400">(${years.join('، ')})</span></p>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs text-slate-500 mb-1"><i class="fa-solid fa-chart-line ml-1 text-indigo-400"></i> متوسط النمو السنوي (لكل شهر ولكل سنة عن اللي قبلها)</p>
+                    <p class="text-xl font-bold ${avgGrowth === null ? 'text-slate-400' : (avgGrowth >= 0 ? 'text-emerald-600' : 'text-red-600')}">${avgGrowth === null ? '—' : `${avgGrowth >= 0 ? '▲' : '▼'} ${Math.abs(avgGrowth).toFixed(1)}%`}</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs text-slate-500 mb-1"><i class="fa-solid fa-scale-balanced ml-1 text-emerald-400"></i> النمو التراكمي (من ${years[0]} إلى ${years[years.length - 1]})</p>
+                    <p class="text-xl font-bold ${cumulativeGrowth === null ? 'text-slate-400' : (cumulativeGrowth >= 0 ? 'text-emerald-600' : 'text-red-600')}">${cumulativeGrowth === null ? '—' : `${cumulativeGrowth >= 0 ? '▲' : '▼'} ${Math.abs(cumulativeGrowth).toFixed(1)}%`}</p>
+                </div>`;
+
+            document.getElementById('yoy-chart-title').innerHTML = `<i class="fa-solid fa-chart-column text-indigo-600 ml-2"></i> مقارنة المبيعات شهرياً — ${years.join(' مقابل ')}`;
+            chartContainer.classList.remove('hidden');
+            buildYoyChart(yoyData, years);
+            pdfBtn.classList.remove('hidden');
+        }
+
+        function buildYoyChart(data, years) {
+            if (yoyChartInstance) { yoyChartInstance.destroy(); yoyChartInstance = null; }
+            const canvas = document.getElementById('yoy-chart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            const labels = data.map(d => d.monthName);
+            const datasets = years.map((y, idx) => ({
+                label: `${y}`,
+                data: data.map(d => d.yearAmounts[idx]),
+                backgroundColor: YOY_YEAR_COLORS[idx % YOY_YEAR_COLORS.length],
+                borderRadius: 6,
+                maxBarThickness: Math.max(12, 34 - years.length * 3)
+            }));
+
+            yoyChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, labels: { font: { family: 'Tajawal', size: 11 }, boxWidth: 14 } },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleFont: { family: 'Tajawal', size: 12 },
+                            bodyFont: { family: 'Tajawal', size: 12, weight: 'bold' },
+                            padding: 12, cornerRadius: 8,
+                            callbacks: { label: function(c) { return c.parsed.y === null ? `${c.dataset.label}: لا توجد بيانات` : `${c.dataset.label}: ${c.parsed.y.toLocaleString()} ﷼`; } }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'Tajawal', size: 10 }, callback: v => v.toLocaleString() } },
+                        x: { grid: { display: false }, ticks: { font: { family: 'Tajawal', size: 10 } } }
+                    },
+                    animation: { duration: 800, easing: 'easeOutQuart' }
+                }
+            });
+        }
+
+        window.exportYoyComparePDF = async function() {
+            if (!yoyData || yoyData.length === 0) return alert('يرجى إجراء المقارنة أولاً قبل التصدير');
+
+            const years = yoySelectedYears;
+            const chartImage = yoyChartInstance ? yoyChartInstance.toBase64Image('image/png', 1) : '';
+
+            function growthPdfText(growth) {
+                if (growth === null) return '<span style="color:#94a3b8;font-family:Arial,Helvetica,sans-serif;">—</span>';
+                if (growth === Infinity) return '<span style="color:#047857;font-weight:800;font-family:Arial,Helvetica,sans-serif;white-space:nowrap;">▲ جديد</span>';
+                const positive = growth >= 0;
+                return `<span style="color:${positive ? '#047857' : '#b91c1c'};font-weight:800;font-family:Arial,Helvetica,sans-serif;white-space:nowrap;">${positive ? '▲' : '▼'} ${Math.abs(growth).toFixed(1)}%</span>`;
+            }
+
+            let tableHeadCells = `<th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:right;color:#475569;">الشهر</th>`;
+            years.forEach((y, idx) => {
+                tableHeadCells += `<th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:center;color:#475569;">${y}${idx > 0 ? `<br><span style="font-size:9px;font-weight:500;color:#94a3b8;">والنمو عن ${years[idx - 1]}</span>` : ''}</th>`;
+            });
+
+            let tableRows = '';
+            yoyData.forEach(item => {
+                let rowCells = `<td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:700;">${item.monthName}</td>`;
+                item.yearAmounts.forEach((amt, idx) => {
+                    const valueText = amt === null ? '—' : `${amt.toLocaleString()} <span style="font-size:0.85em;">﷼</span>`;
+                    const growthText = idx > 0 ? `<br>${growthPdfText(item.growths[idx])}` : '';
+                    rowCells += `<td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:700;color:#047857;text-align:center;">${valueText}${growthText}</td>`;
+                });
+                tableRows += `<tr>${rowCells}</tr>`;
+            });
+
+            const yearTotals = years.map((y, idx) => yoyData.reduce((sum, item) => sum + (item.yearAmounts[idx] || 0), 0));
+            const yearTotalsGrowth = yearTotals.map((t, idx) => {
+                if (idx === 0) return null;
+                const prevT = yearTotals[idx - 1];
+                if (prevT > 0) return ((t - prevT) / prevT) * 100;
+                if (prevT === 0 && t > 0) return Infinity;
+                return null;
+            });
+            let footCells = `<td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:800;">الإجمالي</td>`;
+            yearTotals.forEach((t, idx) => {
+                const growthText = idx > 0 ? `<br>${growthPdfText(yearTotalsGrowth[idx])}` : '';
+                footCells += `<td style="padding:10px 12px;border:1px solid #cbd5e1;font-size:12px;font-weight:800;color:#3730a3;text-align:center;background:#f1f5f9;">${t.toLocaleString()} <span style="font-size:0.85em;">﷼</span>${growthText}</td>`;
+            });
+
+            const allGrowths = [];
+            yoyData.forEach(item => item.growths.forEach(g => { if (g !== null && g !== Infinity) allGrowths.push(g); }));
+            const avgGrowth = allGrowths.length > 0 ? (allGrowths.reduce((a, b) => a + b, 0) / allGrowths.length) : null;
+            let cumulativeGrowth = null;
+            if (yearTotals.length > 1 && yearTotals[0] > 0) cumulativeGrowth = ((yearTotals[yearTotals.length - 1] - yearTotals[0]) / yearTotals[0]) * 100;
+
+            const generatedOn = new Date().toISOString().split('T')[0];
+
+            const loadingEl = document.getElementById('pdf-loading-overlay');
+            loadingEl.style.display = 'flex';
+
+            const workspace = document.getElementById('pdf-workspace');
+            workspace.innerHTML = '';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.style.cssText = 'direction:rtl;font-family:Tajawal,sans-serif;color:#1e293b;width:' + Math.max(760, 500 + years.length * 100) + 'px;margin:0 auto;background:white;padding:30px;';
+
+            let html = '';
+            html += `<div style="text-align:center;border-bottom:3px solid #1e293b;padding-bottom:20px;margin-bottom:24px;">`;
+            html += `<h2 style="font-size:22px;font-weight:800;color:#1e293b;margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;letter-spacing:0.5px;">V-SHAPE Healthy Meals</h2>`;
+            html += `<h3 style="font-size:17px;font-weight:700;color:#4f46e5;margin:8px 0 4px;">تقرير المقارنة السنوية — ${years.join(' مقابل ')}</h3>`;
+            html += `<p style="font-size:12px;color:#64748b;margin:0;font-weight:500;">تاريخ الإصدار: ${generatedOn} — المبالغ ${yoyVatMode === 'net' ? 'بدون ضريبة القيمة المضافة (صافي)' : 'شاملة ضريبة القيمة المضافة'}</p>`;
+            html += `</div>`;
+
+            html += `<table style="width:100%;border-collapse:separate;border-spacing:10px;margin-bottom:20px;"><tr>`;
+            html += `<td style="width:33.3%;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#4338ca;margin:0 0 4px;font-weight:600;">عدد السنوات المقارنة</p><p style="font-size:18px;font-weight:800;color:#3730a3;margin:0;">${years.length} <span style="font-size:11px;font-weight:500;">(${years.join('، ')})</span></p></td>`;
+            html += `<td style="width:33.3%;background:${avgGrowth === null ? '#f1f5f9' : (avgGrowth >= 0 ? '#d1fae5' : '#fee2e2')};border:1px solid ${avgGrowth === null ? '#e2e8f0' : (avgGrowth >= 0 ? '#6ee7b7' : '#fca5a5')};border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#475569;margin:0 0 4px;font-weight:600;">متوسط النمو السنوي</p><p style="font-size:18px;font-weight:800;font-family:Arial,Helvetica,sans-serif;white-space:nowrap;color:${avgGrowth === null ? '#64748b' : (avgGrowth >= 0 ? '#047857' : '#b91c1c')};margin:0;">${avgGrowth === null ? '—' : `${avgGrowth >= 0 ? '▲' : '▼'} ${Math.abs(avgGrowth).toFixed(1)}%`}</p></td>`;
+            html += `<td style="width:33.3%;background:${cumulativeGrowth === null ? '#f1f5f9' : (cumulativeGrowth >= 0 ? '#d1fae5' : '#fee2e2')};border:1px solid ${cumulativeGrowth === null ? '#e2e8f0' : (cumulativeGrowth >= 0 ? '#6ee7b7' : '#fca5a5')};border-radius:8px;padding:14px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:#475569;margin:0 0 4px;font-weight:600;">النمو التراكمي (${years[0]} → ${years[years.length - 1]})</p><p style="font-size:18px;font-weight:800;font-family:Arial,Helvetica,sans-serif;white-space:nowrap;color:${cumulativeGrowth === null ? '#64748b' : (cumulativeGrowth >= 0 ? '#047857' : '#b91c1c')};margin:0;">${cumulativeGrowth === null ? '—' : `${cumulativeGrowth >= 0 ? '▲' : '▼'} ${Math.abs(cumulativeGrowth).toFixed(1)}%`}</p></td>`;
+            html += `</tr></table>`;
+
+            if (chartImage) {
+                html += `<div style="margin-bottom:22px;">`;
+                html += `<h4 style="font-size:14px;font-weight:700;color:#334155;margin:0 0 12px;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">الرسم البياني للمقارنة الشهرية بين السنوات</h4>`;
+                html += `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center;">`;
+                html += `<img src="${chartImage}" style="max-width:100%;max-height:320px;">`;
+                html += `</div></div>`;
+            }
+
+            html += `<div style="margin-bottom:20px;">`;
+            html += `<h4 style="font-size:14px;font-weight:700;color:#334155;margin:0 0 12px;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">تفاصيل المقارنة الشهرية</h4>`;
+            html += `<table style="width:100%;border-collapse:collapse;">`;
+            html += `<thead><tr style="background:#f1f5f9;">${tableHeadCells}</tr></thead><tbody>${tableRows}</tbody>`;
+            html += `<tfoot><tr>${footCells}</tr></tfoot>`;
+            html += `</table></div>`;
+
+            html += `<p style="font-size:10px;color:#94a3b8;margin:-10px 0 20px;">* نسبة النمو محسوبة لكل سنة بالمقارنة مع السنة اللي قبلها مباشرة من السنوات المختارة (${years.join('، ')}) لنفس الشهر. جميع مبالغ المبيعات ${yoyVatMode === 'net' ? 'بدون ضريبة القيمة المضافة (صافي)' : 'شاملة ضريبة القيمة المضافة'}.</p>`;
+
+            html += `<div style="margin-top:48px;padding-top:24px;border-top:2px solid #e2e8f0;text-align:center;">`;
+            html += `<p style="font-size:12px;color:#64748b;margin:0 0 40px;">المدير المالى</p>`;
+            html += `<div style="border-bottom:1px solid #94a3b8;width:200px;margin:0 auto;"></div>`;
+            html += `<p style="font-size:13px;font-weight:700;color:#334155;margin:8px 0 0;">Reyad Hussein</p>`;
+            html += `</div>`;
+
+            contentDiv.innerHTML = html;
+            workspace.appendChild(contentDiv);
+            workspace.style.display = 'block';
+
+            await new Promise(r => setTimeout(r, 1500));
+
+            try {
+                const canvas = await html2canvas(contentDiv, {
+                    scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
+                    width: contentDiv.scrollWidth, height: contentDiv.scrollHeight
+                });
+
+                const { jsPDF } = window.jspdf;
+                const imgWidth = 210;
+                const pageHeight = 297;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+
+                let heightLeft = imgHeight;
+                let position = 0;
+                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+                while (heightLeft > 0) {
+                    position = -(imgHeight - heightLeft);
+                    pdf.addPage();
+                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                pdf.save(`المقارنة_السنوية_${years.join('_')}_${generatedOn}.pdf`);
             } catch (err) {
                 console.error('PDF Export Error:', err);
                 alert('حدث خطأ أثناء تصدير PDF: ' + err.message);
@@ -3003,6 +3504,7 @@
                 if(currentActivePage === 'monthlySales') calcMonthlySales();
                 if(currentActivePage === 'salesCompare') { renderSalesCompareMonthsList(); renderCompareResults(); }
                 if(currentActivePage === 'salesGrowth' && sgData.length > 0) calcSalesGrowth();
+                if(currentActivePage === 'yoyCompare') { renderYoyYearsChecklist(); if (yoyData.length > 0) calcYoyCompare(); }
                 if(currentActivePage === 'users') renderUsers();
             } catch (error) { console.error("Error rendering page:", error); }
         }
