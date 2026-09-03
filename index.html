@@ -265,11 +265,18 @@
                     <div class="flex flex-wrap gap-4 items-end bg-white p-4 rounded-lg shadow-sm border border-slate-200">
                         <div><label class="block text-sm text-slate-500 mb-1">من تاريخ</label><input type="date" id="ms-start" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
                         <div><label class="block text-sm text-slate-500 mb-1">إلى تاريخ</label><input type="date" id="ms-end" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                        <div>
+                            <label class="block text-sm text-slate-500 mb-1">طريقة عرض المبلغ</label>
+                            <div class="flex gap-2">
+                                <button onclick="setMsVatMode('gross')" id="ms-vat-gross-btn" class="px-3 py-2 text-xs rounded-lg bg-indigo-100 text-indigo-700 font-medium transition-colors">شامل الضريبة</button>
+                                <button onclick="setMsVatMode('net')" id="ms-vat-net-btn" class="px-3 py-2 text-xs rounded-lg bg-slate-100 text-slate-600 font-medium transition-colors">بدون الضريبة</button>
+                            </div>
+                        </div>
                         <button onclick="calcMonthlySales()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg h-10 font-medium transition-colors"><i class="fa-solid fa-magnifying-glass ml-1"></i> عرض المبيعات</button>
                         <button id="ms-pdf-btn" onclick="exportMonthlySalesPDF()" class="hidden bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg h-10 font-medium transition-colors items-center gap-2"><i class="fa-solid fa-file-pdf"></i> تصدير PDF</button>
                     </div>
                     <div id="ms-total-card" class="hidden animate-fade-in-up bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                        <div><p class="text-sm text-slate-500 mb-1">إجمالي المبيعات (المبالغ المحررة) خلال الفترة</p><h3 id="ms-total-val" class="text-2xl font-bold text-emerald-700">0</h3></div>
+                        <div><p id="ms-total-label" class="text-sm text-slate-500 mb-1">إجمالي المبيعات (المبالغ المحررة) خلال الفترة — شامل الضريبة</p><h3 id="ms-total-val" class="text-2xl font-bold text-emerald-700">0</h3></div>
                         <div class="p-3 rounded-xl bg-emerald-50 text-emerald-600"><i class="fa-solid fa-file-invoice-dollar text-xl"></i></div>
                     </div>
                     <div id="ms-stats-cards" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in-up">
@@ -298,7 +305,7 @@
                     </div>
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
                         <table class="w-full text-sm text-right">
-                            <thead class="bg-slate-50 text-slate-600"><tr><th class="p-4 font-medium">التاريخ</th><th class="p-4 font-medium">إجمالي المبالغ المحررة للعملاء</th></tr></thead>
+                            <thead class="bg-slate-50 text-slate-600"><tr><th class="p-4 font-medium">التاريخ</th><th class="p-4 font-medium"><span id="ms-table-header-label">إجمالي المبالغ المحررة للعملاء (شامل الضريبة)</span></th></tr></thead>
                             <tbody id="ms-table-body" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
@@ -306,6 +313,14 @@
 
                 <!-- 5.7 مقارنة المبيعات -->
                 <div id="page-salesCompare" class="page space-y-6">
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
+                        <p class="text-sm font-medium text-slate-600 flex items-center gap-2"><i class="fa-solid fa-receipt text-indigo-600"></i> طريقة عرض مبالغ المبيعات في هذا التقرير</p>
+                        <div class="flex gap-2">
+                            <button onclick="setScVatMode('gross')" id="sc-vat-gross-btn" class="px-3 py-2 text-xs rounded-lg bg-indigo-100 text-indigo-700 font-medium transition-colors">شامل الضريبة</button>
+                            <button onclick="setScVatMode('net')" id="sc-vat-net-btn" class="px-3 py-2 text-xs rounded-lg bg-slate-100 text-slate-600 font-medium transition-colors">بدون الضريبة</button>
+                        </div>
+                    </div>
+
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
                         <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-calendar-check text-indigo-600"></i> إضافة شهور بسرعة للمقارنة</h2>
                         <div id="sc-months-list" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 mb-4"></div>
@@ -361,7 +376,7 @@
                                         <th class="p-3 font-medium w-8"></th>
                                         <th class="p-3 font-medium">الفترة</th>
                                         <th class="p-3 font-medium">النطاق</th>
-                                        <th class="p-3 font-medium">إجمالي المبيعات <span class="block text-[10px] font-normal text-slate-400">شامل الضريبة</span></th>
+                                        <th class="p-3 font-medium">إجمالي المبيعات <span id="sc-table-vat-label" class="block text-[10px] font-normal text-slate-400">شامل الضريبة</span></th>
                                         <th class="p-3 font-medium">نسبة النمو</th>
                                         <th class="p-3 font-medium">متوسط اليوم</th>
                                         <th class="p-3 font-medium">أعلى يوم</th>
@@ -372,7 +387,7 @@
                                 </thead>
                                 <tbody id="sc-table-body" class="divide-y divide-slate-100"></tbody>
                             </table>
-                            <p class="text-[11px] text-slate-400 px-4 py-2 border-t border-slate-100">* جميع مبالغ المبيعات الموضحة أعلاه شاملة ضريبة القيمة المضافة.</p>
+                            <p id="sc-footnote" class="text-[11px] text-slate-400 px-4 py-2 border-t border-slate-100">* جميع مبالغ المبيعات الموضحة أعلاه شاملة ضريبة القيمة المضافة.</p>
                         </div>
                     </div>
                 </div>
@@ -385,6 +400,13 @@
                         <div class="flex flex-wrap gap-4 items-end">
                             <div><label class="block text-sm text-slate-500 mb-1">من شهر (اختياري)</label><input type="month" id="sg-start" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
                             <div><label class="block text-sm text-slate-500 mb-1">إلى شهر (اختياري)</label><input type="month" id="sg-end" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <div>
+                                <label class="block text-sm text-slate-500 mb-1">طريقة عرض المبلغ</label>
+                                <div class="flex gap-2">
+                                    <button onclick="setSgVatMode('gross')" id="sg-vat-gross-btn" class="px-3 py-2 text-xs rounded-lg bg-indigo-100 text-indigo-700 font-medium transition-colors">شامل الضريبة</button>
+                                    <button onclick="setSgVatMode('net')" id="sg-vat-net-btn" class="px-3 py-2 text-xs rounded-lg bg-slate-100 text-slate-600 font-medium transition-colors">بدون الضريبة</button>
+                                </div>
+                            </div>
                             <button onclick="calcSalesGrowth()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg h-10 font-medium transition-colors"><i class="fa-solid fa-magnifying-glass ml-1"></i> تحليل النمو الشهري</button>
                             <button id="sg-pdf-btn" onclick="exportSalesGrowthPDF()" class="hidden bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg h-10 font-medium transition-colors items-center gap-2"><i class="fa-solid fa-file-pdf"></i> تصدير PDF</button>
                         </div>
@@ -415,10 +437,10 @@
 
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
                         <table class="w-full text-sm text-right">
-                            <thead class="bg-slate-50 text-slate-600"><tr><th class="p-4 font-medium">الشهر</th><th class="p-4 font-medium">إجمالي المبيعات</th><th class="p-4 font-medium">الفرق عن الشهر السابق</th><th class="p-4 font-medium">نسبة النمو عن الشهر السابق</th></tr></thead>
+                            <thead class="bg-slate-50 text-slate-600"><tr><th class="p-4 font-medium">الشهر</th><th class="p-4 font-medium"><span id="sg-table-vat-label">إجمالي المبيعات (شامل الضريبة)</span></th><th class="p-4 font-medium">الفرق عن الشهر السابق</th><th class="p-4 font-medium">نسبة النمو عن الشهر السابق</th></tr></thead>
                             <tbody id="sg-table-body" class="divide-y divide-slate-100"><tr><td colspan="4" class="p-4 text-center text-slate-400">اضغط "تحليل النمو الشهري" لعرض البيانات</td></tr></tbody>
                         </table>
-                        <p class="text-[11px] text-slate-400 px-4 py-2 border-t border-slate-100">* جميع مبالغ المبيعات الموضحة أعلاه شاملة ضريبة القيمة المضافة، ونسبة النمو محسوبة دائماً بالمقارنة مع الشهر التقويمي السابق مباشرة لكل شهر.</p>
+                        <p id="sg-footnote" class="text-[11px] text-slate-400 px-4 py-2 border-t border-slate-100">* جميع مبالغ المبيعات الموضحة أعلاه شاملة ضريبة القيمة المضافة، ونسبة النمو محسوبة دائماً بالمقارنة مع الشهر التقويمي السابق مباشرة لكل شهر.</p>
                     </div>
                 </div>
 
@@ -619,6 +641,31 @@
         window.monthlyItemsArr = [];
         window.usersArr = [];
         window.manualMonthlySalesObj = {}; // مبيعات الشهور المضافة يدوياً (قبل بدء تسجيل النظام) - { 'YYYY-MM': amount }
+
+        // إعدادات ضريبة القيمة المضافة المستخدمة في تقارير المبيعات
+        const VAT_RATE = 0.15;
+        let msVatMode = 'gross'; // 'gross' = شامل الضريبة (افتراضي) | 'net' = بدون الضريبة
+        let scVatMode = 'gross';
+        let sgVatMode = 'gross';
+
+        function applyVatMode(amount, mode) {
+            const num = Number(amount) || 0;
+            const result = mode === 'net' ? num / (1 + VAT_RATE) : num;
+            return Math.round(result * 100) / 100;
+        }
+
+        function vatModeLabel(mode) {
+            return mode === 'net' ? 'بدون الضريبة' : 'شامل الضريبة';
+        }
+
+        function setVatToggleButtons(prefix, mode) {
+            const grossBtn = document.getElementById(prefix + '-vat-gross-btn');
+            const netBtn = document.getElementById(prefix + '-vat-net-btn');
+            const activeClass = 'px-3 py-2 text-xs rounded-lg bg-indigo-100 text-indigo-700 font-medium transition-colors';
+            const inactiveClass = 'px-3 py-2 text-xs rounded-lg bg-slate-100 text-slate-600 font-medium transition-colors';
+            if (grossBtn) grossBtn.className = mode === 'gross' ? activeClass : inactiveClass;
+            if (netBtn) netBtn.className = mode === 'net' ? activeClass : inactiveClass;
+        }
 
         let msChartInstance = null;
         let msCurrentChartType = 'bar';
@@ -1308,6 +1355,10 @@
             const tbody = document.getElementById('ms-table-body');
             tbody.innerHTML = '';
 
+            const vatLabel = vatModeLabel(msVatMode);
+            document.getElementById('ms-total-label').textContent = `إجمالي المبيعات (المبالغ المحررة) خلال الفترة — ${vatLabel}`;
+            document.getElementById('ms-table-header-label').textContent = `إجمالي المبالغ المحررة للعملاء (${vatLabel})`;
+
             if(sortedData.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="2" class="p-4 text-center text-slate-400">لا توجد بيانات لهذه الفترة</td></tr>';
                 document.getElementById('ms-total-card').classList.add('hidden');
@@ -1329,7 +1380,7 @@
 
             let rowsHtml = '';
             sortedData.forEach(item => {
-                const billed = Number(item.customersBilled) || 0;
+                const billed = applyVatMode(item.customersBilled, msVatMode);
                 totalBilled += billed;
                 rowsHtml += `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${item.date}</td><td class="p-4 text-emerald-700 font-bold">${billed.toLocaleString()} <span class="currency">﷼</span></td></tr>`;
                 labels.push(item.date);
@@ -1357,15 +1408,23 @@
             buildChart(labels, values);
         }
 
+        window.setMsVatMode = function(mode) {
+            msVatMode = mode;
+            setVatToggleButtons('ms', mode);
+            if (document.getElementById('ms-start').value || document.getElementById('ms-end').value || msChartData.labels.length > 0) {
+                calcMonthlySales();
+            }
+        }
+
         window.exportMonthlySalesPDF = async function() {
             if (msChartData.labels.length === 0) return alert('لا توجد بيانات للتصدير. يرجى عرض المبيعات أولاً.');
 
             const startDate = document.getElementById('ms-start').value;
             const endDate = document.getElementById('ms-end').value;
-            const periodText = startDate && endDate ? `من ${startDate} إلى ${endDate}` 
+            const periodText = (startDate && endDate ? `من ${startDate} إلى ${endDate}` 
                 : startDate ? `من ${startDate}` 
                 : endDate ? `إلى ${endDate}` 
-                : 'كل الفترة المتاحة';
+                : 'كل الفترة المتاحة') + ` — ${vatModeLabel(msVatMode)}`;
 
             const chartImage = msChartInstance ? msChartInstance.toBase64Image('image/png', 1) : '';
 
@@ -1591,7 +1650,7 @@
 
         function computePeriodSalesStats(period) {
             if (period.manual) {
-                const total = period.manualTotal || 0;
+                const total = applyVatMode(period.manualTotal || 0, scVatMode);
                 const days = period.manualDays || 0;
                 const avg = days > 0 ? Math.round(total / days) : 0;
                 return { total, max: null, min: null, maxDate: '', minDate: '', avg, operatingDays: days, isManual: true };
@@ -1599,7 +1658,7 @@
             const data = (window.dailyStatementsArr || []).filter(d => d.date >= period.start && d.date <= period.end);
             let total = 0, max = 0, min = Infinity, maxDate = '', minDate = '', operatingDays = 0;
             data.forEach(d => {
-                const billed = Number(d.customersBilled) || 0;
+                const billed = applyVatMode(d.customersBilled, scVatMode);
                 total += billed;
                 if (billed > max) { max = billed; maxDate = d.date; }
                 if (billed > 0 && billed < min) { min = billed; minDate = d.date; }
@@ -1608,6 +1667,17 @@
             if (min === Infinity) min = 0;
             const avg = operatingDays > 0 ? Math.round(total / operatingDays) : 0;
             return { total, max, min, maxDate, minDate, avg, operatingDays, isManual: false };
+        }
+
+        window.setScVatMode = function(mode) {
+            scVatMode = mode;
+            setVatToggleButtons('sc', mode);
+            const vatLabel = vatModeLabel(mode);
+            const headerLabel = document.getElementById('sc-table-vat-label');
+            const footnote = document.getElementById('sc-footnote');
+            if (headerLabel) headerLabel.textContent = vatLabel;
+            if (footnote) footnote.textContent = `* جميع مبالغ المبيعات الموضحة أعلاه ${vatLabel === 'شامل الضريبة' ? 'شاملة ضريبة القيمة المضافة' : 'بدون ضريبة القيمة المضافة (صافي)'}.`;
+            renderCompareResults();
         }
 
         // حساب نسبة النمو لكل فترة بالنسبة للفترة اللي قبلها في نفس الترتيب الحالي
@@ -1852,7 +1922,7 @@
             html += `<div style="text-align:center;border-bottom:3px solid #1e293b;padding-bottom:20px;margin-bottom:24px;">`;
             html += `<h2 style="font-size:22px;font-weight:800;color:#1e293b;margin:0 0 4px;">V-SHAPE Healthy Meals</h2>`;
             html += `<h3 style="font-size:17px;font-weight:700;color:#4f46e5;margin:8px 0 4px;">تقرير مقارنة المبيعات</h3>`;
-            html += `<p style="font-size:12px;color:#64748b;margin:0;font-weight:500;">تاريخ الإصدار: ${generatedOn} — عدد الفترات: ${statsArr.length} — المبالغ شاملة الضريبة</p>`;
+            html += `<p style="font-size:12px;color:#64748b;margin:0;font-weight:500;">تاريخ الإصدار: ${generatedOn} — عدد الفترات: ${statsArr.length} — المبالغ ${scVatMode === 'net' ? 'بدون ضريبة القيمة المضافة (صافي)' : 'شاملة ضريبة القيمة المضافة'}</p>`;
             html += `</div>`;
 
             if (bestPeriod && statsArr.length > 1) {
@@ -1880,7 +1950,7 @@
             }
 
             html += `<div style="margin-bottom:24px;">`;
-            html += `<h4 style="font-size:14px;font-weight:700;color:#334155;margin:0 0 12px;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">تفاصيل المقارنة <span style="font-size:11px;font-weight:500;color:#94a3b8;">(المبالغ شاملة ضريبة القيمة المضافة)</span></h4>`;
+            html += `<h4 style="font-size:14px;font-weight:700;color:#334155;margin:0 0 12px;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">تفاصيل المقارنة <span style="font-size:11px;font-weight:500;color:#94a3b8;">(المبالغ ${scVatMode === 'net' ? 'بدون ضريبة القيمة المضافة' : 'شاملة ضريبة القيمة المضافة'})</span></h4>`;
             html += `<table style="width:100%;border-collapse:collapse;">`;
             html += `<thead><tr style="background:#f1f5f9;">`;
             html += `<th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:right;color:#475569;">الفترة</th>`;
@@ -1894,7 +1964,7 @@
             html += `</tr></thead><tbody>${tableRows}</tbody>`;
             html += `</table></div>`;
 
-            html += `<p style="font-size:10px;color:#94a3b8;margin:-14px 0 8px;">* نسبة النمو محسوبة لكل فترة بالنسبة للفترة السابقة لها في نفس ترتيب المقارنة. جميع مبالغ المبيعات شاملة ضريبة القيمة المضافة.</p>`;
+            html += `<p style="font-size:10px;color:#94a3b8;margin:-14px 0 8px;">* نسبة النمو محسوبة لكل فترة بالنسبة للفترة السابقة لها في نفس ترتيب المقارنة. جميع مبالغ المبيعات ${scVatMode === 'net' ? 'بدون ضريبة القيمة المضافة (صافي)' : 'شاملة ضريبة القيمة المضافة'}.</p>`;
 
             if (statsArr.some(s => s.stats.isManual)) {
                 html += `<p style="font-size:10px;color:#b45309;margin:0 0 20px;">🖊️ الفترات المُعلَّمة "بيانات يدوية" تم إدخال إجماليها يدوياً لعدم توفر بياناتها في النظام، ولا تحتوي على تفاصيل أعلى/أقل يوم.</p>`;
@@ -2011,14 +2081,20 @@
             const endMonth = document.getElementById('sg-end').value;
             const data = window.dailyStatementsArr || [];
 
-            // تجميع إجمالي المبيعات لكل شهر تقويمي من البيانات الفعلية
-            const monthTotals = {};
+            const vatLabel = vatModeLabel(sgVatMode);
+            const tableHeaderLabel = document.getElementById('sg-table-vat-label');
+            const footnote = document.getElementById('sg-footnote');
+            if (tableHeaderLabel) tableHeaderLabel.textContent = `إجمالي المبيعات (${vatLabel})`;
+            if (footnote) footnote.textContent = `* جميع مبالغ المبيعات الموضحة أعلاه ${sgVatMode === 'net' ? 'بدون ضريبة القيمة المضافة (صافي)' : 'شاملة ضريبة القيمة المضافة'}، ونسبة النمو محسوبة دائماً بالمقارنة مع الشهر التقويمي السابق مباشرة لكل شهر.`;
+
+            // تجميع إجمالي المبيعات لكل شهر تقويمي من البيانات الفعلية (بالقيمة الخام أولاً، ثم تطبيق وضع الضريبة على الإجمالي الشهري)
+            const monthTotalsRaw = {};
             data.forEach(d => {
                 if (!d.date || d.date.length < 7) return;
                 const mKey = d.date.substring(0, 7);
                 if (startMonth && mKey < startMonth) return;
                 if (endMonth && mKey > endMonth) return;
-                monthTotals[mKey] = (monthTotals[mKey] || 0) + (Number(d.customersBilled) || 0);
+                monthTotalsRaw[mKey] = (monthTotalsRaw[mKey] || 0) + (Number(d.customersBilled) || 0);
             });
 
             // إضافة الشهور المُدخلة يدوياً (قبل بدء تسجيل النظام) لأي شهر ليس له بيانات فعلية بعد
@@ -2027,11 +2103,14 @@
             Object.keys(manualObj).forEach(mKey => {
                 if (startMonth && mKey < startMonth) return;
                 if (endMonth && mKey > endMonth) return;
-                if (monthTotals[mKey] === undefined) {
-                    monthTotals[mKey] = Number(manualObj[mKey]) || 0;
+                if (monthTotalsRaw[mKey] === undefined) {
+                    monthTotalsRaw[mKey] = Number(manualObj[mKey]) || 0;
                     manualMonthKeysSet.add(mKey);
                 }
             });
+
+            const monthTotals = {};
+            Object.keys(monthTotalsRaw).forEach(mKey => { monthTotals[mKey] = applyVatMode(monthTotalsRaw[mKey], sgVatMode); });
 
             const monthKeys = Object.keys(monthTotals).sort(); // ترتيب تصاعدي زمني ثابت (لا يمكن إعادة ترتيبه)
 
@@ -2104,6 +2183,12 @@
             chartContainer.classList.remove('hidden');
             buildSalesGrowthChart(sgData);
             pdfBtn.classList.remove('hidden');
+        }
+
+        window.setSgVatMode = function(mode) {
+            sgVatMode = mode;
+            setVatToggleButtons('sg', mode);
+            calcSalesGrowth();
         }
 
         function buildSalesGrowthChart(data) {
@@ -2246,7 +2331,7 @@
             html += `<div style="text-align:center;border-bottom:3px solid #1e293b;padding-bottom:20px;margin-bottom:24px;">`;
             html += `<h2 style="font-size:22px;font-weight:800;color:#1e293b;margin:0 0 4px;">V-SHAPE Healthy Meals</h2>`;
             html += `<h3 style="font-size:17px;font-weight:700;color:#4f46e5;margin:8px 0 4px;">تقرير نمو المبيعات شهر بعد شهر</h3>`;
-            html += `<p style="font-size:12px;color:#64748b;margin:0;font-weight:500;">الفترة: ${periodText} — تاريخ الإصدار: ${generatedOn} — المبالغ شاملة الضريبة</p>`;
+            html += `<p style="font-size:12px;color:#64748b;margin:0;font-weight:500;">الفترة: ${periodText} — تاريخ الإصدار: ${generatedOn} — المبالغ ${sgVatMode === 'net' ? 'بدون ضريبة القيمة المضافة (صافي)' : 'شاملة ضريبة القيمة المضافة'}</p>`;
             html += `</div>`;
 
             html += `<table style="width:100%;border-collapse:separate;border-spacing:10px;margin-bottom:20px;"><tr>`;
@@ -2268,13 +2353,13 @@
             html += `<table style="width:100%;border-collapse:collapse;">`;
             html += `<thead><tr style="background:#f1f5f9;">`;
             html += `<th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:right;color:#475569;">الشهر</th>`;
-            html += `<th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:center;color:#475569;">إجمالي المبيعات</th>`;
+            html += `<th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:center;color:#475569;">إجمالي المبيعات (${vatModeLabel(sgVatMode)})</th>`;
             html += `<th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:center;color:#475569;">الفرق عن الشهر السابق</th>`;
             html += `<th style="padding:10px 12px;border:1px solid #cbd5e1;font-size:11px;text-align:center;color:#475569;">نسبة النمو عن الشهر السابق</th>`;
             html += `</tr></thead><tbody>${tableRows}</tbody>`;
             html += `</table></div>`;
 
-            html += `<p style="font-size:10px;color:#94a3b8;margin:-10px 0 20px;">* نسبة النمو محسوبة لكل شهر بالمقارنة مع الشهر التقويمي السابق مباشرة (وليس شهر أساس ثابت). جميع مبالغ المبيعات شاملة ضريبة القيمة المضافة.</p>`;
+            html += `<p style="font-size:10px;color:#94a3b8;margin:-10px 0 20px;">* نسبة النمو محسوبة لكل شهر بالمقارنة مع الشهر التقويمي السابق مباشرة (وليس شهر أساس ثابت). جميع مبالغ المبيعات ${sgVatMode === 'net' ? 'بدون ضريبة القيمة المضافة (صافي)' : 'شاملة ضريبة القيمة المضافة'}.</p>`;
 
             html += `<div style="margin-top:48px;padding-top:24px;border-top:2px solid #e2e8f0;text-align:center;">`;
             html += `<p style="font-size:12px;color:#64748b;margin:0 0 40px;">المدير المالى</p>`;
