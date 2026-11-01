@@ -113,6 +113,9 @@
                 <button onclick="showPage('monthlyPayments')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="monthlyPayments">
                     <i class="fa-solid fa-money-bill-trend-up w-4 h-4"></i><span>المصروفات الشهرية</span>
                 </button>
+                <button onclick="showPage('bankMovements')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="bankMovements">
+                    <i class="fa-solid fa-building-columns w-4 h-4"></i><span>حركة البنك</span>
+                </button>
                 <button onclick="showPage('history')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-slate-400 hover:text-white hover:bg-[#1e293b] mb-1" data-page="history">
                     <i class="fa-solid fa-clock-rotate-left w-4 h-4"></i><span>إدخال بيانات سابقة</span>
                 </button>
@@ -207,6 +210,7 @@
                         </div>
                     </div>
                     
+                    <div id="m-current-month-label" class="bg-indigo-50 border border-indigo-200 text-indigo-800 text-sm rounded-lg px-4 py-2.5"></div>
                     <!-- حقل البحث -->
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
                         <div class="relative flex-1">
@@ -255,6 +259,85 @@
                         <table class="w-full text-sm text-right">
                             <thead class="bg-slate-50 text-slate-600"><tr><th class="p-4 font-medium">الشهر</th><th class="p-4 font-medium">إجمالي المسدد</th><th class="p-4 font-medium">عدد السدادات</th><th class="p-4 font-medium">إجراء</th></tr></thead>
                             <tbody id="mp-table-body" class="divide-y divide-slate-100"><tr><td colspan="4" class="p-4 text-center text-slate-400">اضغط "عرض التقرير" لعرض البيانات</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 2.6 حركة البنك اليومية -->
+                <div id="page-bankMovements" class="page space-y-6">
+                    <!-- الرصيد الافتتاحي -->
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6 editor-only-section">
+                        <h2 class="text-md font-bold mb-1 flex items-center gap-2"><i class="fa-solid fa-flag-checkered text-indigo-600"></i> الرصيد الافتتاحي للبنوك (يُدخل مرة واحدة)</h2>
+                        <p class="text-xs text-slate-500 mb-4">أدخل رصيد كل بنك <span class="font-bold">في بداية</span> أول يوم تبدأ فيه تسجيل الحركة. بعدها يحسب النظام رصيد أول كل يوم تلقائيًا = رصيد آخر اليوم السابق.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                            <div><label class="block text-sm text-slate-500 mb-1">تاريخ بداية التسجيل</label><input type="date" id="bo-date" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <div><label class="block text-sm text-slate-500 mb-1">رصيد البنك الأهلي</label><input type="number" step="any" id="bo-alahli" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="0"></div>
+                            <div><label class="block text-sm text-slate-500 mb-1">رصيد بنك الإنماء</label><input type="number" step="any" id="bo-alinma" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="0"></div>
+                            <button onclick="saveBankOpening()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg h-10 font-medium transition-colors"><i class="fa-solid fa-floppy-disk ml-1"></i> حفظ الرصيد الافتتاحي</button>
+                        </div>
+                    </div>
+
+                    <!-- إدخال حركة -->
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6 editor-only-section">
+                        <h2 id="bt-form-title" class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-plus-circle text-emerald-600"></i> تسجيل حركة بنكية</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div><label class="block text-sm text-slate-500 mb-1">التاريخ</label><input type="date" id="bt-date" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <div><label class="block text-sm text-slate-500 mb-1">نوع الحركة</label>
+                                <select id="bt-type" onchange="bankTypeChanged()" class="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                                    <option value="in">وارد (إيداع / تحصيل)</option>
+                                    <option value="out">صادر (سحب / سداد)</option>
+                                    <option value="transfer">تحويل بين البنكين</option>
+                                </select>
+                            </div>
+                            <div><label id="bt-bank-label" class="block text-sm text-slate-500 mb-1">البنك</label>
+                                <select id="bt-bank" class="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                                    <option value="alahli">البنك الأهلي</option>
+                                    <option value="alinma">بنك الإنماء</option>
+                                </select>
+                                <p id="bt-transfer-hint" class="hidden text-xs text-indigo-600 mt-1"></p>
+                            </div>
+                            <div><label class="block text-sm text-slate-500 mb-1">المبلغ</label><input type="number" step="any" min="0" id="bt-amount" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="0"></div>
+                            <div><label class="block text-sm text-slate-500 mb-1">البيان / الوصف</label><input type="text" id="bt-desc" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="مثال: تحصيل من عميل / سداد مورد"></div>
+                            <div><label class="block text-sm text-slate-500 mb-1">التصنيف (اختياري)</label>
+                                <input type="text" id="bt-category" list="bt-category-list" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="مبيعات، موردين، رواتب، إيجار...">
+                                <datalist id="bt-category-list"><option value="مبيعات"><option value="تحصيل عملاء"><option value="موردين"><option value="رواتب"><option value="إيجار"><option value="مصروفات تشغيل"><option value="ضريبة"><option value="أخرى"></datalist>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex gap-2">
+                            <button id="bt-save-btn" onclick="saveBankTransaction()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg font-medium transition-colors"><i class="fa-solid fa-check ml-1"></i> حفظ الحركة</button>
+                            <button id="bt-cancel-btn" onclick="cancelBankEdit()" class="hidden bg-slate-400 hover:bg-slate-500 text-white px-5 py-2 rounded-lg font-medium transition-colors">إلغاء التعديل</button>
+                        </div>
+                    </div>
+
+                    <!-- التقرير اليومي -->
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
+                        <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-building-columns text-indigo-600"></i> التقرير اليومي لحركة البنك</h2>
+                        <div class="flex flex-wrap gap-3 items-end">
+                            <button onclick="shiftBankDay(-1)" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg h-10"><i class="fa-solid fa-chevron-right"></i></button>
+                            <div><label class="block text-sm text-slate-500 mb-1">اليوم</label><input type="date" id="br-date" onchange="renderBankReport()" class="p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
+                            <button onclick="shiftBankDay(1)" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg h-10"><i class="fa-solid fa-chevron-left"></i></button>
+                            <button onclick="setBankToday()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg h-10 font-medium">اليوم</button>
+                            <button onclick="exportBankReportPDF()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg h-10 font-medium transition-colors flex items-center gap-2"><i class="fa-solid fa-file-pdf"></i> تصدير PDF</button>
+                        </div>
+                    </div>
+
+                    <div id="br-warnings" class="space-y-2"></div>
+                    <div id="br-summary-cards" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-x-auto">
+                        <table class="w-full text-sm text-right">
+                            <thead class="bg-slate-50 text-slate-600"><tr>
+                                <th class="p-3 font-medium">البنك</th><th class="p-3 font-medium">رصيد أول اليوم</th><th class="p-3 font-medium">الوارد</th><th class="p-3 font-medium">الصادر</th><th class="p-3 font-medium">تحويلات (صافي)</th><th class="p-3 font-medium">رصيد آخر اليوم</th><th class="p-3 font-medium">رصيد البيان اليومي</th><th class="p-3 font-medium">الفرق</th>
+                            </tr></thead>
+                            <tbody id="br-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-x-auto">
+                        <div class="px-4 pt-4 font-bold text-slate-700"><i class="fa-solid fa-list ml-2 text-indigo-600"></i> حركات اليوم بالتفصيل</div>
+                        <table class="w-full text-sm text-right mt-2">
+                            <thead class="bg-slate-50 text-slate-600"><tr><th class="p-3 font-medium">النوع</th><th class="p-3 font-medium">البنك</th><th class="p-3 font-medium">المبلغ</th><th class="p-3 font-medium">البيان</th><th class="p-3 font-medium">التصنيف</th><th class="p-3 font-medium">إجراء</th></tr></thead>
+                            <tbody id="br-moves-body" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
                 </div>
@@ -620,7 +703,7 @@
                 <div id="page-backup" class="page space-y-6">
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
                         <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><i class="fa-solid fa-shield-halved text-indigo-600"></i> النسخ الاحتياطي الكامل</h2>
-                        <p class="text-sm text-slate-500 mb-6">قم بتنزيل نسخة احتياطية شاملة لكل البيانات المسجلة في النظام (البيان اليومي، البنود الشهرية والسدادات، أرشيف الشهور، المستخدمين) بصيغة JSON. احتفظ بهذا الملف في مكان آمن، ويمكن استخدامه لاحقاً لاستعادة كامل البيانات في حال حدوث أي مشكلة.</p>
+                        <p class="text-sm text-slate-500 mb-6">قم بتنزيل نسخة احتياطية شاملة لكل البيانات المسجلة في النظام (البيان اليومي، البنود الشهرية والسدادات، أرشيف الشهور، المبيعات اليدوية، حركة البنك، المستخدمين) بصيغة JSON. احتفظ بهذا الملف في مكان آمن، ويمكن استخدامه لاحقاً لاستعادة كامل البيانات في حال حدوث أي مشكلة.</p>
                         <div class="flex flex-wrap gap-3">
                             <button onclick="downloadFullBackup()" id="backup-json-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 transition-colors"><i class="fa-solid fa-download"></i> تنزيل نسخة احتياطية (JSON)</button>
                             <button onclick="exportBackupExcel()" id="backup-excel-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 transition-colors"><i class="fa-solid fa-file-excel"></i> نسخة قابلة للقراءة (Excel)</button>
@@ -886,7 +969,7 @@
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             const navBtn = document.querySelector(`.nav-item[data-page="${pageId}"]`);
             if(navBtn) navBtn.classList.add('active');
-            const titles = { 'daily': 'البيان اليومي', 'monthly': 'البنود الشهرية', 'monthlyPayments': 'المصروفات الشهرية', 'history': 'إدخال بيانات سابقة', 'report30': 'تقرير 30 يوم', 'reportFull': 'التقرير الشامل', 'monthlySales': 'المبيعات الشهرية', 'salesCompare': 'مقارنة المبيعات', 'salesGrowth': 'نمو المبيعات الشهري', 'yoyCompare': 'المقارنة السنوية', 'users': 'إدارة المستخدمين', 'adminReport': 'تقرير الإدارة', 'backup': 'النسخ الاحتياطي' };
+            const titles = { 'daily': 'البيان اليومي', 'monthly': 'البنود الشهرية', 'monthlyPayments': 'المصروفات الشهرية', 'bankMovements': 'حركة البنك', 'history': 'إدخال بيانات سابقة', 'report30': 'تقرير 30 يوم', 'reportFull': 'التقرير الشامل', 'monthlySales': 'المبيعات الشهرية', 'salesCompare': 'مقارنة المبيعات', 'salesGrowth': 'نمو المبيعات الشهري', 'yoyCompare': 'المقارنة السنوية', 'users': 'إدارة المستخدمين', 'adminReport': 'تقرير الإدارة', 'backup': 'النسخ الاحتياطي' };
             document.getElementById('page-title').textContent = titles[pageId];
             toggleMobileMenu(true); 
             renderCurrentPage(); 
@@ -1081,23 +1164,56 @@
             if(confirm(`هل أنت متأكد من حذف البند: ${item.name}؟`)) { set(ref(db, 'monthlyItems/' + id), null); }
         }
 
+        // يقترح الشهر الذي تخصه البنود الحالية: آخر شهر سداد فعلي، وإن لم توجد سدادات فحسب يوم الشهر (أول 15 يوم => الشهر السابق)
+        function suggestMonthlyItemsMonthKey() {
+            const items = window.monthlyItemsArr || [];
+            let lastPay = '';
+            items.forEach(i => (i.payments || []).forEach(p => { if (p && p.date && String(p.date) > lastPay) lastPay = String(p.date); }));
+            const now = new Date();
+            const fmt = (y, m) => `${y}-${String(m).padStart(2, '0')}`;
+            const cur = fmt(now.getFullYear(), now.getMonth() + 1);
+            const prevD = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const prev = fmt(prevD.getFullYear(), prevD.getMonth() + 1);
+            const byDay = now.getDate() <= 15 ? prev : cur;
+            const m = lastPay.replace(/\//g, '-').match(/^(\d{4})-(\d{2})/);
+            if (m) {
+                const payKey = `${m[1]}-${m[2]}`;
+                // آخر سداد في شهر سابق للحالي => البنود تخص ذلك الشهر؛ وإلا نعتمد منطق اليوم
+                if (payKey < cur) return payKey;
+            }
+            return byDay;
+        }
+
         window.startNewMonth = function() {
             const currentItems = window.monthlyItemsArr || [];
+            const suggested = suggestMonthlyItemsMonthKey();
+            const keyRaw = prompt(`هذه البنود تخص أي شهر؟ (بصيغة سنة-شهر مثل 2026-11)\nسيتم أرشفتها بهذا الشهر.`, suggested);
+            if (keyRaw === null) return;
+            const monthKey = keyRaw.trim();
+            if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(monthKey)) return alert('صيغة غير صحيحة. يجب إدخال الشهر بصيغة سنة-شهر مثل 2026-11');
+
             const carryOver = confirm('هل تريد نقل البنود الحالية للشهر الجديد كاقتراح؟\n(سيتم تصفير المبالغ المسددة وإعادة إضافتها كالتزامات جديدة)');
-            if (!confirm('تأكيد نهائي: سيتم أرشفة بنود الشهر الحالي وبدء شهر جديد. هل أنت متأكد؟')) return;
-            let updates = {};
-            const now = new Date();
-            const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            if (currentItems.length > 0) { updates[`/monthlyArchive/${monthKey}`] = currentItems; }
-            if (carryOver && currentItems.length > 0) {
-                const newItems = {};
-                currentItems.forEach(item => {
-                    const newItemRef = push(ref(db, 'monthlyItems'));
-                    newItems[newItemRef.key] = { id: newItemRef.key, name: item.name, type: item.type, totalAmount: item.totalAmount, paidAmount: 0, payments: [] };
-                });
-                updates['/monthlyItems'] = newItems;
-            } else { updates['/monthlyItems'] = null; }
-            update(ref(db), updates).then(() => alert('تم بدء شهر جديد بنجاح!')).catch(err => alert('حدث خطأ: ' + err));
+            (async () => {
+                try {
+                    if (currentItems.length > 0) {
+                        const existing = await get(ref(db, `monthlyArchive/${monthKey}`));
+                        if (existing.exists() && !confirm(`يوجد بالفعل أرشيف محفوظ للشهر ${monthKey}. هل تريد استبداله بالبنود الحالية؟`)) return;
+                    }
+                    if (!confirm(`تأكيد نهائي: سيتم أرشفة بنود الشهر الحالي باسم ${monthKey} وبدء شهر جديد. هل أنت متأكد؟`)) return;
+                    let updates = {};
+                    if (currentItems.length > 0) { updates[`/monthlyArchive/${monthKey}`] = currentItems; }
+                    if (carryOver && currentItems.length > 0) {
+                        const newItems = {};
+                        currentItems.forEach(item => {
+                            const newItemRef = push(ref(db, 'monthlyItems'));
+                            newItems[newItemRef.key] = { id: newItemRef.key, name: item.name, type: item.type, totalAmount: item.totalAmount, paidAmount: 0, payments: [] };
+                        });
+                        updates['/monthlyItems'] = newItems;
+                    } else { updates['/monthlyItems'] = null; }
+                    await update(ref(db), updates);
+                    alert('تم بدء شهر جديد بنجاح!');
+                } catch (err) { alert('حدث خطأ: ' + err); }
+            })();
         }
 
         window.openArchiveModal = async function() {
@@ -1188,6 +1304,8 @@
         function renderMonthlyItems() {
             const tbody = document.getElementById('monthly-table-body');
             let data = window.monthlyItemsArr || [];
+            const lbl = document.getElementById('m-current-month-label');
+            if (lbl) lbl.innerHTML = (window.monthlyItemsArr || []).length > 0 ? `<i class="fa-solid fa-calendar-day ml-2"></i>البنود الحالية تخص شهر: <span class="font-extrabold">${suggestMonthlyItemsMonthKey()}</span> <span class="text-xs text-indigo-600">(مقترح — تقدر تغيّره عند الضغط على "بدء شهر جديد")</span>` : '<i class="fa-solid fa-calendar-day ml-2"></i>لا توجد بنود حالية';
             const searchTerm = (document.getElementById('m-search')?.value || '').toLowerCase();
             
             // تصفية البنود بناءً على البحث
@@ -3617,9 +3735,361 @@
         }
 
         // =========================================
+        // ===        2.6 حركة البنك اليومية      ===
+        // =========================================
+        const BANK_NAMES = { alahli: 'البنك الأهلي', alinma: 'بنك الإنماء' };
+        const BANK_TYPE_NAMES = { in: 'وارد', out: 'صادر', transfer: 'تحويل بين البنكين' };
+        window.bankTransactionsArr = [];
+        window.bankOpeningObj = null;
+        let editingBankTxId = null;
+
+        onValue(ref(db, 'bankTransactions'), (snapshot) => {
+            const data = snapshot.val();
+            window.bankTransactionsArr = data ? Object.values(data).filter(t => t && t.date) : [];
+            if (currentActivePage === 'bankMovements') renderBankReport();
+        });
+        onValue(ref(db, 'bankOpening'), (snapshot) => {
+            window.bankOpeningObj = snapshot.val() || null;
+            const bo = window.bankOpeningObj;
+            if (bo) {
+                const set_ = (id, v) => { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = v; };
+                set_('bo-date', bo.date || ''); set_('bo-alahli', bo.alahli ?? ''); set_('bo-alinma', bo.alinma ?? '');
+            }
+            if (currentActivePage === 'bankMovements') renderBankReport();
+        });
+
+        function bmEsc(str) {
+            return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+        function bmMoney(n) { return (Math.round((Number(n) || 0) * 100) / 100).toLocaleString('en-US'); }
+        function bmOtherBank(b) { return b === 'alahli' ? 'alinma' : 'alahli'; }
+
+        // أثر الحركة على بنك معين (موجب = زيادة، سالب = نقص)
+        function bmEffect(t, bank) {
+            const amt = Number(t.amount) || 0;
+            if (t.type === 'in') return t.bank === bank ? amt : 0;
+            if (t.type === 'out') return t.bank === bank ? -amt : 0;
+            if (t.type === 'transfer') {
+                if (t.bank === bank) return -amt;
+                if (bmOtherBank(t.bank) === bank) return amt;
+            }
+            return 0;
+        }
+
+        // رصيد البنك في بداية اليوم المحدد (null لو اليوم قبل تاريخ الرصيد الافتتاحي)
+        function bmOpeningOfDay(bank, date) {
+            const bo = window.bankOpeningObj;
+            if (!bo || !bo.date || date < bo.date) return null;
+            let bal = Number(bo[bank]) || 0;
+            window.bankTransactionsArr.forEach(t => {
+                if (t.date >= bo.date && t.date < date) bal += bmEffect(t, bank);
+            });
+            return bal;
+        }
+
+        function bmCompute(date) {
+            const res = { date, banks: {}, moves: [], hasOpening: !!(window.bankOpeningObj && window.bankOpeningObj.date), beforeStart: false };
+            if (res.hasOpening && date < window.bankOpeningObj.date) res.beforeStart = true;
+            const st = (window.dailyStatementsArr || []).find(d => d.date === date);
+            res.moves = window.bankTransactionsArr.filter(t => t.date === date).sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
+            ['alahli', 'alinma'].forEach(b => {
+                const opening = bmOpeningOfDay(b, date);
+                let inn = 0, out = 0, trans = 0;
+                res.moves.forEach(t => {
+                    const eff = bmEffect(t, b);
+                    if (t.type === 'in') inn += eff;
+                    else if (t.type === 'out') out += -eff;
+                    else if (t.type === 'transfer') trans += eff;
+                });
+                const closing = opening === null ? null : opening + inn - out + trans;
+                let stmt = null;
+                if (st) stmt = Number(b === 'alahli' ? st.bankAlahli : st.bankAlinma) || 0;
+                const diff = (closing !== null && stmt !== null) ? stmt - closing : null;
+                res.banks[b] = { opening, inn, out, trans, closing, stmt, diff };
+            });
+            const A = res.banks.alahli, N = res.banks.alinma;
+            const both = (x, y) => (x === null || y === null) ? null : x + y;
+            res.total = {
+                opening: both(A.opening, N.opening),
+                inn: A.inn + N.inn,
+                out: A.out + N.out,
+                // التحويلات بين البنكين صافيها صفر على الإجمالي
+                closing: both(A.closing, N.closing),
+                stmt: both(A.stmt, N.stmt),
+            };
+            res.total.diff = (res.total.closing !== null && res.total.stmt !== null) ? res.total.stmt - res.total.closing : null;
+            res.transferTotal = res.moves.filter(t => t.type === 'transfer').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+            return res;
+        }
+
+        function bmFmtCell(v, cls) {
+            return v === null ? '<span class="text-slate-300">—</span>' : `<span class="${cls || ''}">${bmMoney(v)}</span> <span class="currency">﷼</span>`;
+        }
+        function bmDiffCell(v) {
+            if (v === null) return '<span class="text-slate-300">—</span>';
+            if (Math.abs(v) < 0.5) return '<span class="text-emerald-600 font-bold"><i class="fa-solid fa-circle-check ml-1"></i>مطابق</span>';
+            return `<span class="text-red-600 font-bold" dir="ltr">${v > 0 ? '+' : ''}${bmMoney(v)}</span> <span class="currency text-red-600">﷼</span>`;
+        }
+
+        window.setBankToday = function() { document.getElementById('br-date').value = new Date().toISOString().split('T')[0]; renderBankReport(); }
+        window.shiftBankDay = function(delta) {
+            const el = document.getElementById('br-date');
+            const d = new Date((el.value || new Date().toISOString().split('T')[0]) + 'T00:00:00Z');
+            d.setUTCDate(d.getUTCDate() + delta);
+            el.value = d.toISOString().split('T')[0];
+            renderBankReport();
+        }
+
+        window.bankTypeChanged = function() {
+            const type = document.getElementById('bt-type').value;
+            const lbl = document.getElementById('bt-bank-label');
+            const hint = document.getElementById('bt-transfer-hint');
+            if (type === 'transfer') {
+                lbl.textContent = 'التحويل من بنك';
+                hint.classList.remove('hidden');
+            } else {
+                lbl.textContent = type === 'in' ? 'البنك المستلم' : 'البنك المصروف منه';
+                hint.classList.add('hidden');
+            }
+            if (type === 'transfer') {
+                const b = document.getElementById('bt-bank').value;
+                hint.textContent = `← إلى ${BANK_NAMES[bmOtherBank(b)]}`;
+            }
+        }
+        document.addEventListener('change', (e) => { if (e.target && e.target.id === 'bt-bank') bankTypeChanged(); });
+
+        window.saveBankOpening = function() {
+            const date = document.getElementById('bo-date').value;
+            if (!date) return alert('حدد تاريخ بداية التسجيل');
+            const alahli = parseFloat(document.getElementById('bo-alahli').value);
+            const alinma = parseFloat(document.getElementById('bo-alinma').value);
+            if (isNaN(alahli) || isNaN(alinma)) return alert('أدخل رصيد البنكين (يمكن إدخال 0)');
+            const hadOld = window.bankOpeningObj && window.bankOpeningObj.date;
+            if (hadOld && !confirm('يوجد رصيد افتتاحي محفوظ مسبقًا، وتغييره سيؤثر على أرصدة كل الأيام. هل تريد المتابعة؟')) return;
+            set(ref(db, 'bankOpening'), { date, alahli, alinma, updatedBy: window.currentUserName || '' })
+                .then(() => alert('تم حفظ الرصيد الافتتاحي'))
+                .catch(err => alert('حدث خطأ: ' + err));
+        }
+
+        window.saveBankTransaction = function() {
+            const date = document.getElementById('bt-date').value;
+            const type = document.getElementById('bt-type').value;
+            const bank = document.getElementById('bt-bank').value;
+            const amount = parseFloat(document.getElementById('bt-amount').value);
+            const description = document.getElementById('bt-desc').value.trim();
+            const category = document.getElementById('bt-category').value.trim();
+            if (!date) return alert('حدد التاريخ');
+            if (isNaN(amount) || amount <= 0) return alert('أدخل مبلغًا صحيحًا أكبر من صفر');
+            if (!window.bankOpeningObj || !window.bankOpeningObj.date) {
+                if (!confirm('لم يتم إدخال الرصيد الافتتاحي للبنوك بعد، ولن تظهر الأرصدة قبل إدخاله. هل تريد حفظ الحركة على أي حال؟')) return;
+            } else if (date < window.bankOpeningObj.date) {
+                if (!confirm('تاريخ الحركة أقدم من تاريخ الرصيد الافتتاحي، ولن تدخل في حساب الأرصدة. هل تريد المتابعة؟')) return;
+            }
+            const isEdit = !!editingBankTxId;
+            const old = isEdit ? window.bankTransactionsArr.find(t => t.id === editingBankTxId) : null;
+            const id = isEdit ? editingBankTxId : push(ref(db, 'bankTransactions')).key;
+            const tx = {
+                id, date, type, bank, amount, description, category,
+                createdAt: (old && old.createdAt) || new Date().toISOString(),
+                createdBy: (old && old.createdBy) || window.currentUserName || '',
+                updatedBy: window.currentUserName || ''
+            };
+            set(ref(db, 'bankTransactions/' + id), tx).then(() => {
+                document.getElementById('bt-amount').value = '';
+                document.getElementById('bt-desc').value = '';
+                document.getElementById('bt-category').value = '';
+                cancelBankEdit();
+                document.getElementById('br-date').value = date; // اعرض اليوم الذي أُدخلت له الحركة
+                renderBankReport();
+            }).catch(err => alert('حدث خطأ: ' + err));
+        }
+
+        window.editBankTransaction = function(id) {
+            const t = window.bankTransactionsArr.find(x => x.id === id);
+            if (!t) return;
+            editingBankTxId = id;
+            document.getElementById('bt-date').value = t.date;
+            document.getElementById('bt-type').value = t.type;
+            document.getElementById('bt-bank').value = t.bank;
+            document.getElementById('bt-amount').value = t.amount;
+            document.getElementById('bt-desc').value = t.description || '';
+            document.getElementById('bt-category').value = t.category || '';
+            bankTypeChanged();
+            document.getElementById('bt-form-title').innerHTML = '<i class="fa-solid fa-pen text-indigo-600"></i> تعديل حركة بنكية';
+            document.getElementById('bt-save-btn').innerHTML = '<i class="fa-solid fa-check ml-1"></i> حفظ التعديل';
+            document.getElementById('bt-cancel-btn').classList.remove('hidden');
+            document.getElementById('bt-date').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        window.cancelBankEdit = function() {
+            editingBankTxId = null;
+            document.getElementById('bt-form-title').innerHTML = '<i class="fa-solid fa-plus-circle text-emerald-600"></i> تسجيل حركة بنكية';
+            document.getElementById('bt-save-btn').innerHTML = '<i class="fa-solid fa-check ml-1"></i> حفظ الحركة';
+            document.getElementById('bt-cancel-btn').classList.add('hidden');
+        }
+        window.deleteBankTransaction = function(id) {
+            if (!confirm('هل تريد حذف هذه الحركة؟ سيتغير رصيد هذا اليوم والأيام التالية.')) return;
+            remove(ref(db, 'bankTransactions/' + id)).catch(err => alert('حدث خطأ: ' + err));
+        }
+
+        function bmTypeBadge(t) {
+            const cls = t.type === 'in' ? 'bg-emerald-100 text-emerald-700' : t.type === 'out' ? 'bg-red-100 text-red-700' : 'bg-indigo-100 text-indigo-700';
+            return `<span class="px-2 py-1 rounded-full text-xs ${cls}">${BANK_TYPE_NAMES[t.type] || t.type}</span>`;
+        }
+        function bmBankText(t) {
+            return t.type === 'transfer' ? `${BANK_NAMES[t.bank]} ← ${BANK_NAMES[bmOtherBank(t.bank)]}` : BANK_NAMES[t.bank];
+        }
+
+        window.renderBankReport = function() {
+            const dateEl = document.getElementById('br-date');
+            if (!dateEl) return;
+            if (!dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
+            const btDate = document.getElementById('bt-date');
+            if (btDate && !btDate.value) btDate.value = dateEl.value;
+            if (document.getElementById('bt-type') && !document.getElementById('bt-type').dataset.init) { document.getElementById('bt-type').dataset.init = '1'; bankTypeChanged(); }
+
+            const r = bmCompute(dateEl.value);
+            const canEdit = window.currentUserRole === 'محرر' || window.currentUserRole === 'مدير';
+
+            // تنبيهات
+            let warn = '';
+            if (!r.hasOpening) warn += `<div class="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg px-4 py-3"><i class="fa-solid fa-triangle-exclamation ml-2"></i>لم يتم إدخال الرصيد الافتتاحي للبنوك بعد — أدخله من الأعلى ليظهر رصيد أول وآخر اليوم.</div>`;
+            else if (r.beforeStart) warn += `<div class="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg px-4 py-3"><i class="fa-solid fa-triangle-exclamation ml-2"></i>هذا اليوم قبل تاريخ بداية التسجيل (${bmEsc(window.bankOpeningObj.date)}) لذلك لا تُحسب له أرصدة.</div>`;
+            ['alahli', 'alinma'].forEach(b => {
+                const d = r.banks[b].diff;
+                if (d !== null && Math.abs(d) >= 0.5) warn += `<div class="bg-red-50 border border-red-200 text-red-800 text-sm rounded-lg px-4 py-3"><i class="fa-solid fa-circle-exclamation ml-2"></i><span class="font-bold">${BANK_NAMES[b]}:</span> رصيد آخر اليوم المحسوب (${bmMoney(r.banks[b].closing)}) يختلف عن الرصيد المدخل في "البيان اليومي" (${bmMoney(r.banks[b].stmt)}) بفرق <span dir="ltr" class="font-bold">${d > 0 ? '+' : ''}${bmMoney(d)}</span> ﷼ — راجع الحركات المسجلة أو رصيد البيان اليومي.</div>`;
+            });
+            if (r.hasOpening && !r.beforeStart && r.banks.alahli.stmt === null) warn += `<div class="bg-slate-50 border border-slate-200 text-slate-600 text-xs rounded-lg px-4 py-2"><i class="fa-solid fa-circle-info ml-2"></i>لا يوجد بيان يومي لهذا التاريخ، لذلك لم تتم المطابقة مع رصيد البنك.</div>`;
+            document.getElementById('br-warnings').innerHTML = warn;
+
+            // كروت الملخص
+            const T = r.total;
+            const card = (label, val, color, icon) => `<div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm"><p class="text-xs text-slate-500 mb-1"><i class="fa-solid ${icon} ml-1 ${color}"></i>${label}</p><p class="text-xl font-extrabold ${color}">${val === null ? '—' : bmMoney(val) + ' <span class="currency">﷼</span>'}</p></div>`;
+            document.getElementById('br-summary-cards').innerHTML =
+                card('رصيد أول اليوم (الإجمالي)', T.opening, 'text-slate-700', 'fa-flag') +
+                card('إجمالي الوارد', T.inn, 'text-emerald-600', 'fa-arrow-down') +
+                card('إجمالي الصادر', T.out, 'text-red-600', 'fa-arrow-up') +
+                card('رصيد آخر اليوم (الإجمالي)', T.closing, 'text-indigo-700', 'fa-flag-checkered');
+
+            // الجدول
+            const row = (name, x, bold) => `<tr class="${bold ? 'bg-slate-50 font-bold' : ''}">
+                <td class="p-3 font-medium">${name}</td>
+                <td class="p-3">${bmFmtCell(x.opening)}</td>
+                <td class="p-3">${bmFmtCell(x.inn, 'text-emerald-600 font-bold')}</td>
+                <td class="p-3">${bmFmtCell(x.out, 'text-red-600 font-bold')}</td>
+                <td class="p-3">${x.trans === undefined ? '<span class="text-slate-400">0 (تحويلات داخلية)</span>' : bmFmtCell(x.trans, x.trans > 0 ? 'text-emerald-600' : x.trans < 0 ? 'text-red-600' : '')}</td>
+                <td class="p-3">${bmFmtCell(x.closing, 'text-indigo-700 font-extrabold')}</td>
+                <td class="p-3">${bmFmtCell(x.stmt)}</td>
+                <td class="p-3">${bmDiffCell(x.diff)}</td></tr>`;
+            document.getElementById('br-table-body').innerHTML =
+                row(BANK_NAMES.alahli, r.banks.alahli) + row(BANK_NAMES.alinma, r.banks.alinma) + row('الإجمالي', T, true);
+
+            // الحركات
+            const body = document.getElementById('br-moves-body');
+            if (r.moves.length === 0) body.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">لا توجد حركات مسجلة في هذا اليوم</td></tr>';
+            else body.innerHTML = r.moves.map(t => `<tr class="hover:bg-slate-50">
+                <td class="p-3">${bmTypeBadge(t)}</td>
+                <td class="p-3">${bmBankText(t)}</td>
+                <td class="p-3 font-bold ${t.type === 'in' ? 'text-emerald-600' : t.type === 'out' ? 'text-red-600' : 'text-indigo-700'}">${bmMoney(t.amount)} <span class="currency">﷼</span></td>
+                <td class="p-3">${bmEsc(t.description) || '<span class="text-slate-300">—</span>'}</td>
+                <td class="p-3 text-slate-500">${bmEsc(t.category) || '<span class="text-slate-300">—</span>'}</td>
+                <td class="p-3">${canEdit ? `<button onclick="editBankTransaction('${t.id}')" class="text-indigo-600 hover:text-indigo-800 ml-3"><i class="fa-solid fa-pen"></i></button><button onclick="deleteBankTransaction('${t.id}')" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>` : ''}</td>
+            </tr>`).join('');
+        }
+
+        window.exportBankReportPDF = async function() {
+            const dateEl = document.getElementById('br-date');
+            const date = dateEl.value;
+            if (!date) return alert('حدد اليوم أولاً');
+            const r = bmCompute(date);
+            if (!r.hasOpening) return alert('أدخل الرصيد الافتتاحي للبنوك أولاً');
+            if (r.beforeStart) return alert('هذا اليوم قبل تاريخ بداية التسجيل');
+            const generatedOn = new Date().toISOString().split('T')[0];
+            const td = 'padding:9px 8px;border:1px solid #cbd5e1;font-size:11px;text-align:center;';
+            const th = 'padding:9px 8px;border:1px solid #cbd5e1;font-size:11px;font-weight:700;text-align:center;color:#475569;';
+            const m = (v, color) => v === null ? '—' : `<span style="font-family:Arial,Helvetica,sans-serif;white-space:nowrap;${color ? 'color:' + color + ';' : ''}">${bmMoney(v)}</span>`;
+            const diffTxt = (v) => v === null ? '—' : Math.abs(v) < 0.5 ? '<span style="color:#059669;font-weight:700;">مطابق</span>' : `<span style="font-family:Arial,Helvetica,sans-serif;white-space:nowrap;color:#b91c1c;font-weight:700;direction:ltr;display:inline-block;">${v > 0 ? '+' : ''}${bmMoney(v)}</span>`;
+            const mkRow = (name, x, total) => `<tr style="${total ? 'background:#f1f5f9;font-weight:800;' : ''}">
+                <td style="${td}text-align:right;font-weight:700;${total ? 'border-top:2px solid #1e293b;' : ''}">${name}</td>
+                <td style="${td}${total ? 'border-top:2px solid #1e293b;' : ''}">${m(x.opening)}</td>
+                <td style="${td}${total ? 'border-top:2px solid #1e293b;' : ''}">${m(x.inn, '#059669')}</td>
+                <td style="${td}${total ? 'border-top:2px solid #1e293b;' : ''}">${m(x.out, '#b91c1c')}</td>
+                <td style="${td}${total ? 'border-top:2px solid #1e293b;' : ''}">${x.trans === undefined ? '0' : m(x.trans)}</td>
+                <td style="${td}font-weight:800;color:#3730a3;${total ? 'border-top:2px solid #1e293b;' : ''}">${m(x.closing)}</td>
+                <td style="${td}${total ? 'border-top:2px solid #1e293b;' : ''}">${m(x.stmt)}</td>
+                <td style="${td}${total ? 'border-top:2px solid #1e293b;' : ''}">${diffTxt(x.diff)}</td></tr>`;
+
+            let movesRows = '';
+            r.moves.forEach(t => {
+                const color = t.type === 'in' ? '#059669' : t.type === 'out' ? '#b91c1c' : '#3730a3';
+                movesRows += `<tr>
+                    <td style="${td}font-weight:700;">${BANK_TYPE_NAMES[t.type]}</td>
+                    <td style="${td}">${bmEsc(bmBankText(t))}</td>
+                    <td style="${td}font-weight:800;color:${color};">${m(t.amount)}</td>
+                    <td style="${td}text-align:right;">${bmEsc(t.description) || '—'}</td>
+                    <td style="${td}">${bmEsc(t.category) || '—'}</td></tr>`;
+            });
+            if (!movesRows) movesRows = `<tr><td colspan="5" style="${td}color:#94a3b8;">لا توجد حركات مسجلة في هذا اليوم</td></tr>`;
+
+            const loadingEl = document.getElementById('pdf-loading-overlay');
+            loadingEl.style.display = 'flex';
+            const workspace = document.getElementById('pdf-workspace');
+            workspace.innerHTML = '';
+            const contentDiv = document.createElement('div');
+            contentDiv.style.cssText = 'direction:rtl;font-family:Tajawal,sans-serif;color:#1e293b;width:760px;margin:0 auto;background:white;padding:30px;';
+
+            let html = '';
+            html += `<div style="text-align:center;border-bottom:3px solid #1e293b;padding-bottom:20px;margin-bottom:24px;">`;
+            html += `<h2 style="font-size:22px;font-weight:800;color:#1e293b;margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;letter-spacing:0.5px;">V-SHAPE Healthy Meals</h2>`;
+            html += `<h3 style="font-size:17px;font-weight:700;color:#4f46e5;margin:8px 0 4px;">تقرير حركة البنك اليومية</h3>`;
+            html += `<p style="font-size:12px;color:#64748b;margin:0;font-weight:500;">عن يوم: <span style="font-family:Arial,Helvetica,sans-serif;">${date}</span> — تاريخ الإصدار: <span style="font-family:Arial,Helvetica,sans-serif;">${generatedOn}</span></p>`;
+            html += `</div>`;
+
+            const T = r.total;
+            const box = (label, val, bg, bd, tc) => `<td style="width:25%;background:${bg};border:1px solid ${bd};border-radius:8px;padding:12px;text-align:center;vertical-align:top;"><p style="font-size:10px;color:${tc};margin:0 0 4px;font-weight:600;">${label}</p><p style="font-size:16px;font-weight:800;color:${tc};margin:0;font-family:Arial,Helvetica,sans-serif;white-space:nowrap;">${bmMoney(val)}</p></td>`;
+            html += `<table style="width:100%;border-collapse:separate;border-spacing:8px;margin-bottom:18px;"><tr>`;
+            html += box('رصيد أول اليوم', T.opening, '#f1f5f9', '#cbd5e1', '#334155');
+            html += box('إجمالي الوارد', T.inn, '#ecfdf5', '#a7f3d0', '#047857');
+            html += box('إجمالي الصادر', T.out, '#fee2e2', '#fca5a5', '#991b1b');
+            html += box('رصيد آخر اليوم', T.closing, '#eef2ff', '#c7d2fe', '#3730a3');
+            html += `</tr></table>`;
+
+            html += `<div style="margin-bottom:20px;">`;
+            html += `<h4 style="font-size:14px;font-weight:700;color:#334155;margin:0 0 12px;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">ملخص الأرصدة (﷼)</h4>`;
+            html += `<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f1f5f9;"><th style="${th}text-align:right;">البنك</th><th style="${th}">رصيد أول اليوم</th><th style="${th}">الوارد</th><th style="${th}">الصادر</th><th style="${th}">تحويلات (صافي)</th><th style="${th}">رصيد آخر اليوم</th><th style="${th}">رصيد البيان اليومي</th><th style="${th}">الفرق</th></tr></thead>`;
+            html += `<tbody>${mkRow(BANK_NAMES.alahli, r.banks.alahli)}${mkRow(BANK_NAMES.alinma, r.banks.alinma)}${mkRow('الإجمالي', T, true)}</tbody></table>`;
+            if (r.transferTotal > 0) html += `<p style="font-size:10px;color:#94a3b8;margin:8px 0 0;">* تحويلات بين البنكين بقيمة ${bmMoney(r.transferTotal)} ﷼ لا تُحتسب ضمن الوارد أو الصادر الإجمالي.</p>`;
+            html += `</div>`;
+
+            html += `<div style="margin-bottom:20px;">`;
+            html += `<h4 style="font-size:14px;font-weight:700;color:#334155;margin:0 0 12px;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">حركات اليوم بالتفصيل</h4>`;
+            html += `<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f1f5f9;"><th style="${th}">النوع</th><th style="${th}">البنك</th><th style="${th}">المبلغ</th><th style="${th}text-align:right;">البيان</th><th style="${th}">التصنيف</th></tr></thead><tbody>${movesRows}</tbody></table>`;
+            html += `</div>`;
+
+            html += `<div style="margin-top:48px;padding-top:24px;border-top:2px solid #e2e8f0;text-align:center;">`;
+            html += `<p style="font-size:12px;color:#64748b;margin:0 0 40px;">المدير المالى</p>`;
+            html += `<div style="border-bottom:1px solid #94a3b8;width:200px;margin:0 auto;"></div>`;
+            html += `<p style="font-size:13px;font-weight:700;color:#334155;margin:8px 0 0;">Reyad Hussein</p>`;
+            html += `</div>`;
+
+            contentDiv.innerHTML = html;
+            workspace.appendChild(contentDiv);
+            workspace.style.display = 'block';
+            await new Promise(res => setTimeout(res, 1500));
+            try {
+                await renderContentDivToPDF(contentDiv, `حركة_البنك_${date}.pdf`);
+            } catch (err) {
+                console.error('PDF Export Error:', err);
+                alert('حدث خطأ أثناء تصدير PDF: ' + err.message);
+            }
+            workspace.style.display = 'none';
+            workspace.innerHTML = '';
+            loadingEl.style.display = 'none';
+        }
+
+        // =========================================
         // ===        8. النسخ الاحتياطي         ===
         // =========================================
-        const BACKUP_KEYS = ['dailyStatements', 'monthlyItems', 'monthlyArchive', 'users'];
+        const BACKUP_KEYS = ['dailyStatements', 'monthlyItems', 'monthlyArchive', 'users', 'manualMonthlySales', 'bankTransactions', 'bankOpening'];
 
         // ينشئ نص تاريخ ووقت مناسب لاستخدامه في اسم ملف النسخة الاحتياطية (مثال: 2026-08-12_14-35-02)
         function getBackupTimestamp() {
@@ -3769,6 +4239,26 @@
                 const usersSheet = XLSX.utils.json_to_sheet(usersSheetData.length ? usersSheetData : [{ 'ملاحظة': 'لا يوجد مستخدمين' }]);
                 XLSX.utils.book_append_sheet(wb, usersSheet, 'المستخدمين');
 
+                // ورقة حركة البنك
+                const bankNames = { alahli: 'البنك الأهلي', alinma: 'بنك الإنماء' };
+                const typeNames = { in: 'وارد', out: 'صادر', transfer: 'تحويل بين البنكين' };
+                const btArr = data.bankTransactions ? Object.values(data.bankTransactions) : [];
+                btArr.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+                const btSheetData = btArr.map(t => ({
+                    'التاريخ': t.date || '',
+                    'النوع': typeNames[t.type] || t.type || '',
+                    'البنك': bankNames[t.bank] || t.bank || '',
+                    'إلى البنك (للتحويل)': t.type === 'transfer' ? (bankNames[t.bank === 'alahli' ? 'alinma' : 'alahli']) : '',
+                    'المبلغ': Number(t.amount) || 0,
+                    'البيان': t.description || '',
+                    'التصنيف': t.category || ''
+                }));
+                const btSheet = XLSX.utils.json_to_sheet(btSheetData.length ? btSheetData : [{ 'ملاحظة': 'لا توجد حركات بنكية' }]);
+                XLSX.utils.book_append_sheet(wb, btSheet, 'حركة البنك');
+                const bo = data.bankOpening || {};
+                const boSheet = XLSX.utils.json_to_sheet([{ 'تاريخ البداية': bo.date || '', 'الرصيد الافتتاحي - الأهلي': Number(bo.alahli) || 0, 'الرصيد الافتتاحي - الإنماء': Number(bo.alinma) || 0 }]);
+                XLSX.utils.book_append_sheet(wb, boSheet, 'الرصيد الافتتاحي للبنوك');
+
                 const stamp = getBackupTimestamp();
                 XLSX.writeFile(wb, `financial-Tracking_${stamp}.xlsx`);
                 showBackupStatus(`تم تصدير النسخة القابلة للقراءة بنجاح — ${stamp}`, 'success');
@@ -3796,12 +4286,17 @@
 
                     const exportedAtText = parsed.exportedAt ? new Date(parsed.exportedAt).toLocaleString('ar-EG') : 'غير معروف';
                     const exportedByText = parsed.exportedBy ? ` — بواسطة: ${parsed.exportedBy}` : '';
-                    const confirmMsg = `تحذير هام جداً:\n\nسيتم استبدال كل البيانات الحالية في النظام بالكامل (البيان اليومي، البنود الشهرية والسدادات، أرشيف الشهور، المستخدمين) بالبيانات الموجودة في هذا الملف.\n\nتاريخ إنشاء النسخة الاحتياطية: ${exportedAtText}${exportedByText}\n\nهذه العملية لا يمكن التراجع عنها نهائياً. هل أنت متأكد تماماً من المتابعة؟`;
+                    const confirmMsg = `تحذير هام جداً:\n\nسيتم استبدال كل البيانات الحالية في النظام بالكامل (البيان اليومي، البنود الشهرية والسدادات، أرشيف الشهور، المبيعات اليدوية، حركة البنك، المستخدمين) بالبيانات الموجودة في هذا الملف.\n\nتاريخ إنشاء النسخة الاحتياطية: ${exportedAtText}${exportedByText}\n\nهذه العملية لا يمكن التراجع عنها نهائياً. هل أنت متأكد تماماً من المتابعة؟`;
                     if (!confirm(confirmMsg)) { event.target.value = ''; return; }
                     if (!confirm('تأكيد أخير: هل تريد فعلاً استبدال كل بيانات النظام الحالية بالنسخة الاحتياطية المرفوعة؟')) { event.target.value = ''; return; }
 
                     const updates = {};
-                    BACKUP_KEYS.forEach(key => { updates['/' + key] = parsed.data[key] !== undefined ? parsed.data[key] : null; });
+                    // المفاتيح الأساسية تُستبدل دائمًا، أما المفاتيح الأحدث (مبيعات يدوية/حركة البنك) فلا تُمسح إلا إذا كانت موجودة في ملف النسخة
+                    const CORE_KEYS = ['dailyStatements', 'monthlyItems', 'monthlyArchive', 'users'];
+                    BACKUP_KEYS.forEach(key => {
+                        if (Object.prototype.hasOwnProperty.call(parsed.data, key)) updates['/' + key] = parsed.data[key] !== undefined ? parsed.data[key] : null;
+                        else if (CORE_KEYS.includes(key)) updates['/' + key] = null;
+                    });
 
                     await update(ref(db), updates);
                     alert('تم استعادة النسخة الاحتياطية بنجاح! سيتم إعادة تحميل الصفحة الآن.');
@@ -3823,6 +4318,7 @@
                 if(currentActivePage === 'history') renderHistory();
                 if(currentActivePage === 'monthly') renderMonthlyItems();
                 if(currentActivePage === 'monthlyPayments' && mpMonthData.length > 0) calcMonthlyPaymentsReport();
+                if(currentActivePage === 'bankMovements') renderBankReport();
                 if(currentActivePage === 'report30') calcReport30();
                 if(currentActivePage === 'reportFull') calcReportFull();
                 if(currentActivePage === 'monthlySales') calcMonthlySales();
