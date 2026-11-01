@@ -304,6 +304,7 @@
                                 <p id="bt-transfer-hint" class="hidden text-xs text-indigo-600 mt-1"></p>
                             </div>
                             <div><label class="block text-sm text-slate-500 mb-1">المبلغ</label><input type="number" step="any" min="0" id="bt-amount" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="0"></div>
+                            <div><label class="block text-sm text-slate-500 mb-1">رقم المرجع (اختياري)</label><input type="text" id="bt-ref" dir="ltr" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-right" placeholder="رقم العملية في كشف البنك"></div>
                             <div><label class="block text-sm text-slate-500 mb-1">البيان / الوصف</label><input type="text" id="bt-desc" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="مثال: تحصيل من عميل / سداد مورد"></div>
                             <div><label class="block text-sm text-slate-500 mb-1">التصنيف (اختياري)</label>
                                 <input type="text" id="bt-category" list="bt-category-list" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="مبيعات، موردين، رواتب، إيجار...">
@@ -344,7 +345,7 @@
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-x-auto">
                         <div class="px-4 pt-4 font-bold text-slate-700"><i class="fa-solid fa-list ml-2 text-indigo-600"></i> حركات اليوم بالتفصيل</div>
                         <table class="w-full text-sm text-right mt-2">
-                            <thead class="bg-slate-50 text-slate-600"><tr><th class="p-3 font-medium">النوع</th><th class="p-3 font-medium">البنك</th><th class="p-3 font-medium">المبلغ</th><th class="p-3 font-medium">البيان</th><th class="p-3 font-medium">التصنيف</th><th class="p-3 font-medium">إجراء</th></tr></thead>
+                            <thead class="bg-slate-50 text-slate-600"><tr><th class="p-3 font-medium">النوع</th><th class="p-3 font-medium">البنك</th><th class="p-3 font-medium">المبلغ</th><th class="p-3 font-medium">رقم المرجع</th><th class="p-3 font-medium">البيان</th><th class="p-3 font-medium">التصنيف</th><th class="p-3 font-medium">إجراء</th></tr></thead>
                             <tbody id="br-moves-body" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
@@ -3963,6 +3964,7 @@
             const amount = parseFloat(document.getElementById('bt-amount').value);
             const description = document.getElementById('bt-desc').value.trim();
             const category = document.getElementById('bt-category').value.trim();
+            const reference = document.getElementById('bt-ref').value.trim();
             if (!date) return alert('حدد التاريخ');
             if (isNaN(amount) || amount <= 0) return alert('أدخل مبلغًا صحيحًا أكبر من صفر');
             if (!window.bankOpeningObj || !window.bankOpeningObj.date) {
@@ -3970,11 +3972,15 @@
             } else if (date < window.bankOpeningObj.date) {
                 if (!confirm('تاريخ الحركة أقدم من تاريخ الرصيد الافتتاحي، ولن تدخل في حساب الأرصدة. هل تريد المتابعة؟')) return;
             }
+            if (reference) {
+                const same = window.bankTransactionsArr.find(t => t.id !== editingBankTxId && t.bank === bank && bcNorm(t.reference) === bcNorm(reference));
+                if (same && !confirm(`رقم المرجع ${reference} مسجل قبل كده لحركة بتاريخ ${same.date} بمبلغ ${bmMoney(same.amount)} في نفس البنك. هل تريد الحفظ على أي حال؟`)) return;
+            }
             const isEdit = !!editingBankTxId;
             const old = isEdit ? window.bankTransactionsArr.find(t => t.id === editingBankTxId) : null;
             const id = isEdit ? editingBankTxId : push(ref(db, 'bankTransactions')).key;
             const tx = {
-                id, date, type, bank, amount, description, category,
+                id, date, type, bank, amount, description, category, reference,
                 createdAt: (old && old.createdAt) || new Date().toISOString(),
                 createdBy: (old && old.createdBy) || window.currentUserName || '',
                 updatedBy: window.currentUserName || ''
@@ -3984,6 +3990,7 @@
                 document.getElementById('bt-amount').value = '';
                 document.getElementById('bt-desc').value = '';
                 document.getElementById('bt-category').value = '';
+                document.getElementById('bt-ref').value = '';
                 cancelBankEdit();
                 document.getElementById('br-date').value = date; // اعرض اليوم الذي أُدخلت له الحركة
                 renderBankReport();
@@ -4000,6 +4007,7 @@
             document.getElementById('bt-amount').value = t.amount;
             document.getElementById('bt-desc').value = t.description || '';
             document.getElementById('bt-category').value = t.category || '';
+            document.getElementById('bt-ref').value = t.reference || '';
             bankTypeChanged();
             document.getElementById('bt-form-title').innerHTML = '<i class="fa-solid fa-pen text-indigo-600"></i> تعديل حركة بنكية';
             document.getElementById('bt-save-btn').innerHTML = '<i class="fa-solid fa-check ml-1"></i> حفظ التعديل';
@@ -4134,7 +4142,7 @@
         }
 
         // ---------- قالب الإكسيل ----------
-        const BT_HEADERS = ['التاريخ', 'نوع الحركة', 'البنك', 'المبلغ', 'البيان', 'التصنيف'];
+        const BT_HEADERS = ['التاريخ', 'نوع الحركة', 'البنك', 'المبلغ', 'رقم المرجع', 'البيان', 'التصنيف'];
         const BT_TYPE_LABELS = ['وارد', 'صادر', 'تحويل'];
         const BT_BANK_LABELS = ['البنك الأهلي', 'بنك الإنماء'];
 
@@ -4154,14 +4162,15 @@
                 ['نوع الحركة', 'وارد = إيداع أو تحصيل، صادر = سحب أو سداد، تحويل = تحويل بين البنكين.'],
                 ['البنك', 'البنك الأهلي أو بنك الإنماء. في التحويل اكتب البنك اللي خرج منه المبلغ، والنظام يضيفه للبنك التاني.'],
                 ['المبلغ', 'رقم موجب بدون إشارة سالب. ينفع يكون فيه كسور.'],
+                ['رقم المرجع', 'رقم العملية من كشف البنك (اختياري). لو موجود، النظام بيعتمد عليه في كشف التكرار: نفس الرقم في نفس البنك = حركة مكررة.'],
                 ['البيان', 'وصف الحركة (اختياري).'],
                 ['التصنيف', 'اختر من القائمة أو اكتب تصنيفًا جديدًا. التصنيفات الجديدة تتضاف لقائمة النظام تلقائيًا عند الرفع (اختياري).'],
                 [''],
                 ['ملاحظات', 'الصفوف الفاضية بيتم تجاهلها. قبل الحفظ بتظهر لك شاشة مراجعة فيها الأخطاء والحركات المكررة.'],
-                ['', 'الحركة المكررة = نفس التاريخ والنوع والبنك والمبلغ والبيان لحركة مسجلة بالفعل، وبتتخطى إلا لو اخترت ترفعها.'],
+                ['', 'الحركة المكررة = نفس رقم المرجع في نفس البنك، ولو مفيش رقم مرجع: نفس التاريخ والنوع والبنك والمبلغ والبيان. بتتخطى إلا لو اخترت ترفعها.'],
                 [''],
-                ['مثال', '2026-11-01 | وارد | البنك الأهلي | 15000 | تحصيل من عميل | تحصيل عملاء'],
-                ['مثال', '2026-11-01 | تحويل | بنك الإنماء | 50000 | تغطية رواتب | '],
+                ['مثال', '2026-11-01 | وارد | البنك الأهلي | 15000 | FT2611010045 | تحصيل من عميل | تحصيل عملاء'],
+                ['مثال', '2026-11-01 | تحويل | بنك الإنماء | 50000 |  | تغطية رواتب | '],
             ];
             try {
                 await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js');
@@ -4172,8 +4181,9 @@
                     { header: BT_HEADERS[1], key: 't', width: 12 },
                     { header: BT_HEADERS[2], key: 'b', width: 16 },
                     { header: BT_HEADERS[3], key: 'a', width: 14, style: { numFmt: '#,##0.00' } },
-                    { header: BT_HEADERS[4], key: 'desc', width: 40 },
-                    { header: BT_HEADERS[5], key: 'c', width: 20 },
+                    { header: BT_HEADERS[4], key: 'ref', width: 18, style: { numFmt: '@' } },
+                    { header: BT_HEADERS[5], key: 'desc', width: 40 },
+                    { header: BT_HEADERS[6], key: 'c', width: 20 },
                 ];
                 const hr = ws.getRow(1);
                 hr.font = { bold: true, color: { argb: 'FFFFFFFF' } };
@@ -4196,7 +4206,7 @@
                     ws.getCell(r, 3).dataValidation = { type: 'list', allowBlank: true, formulae: [`'القوائم'!$B$2:$B$${BT_BANK_LABELS.length + 1}`], showErrorMessage: true, errorStyle: 'stop', errorTitle: 'بنك غير صحيح', error: 'اختر: البنك الأهلي أو بنك الإنماء' };
                     ws.getCell(r, 4).dataValidation = { type: 'decimal', operator: 'greaterThan', allowBlank: true, formulae: [0], showErrorMessage: true, errorStyle: 'stop', errorTitle: 'مبلغ غير صحيح', error: 'أدخل رقمًا أكبر من صفر' };
                     // التصنيف: قائمة مع السماح بكتابة تصنيف جديد (تحذير فقط)
-                    ws.getCell(r, 6).dataValidation = { type: 'list', allowBlank: true, formulae: [`'القوائم'!$C$2:$C$${Math.max(cats.length + 1, 2)}`], showErrorMessage: true, errorStyle: 'information', errorTitle: 'تصنيف جديد', error: 'التصنيف ده مش في القائمة، وهيتضاف للنظام عند الرفع.' };
+                    ws.getCell(r, 7).dataValidation = { type: 'list', allowBlank: true, formulae: [`'القوائم'!$C$2:$C$${Math.max(cats.length + 1, 2)}`], showErrorMessage: true, errorStyle: 'information', errorTitle: 'تصنيف جديد', error: 'التصنيف ده مش في القائمة، وهيتضاف للنظام عند الرفع.' };
                 }
 
                 const ins = wb.addWorksheet('تعليمات', { views: [{ rightToLeft: true }] });
@@ -4214,7 +4224,7 @@
                 console.warn('ExcelJS unavailable, fallback to SheetJS', e);
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.aoa_to_sheet([BT_HEADERS]);
-                ws['!cols'] = [{ wch: 14 }, { wch: 12 }, { wch: 16 }, { wch: 14 }, { wch: 40 }, { wch: 20 }];
+                ws['!cols'] = [{ wch: 14 }, { wch: 12 }, { wch: 16 }, { wch: 14 }, { wch: 18 }, { wch: 40 }, { wch: 20 }];
                 XLSX.utils.book_append_sheet(wb, ws, 'حركة البنك');
                 const maxLen = Math.max(BT_TYPE_LABELS.length, BT_BANK_LABELS.length, cats.length);
                 const listRows = [['نوع الحركة', 'البنك', 'التصنيف']];
@@ -4264,6 +4274,13 @@
             return Number(s);
         }
         function btDupKey(t) { return [t.date, t.type, t.bank, Math.round((Number(t.amount) || 0) * 100), bcNorm(t.description)].join('|'); }
+        function btRefKey(t) { const r = bcNorm(t.reference); return r ? `${t.bank}|${r.toLowerCase()}` : ''; }
+        // قيمة رقم المرجع كنص (لو إكسيل حوّله لرقم يتشال منه أي .0)
+        function btParseRef(v) {
+            if (v == null || v === '') return '';
+            if (typeof v === 'number') return Number.isInteger(v) ? v.toLocaleString('fullwide', { useGrouping: false }) : String(v);
+            return bcNorm(v);
+        }
 
         let bankImportRows = [];
 
@@ -4279,17 +4296,18 @@
                     const aoa = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, raw: true, defval: '' });
                     // البحث عن صف العناوين
                     const norm = x => String(x || '').trim().replace(/[أإآ]/g, 'ا');
-                    const want = { date: 'التاريخ', type: 'نوع الحركة', bank: 'البنك', amount: 'المبلغ', desc: 'البيان', cat: 'التصنيف' };
+                    const want = { date: 'التاريخ', type: 'نوع الحركة', bank: 'البنك', amount: 'المبلغ', ref: 'رقم المرجع', desc: 'البيان', cat: 'التصنيف' };
                     let hIdx = -1, col = {};
                     for (let i = 0; i < Math.min(aoa.length, 15); i++) {
                         const row = aoa[i].map(norm);
                         const find = (label, alts = []) => row.findIndex(c => c === norm(label) || alts.some(a => c.includes(norm(a))));
-                        const c = { date: find(want.date, ['تاريخ']), type: find(want.type, ['النوع', 'نوع']), bank: find(want.bank, ['بنك']), amount: find(want.amount, ['مبلغ', 'القيمة']), desc: find(want.desc, ['الوصف', 'بيان']), cat: find(want.cat, ['تصنيف']) };
+                        const c = { date: find(want.date, ['تاريخ']), type: find(want.type, ['النوع', 'نوع']), bank: find(want.bank, ['بنك']), amount: find(want.amount, ['مبلغ', 'القيمة']), ref: find(want.ref, ['مرجع', 'المرجع', 'reference', 'ref']), desc: find(want.desc, ['الوصف', 'بيان']), cat: find(want.cat, ['تصنيف']) };
                         if (c.date >= 0 && c.type >= 0 && c.bank >= 0 && c.amount >= 0) { hIdx = i; col = c; break; }
                     }
                     if (hIdx < 0) return alert('ما لقيتش عناوين الأعمدة في الملف. استخدم "تحميل قالب إكسيل" واملأ الشيت "حركة البنك".');
 
                     const existing = new Set((window.bankTransactionsArr || []).map(btDupKey));
+                    const existingRefs = new Set((window.bankTransactionsArr || []).map(btRefKey).filter(Boolean));
                     const inFile = new Set();
                     const cats = window.bankCategoriesArr || [];
                     const bo = window.bankOpeningObj;
@@ -4297,7 +4315,7 @@
                     for (let i = hIdx + 1; i < aoa.length; i++) {
                         const r = aoa[i];
                         const get_ = k => col[k] >= 0 ? r[col[k]] : '';
-                        if (['date', 'type', 'bank', 'amount', 'desc', 'cat'].every(k => String(get_(k) ?? '').trim() === '')) continue;
+                        if (['date', 'type', 'bank', 'amount', 'ref', 'desc', 'cat'].every(k => String(get_(k) ?? '').trim() === '')) continue;
                         const errors = [];
                         const date = btParseDate(get_('date')); if (!date) errors.push('تاريخ غير صحيح');
                         const type = btParseType(get_('type')); if (!type) errors.push('نوع الحركة غير معروف');
@@ -4305,12 +4323,16 @@
                         const amount = btParseAmount(get_('amount')); if (!(amount > 0)) errors.push('المبلغ لازم يكون رقم أكبر من صفر');
                         const description = bcNorm(get_('desc'));
                         const category = bcNorm(get_('cat'));
-                        const row = { excelRow: i + 1, date, type, bank, amount: amount > 0 ? Math.round(amount * 100) / 100 : amount, description, category, errors, warnings: [], status: 'ok' };
+                        const reference = btParseRef(get_('ref'));
+                        const row = { excelRow: i + 1, date, type, bank, amount: amount > 0 ? Math.round(amount * 100) / 100 : amount, reference, description, category, errors, warnings: [], status: 'ok' };
                         if (errors.length) row.status = 'error';
                         else {
-                            const k = btDupKey(row);
-                            if (existing.has(k)) { row.status = 'dup'; row.warnings.push('مسجلة بالفعل في النظام'); }
-                            else if (inFile.has(k)) { row.warnings.push('مكررة داخل الملف'); }
+                            // لو فيه رقم مرجع: التكرار = نفس المرجع في نفس البنك، وإلا نعتمد التاريخ والنوع والبنك والمبلغ والبيان
+                            const rk = btRefKey(row);
+                            const k = rk ? 'ref:' + rk : btDupKey(row);
+                            const isDup = rk ? existingRefs.has(rk) : existing.has(k);
+                            if (isDup) { row.status = 'dup'; row.warnings.push(rk ? 'رقم المرجع مسجل بالفعل في النظام' : 'مسجلة بالفعل في النظام'); }
+                            else if (inFile.has(k)) { row.warnings.push(rk ? 'رقم المرجع مكرر داخل الملف' : 'مكررة داخل الملف'); }
                             inFile.add(k);
                             if (bo && bo.date && date < bo.date) row.warnings.push('قبل تاريخ الرصيد الافتتاحي');
                             if (category && !cats.includes(category)) row.newCat = true;
@@ -4358,13 +4380,13 @@
                 : r.status === 'dup' ? `<span class="text-xs ${incDup ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'} px-2 py-0.5 rounded-full">${incDup ? 'هتترفع' : 'هتتخطى'}</span>`
                 : '<span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">تمام</span>';
             html += `<div class="overflow-x-auto border border-slate-200 rounded-lg"><table class="w-full text-sm text-right"><thead class="bg-slate-50 text-slate-600"><tr>
-                <th class="p-2">صف</th><th class="p-2">الحالة</th><th class="p-2">التاريخ</th><th class="p-2">النوع</th><th class="p-2">البنك</th><th class="p-2">المبلغ</th><th class="p-2">البيان</th><th class="p-2">التصنيف</th><th class="p-2">ملاحظات</th></tr></thead><tbody class="divide-y divide-slate-100">`;
+                <th class="p-2">صف</th><th class="p-2">الحالة</th><th class="p-2">التاريخ</th><th class="p-2">النوع</th><th class="p-2">البنك</th><th class="p-2">المبلغ</th><th class="p-2">رقم المرجع</th><th class="p-2">البيان</th><th class="p-2">التصنيف</th><th class="p-2">ملاحظات</th></tr></thead><tbody class="divide-y divide-slate-100">`;
             const order = { error: 0, dup: 1, ok: 2 };
             rows.slice().sort((a, b) => order[a.status] - order[b.status] || a.excelRow - b.excelRow).forEach(r => {
                 const notes = r.errors.concat(r.warnings).map(bmEsc).join('، ');
                 html += `<tr class="${r.status === 'error' ? 'bg-red-50/50' : ''}"><td class="p-2 text-slate-400">${r.excelRow}</td><td class="p-2">${badge(r)}</td>
                     <td class="p-2 whitespace-nowrap">${r.date || '—'}</td><td class="p-2">${r.type ? bmTypeBadge(r) : '—'}</td><td class="p-2 whitespace-nowrap">${r.bank ? bmBankText(r) : '—'}</td>
-                    <td class="p-2 font-medium whitespace-nowrap">${r.amount > 0 ? bmMoney(r.amount) : '—'}</td><td class="p-2">${bmEsc(r.description)}</td>
+                    <td class="p-2 font-medium whitespace-nowrap">${r.amount > 0 ? bmMoney(r.amount) : '—'}</td><td class="p-2" dir="ltr" style="text-align:right">${bmEsc(r.reference)}</td><td class="p-2">${bmEsc(r.description)}</td>
                     <td class="p-2">${bmEsc(r.category)}${r.newCat ? ' <span class="text-xs text-indigo-600">(جديد)</span>' : ''}</td>
                     <td class="p-2 text-xs ${r.status === 'error' ? 'text-red-600' : 'text-amber-700'}">${notes}</td></tr>`;
             });
@@ -4396,7 +4418,7 @@
                 sel.slice().sort((a, b) => a.date.localeCompare(b.date) || a.excelRow - b.excelRow).forEach((r, i) => {
                     const id = push(ref(db, 'bankTransactions')).key;
                     updates[`/bankTransactions/${id}`] = {
-                        id, date: r.date, type: r.type, bank: r.bank, amount: r.amount, description: r.description, category: r.category,
+                        id, date: r.date, type: r.type, bank: r.bank, amount: r.amount, reference: r.reference, description: r.description, category: r.category,
                         createdAt: new Date(base + i).toISOString(), createdBy: user, updatedBy: user, source: 'excel'
                     };
                 });
@@ -4461,11 +4483,12 @@
 
             // الحركات
             const body = document.getElementById('br-moves-body');
-            if (r.moves.length === 0) body.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">لا توجد حركات مسجلة في هذا اليوم</td></tr>';
+            if (r.moves.length === 0) body.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">لا توجد حركات مسجلة في هذا اليوم</td></tr>';
             else body.innerHTML = r.moves.map(t => `<tr class="hover:bg-slate-50">
                 <td class="p-3">${bmTypeBadge(t)}</td>
                 <td class="p-3">${bmBankText(t)}</td>
                 <td class="p-3 font-bold ${t.type === 'in' ? 'text-emerald-600' : t.type === 'out' ? 'text-red-600' : 'text-indigo-700'}">${bmMoney(t.amount)} <span class="currency">﷼</span></td>
+                <td class="p-3 text-slate-600" dir="ltr" style="text-align:right">${bmEsc(t.reference) || '<span class="text-slate-300">—</span>'}</td>
                 <td class="p-3">${bmEsc(t.description) || '<span class="text-slate-300">—</span>'}</td>
                 <td class="p-3 text-slate-500">${bmEsc(t.category) || '<span class="text-slate-300">—</span>'}</td>
                 <td class="p-3">${canEdit ? `<button onclick="editBankTransaction('${t.id}')" class="text-indigo-600 hover:text-indigo-800 ml-3"><i class="fa-solid fa-pen"></i></button><button onclick="deleteBankTransaction('${t.id}')" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>` : ''}</td>
@@ -4501,10 +4524,11 @@
                     <td style="${td}font-weight:700;">${BANK_TYPE_NAMES[t.type]}</td>
                     <td style="${td}">${bmEsc(bmBankText(t))}</td>
                     <td style="${td}font-weight:800;color:${color};">${m(t.amount)}</td>
+                    <td style="${td}font-family:Arial,Helvetica,sans-serif;">${bmEsc(t.reference) || '—'}</td>
                     <td style="${td}text-align:right;">${bmEsc(t.description) || '—'}</td>
                     <td style="${td}">${bmEsc(t.category) || '—'}</td></tr>`;
             });
-            if (!movesRows) movesRows = `<tr><td colspan="5" style="${td}color:#94a3b8;">لا توجد حركات مسجلة في هذا اليوم</td></tr>`;
+            if (!movesRows) movesRows = `<tr><td colspan="6" style="${td}color:#94a3b8;">لا توجد حركات مسجلة في هذا اليوم</td></tr>`;
 
             const loadingEl = document.getElementById('pdf-loading-overlay');
             loadingEl.style.display = 'flex';
@@ -4538,7 +4562,7 @@
 
             html += `<div style="margin-bottom:20px;">`;
             html += `<h4 style="font-size:14px;font-weight:700;color:#334155;margin:0 0 12px;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">حركات اليوم بالتفصيل</h4>`;
-            html += `<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f1f5f9;"><th style="${th}">النوع</th><th style="${th}">البنك</th><th style="${th}">المبلغ</th><th style="${th}text-align:right;">البيان</th><th style="${th}">التصنيف</th></tr></thead><tbody>${movesRows}</tbody></table>`;
+            html += `<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f1f5f9;"><th style="${th}">النوع</th><th style="${th}">البنك</th><th style="${th}">المبلغ</th><th style="${th}">رقم المرجع</th><th style="${th}text-align:right;">البيان</th><th style="${th}">التصنيف</th></tr></thead><tbody>${movesRows}</tbody></table>`;
             html += `</div>`;
 
             html += `<div style="margin-top:48px;padding-top:24px;border-top:2px solid #e2e8f0;text-align:center;">`;
@@ -4727,7 +4751,8 @@
                     'إلى البنك (للتحويل)': t.type === 'transfer' ? (bankNames[t.bank === 'alahli' ? 'alinma' : 'alahli']) : '',
                     'المبلغ': Number(t.amount) || 0,
                     'البيان': t.description || '',
-                    'التصنيف': t.category || ''
+                    'التصنيف': t.category || '',
+                    'رقم المرجع': t.reference || ''
                 }));
                 const btSheet = XLSX.utils.json_to_sheet(btSheetData.length ? btSheetData : [{ 'ملاحظة': 'لا توجد حركات بنكية' }]);
                 XLSX.utils.book_append_sheet(wb, btSheet, 'حركة البنك');
