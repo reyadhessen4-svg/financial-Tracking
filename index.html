@@ -743,6 +743,9 @@
                 <button id="archive-rename-btn" onclick="renameArchivedMonth()" disabled class="bg-amber-600 hover:bg-amber-700 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm whitespace-nowrap">
                     <i class="fa-solid fa-pen-to-square ml-2"></i> تعديل تاريخ الشهر
                 </button>
+                <button id="archive-delete-btn" onclick="deleteArchivedMonth()" disabled class="bg-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm whitespace-nowrap">
+                    <i class="fa-solid fa-trash ml-2"></i> حذف هذا الأرشيف
+                </button>
             </div>
             <div id="archive-table-container" class="text-center text-slate-400 text-sm">اختر شهراً لعرض بنوده</div>
         </div>
@@ -1175,13 +1178,18 @@
             const prevD = new Date(now.getFullYear(), now.getMonth() - 1, 1);
             const prev = fmt(prevD.getFullYear(), prevD.getMonth() + 1);
             const byDay = now.getDate() <= 15 ? prev : cur;
+            let base = byDay;
             const m = lastPay.replace(/\//g, '-').match(/^(\d{4})-(\d{2})/);
             if (m) {
                 const payKey = `${m[1]}-${m[2]}`;
                 // آخر سداد في شهر سابق للحالي => البنود تخص ذلك الشهر؛ وإلا نعتمد منطق اليوم
-                if (payKey < cur) return payKey;
+                if (payKey < cur) base = payKey;
             }
-            return byDay;
+            // تخطي أي شهر مؤرشف بالفعل (ننتقل للشهر التالي) بحد أقصى الشهر الحالي
+            const archived = new Set(window.archivedMonthKeys || []);
+            const nextKey = (k) => { const [y, mo] = k.split('-').map(Number); const d = new Date(y, mo, 1); return fmt(d.getFullYear(), d.getMonth() + 1); };
+            while (archived.has(base) && base < cur) base = nextKey(base);
+            return base;
         }
 
         window.startNewMonth = function() {
@@ -1222,6 +1230,7 @@
             select.innerHTML = '<option value="">-- اختر شهراً من الأرشيف --</option>';
             currentArchiveSelectedKey = null;
             document.getElementById('archive-rename-btn').disabled = true;
+            document.getElementById('archive-delete-btn').disabled = true;
             try {
                 const snapshot = await get(ref(db, 'monthlyArchive'));
                 if (snapshot.exists()) {
@@ -1236,6 +1245,7 @@
             const renameBtn = document.getElementById('archive-rename-btn');
             currentArchiveSelectedKey = monthKey || null;
             renameBtn.disabled = !monthKey;
+            document.getElementById('archive-delete-btn').disabled = !monthKey;
             if(!monthKey) { container.innerHTML = '<p class="text-center text-slate-400 text-sm">اختر شهراً لعرض بنوده</p>'; return; }
             try {
                 const snapshot = await get(ref(db, `monthlyArchive/${monthKey}`));
@@ -1243,8 +1253,9 @@
                     const items = Object.values(snapshot.val());
                     let html = `<table class="w-full text-sm text-right border-collapse mt-4"><thead class="bg-slate-100"><tr><th class="p-3 font-medium border border-slate-200">البند</th><th class="p-3 font-medium border border-slate-200">التصنيف</th><th class="p-3 font-medium border border-slate-200">المستحق</th><th class="p-3 font-medium border border-slate-200">المسدد</th><th class="p-3 font-medium border border-slate-200">المتبقي</th></tr></thead><tbody>`;
                     items.forEach(item => {
-                        const remaining = (item.totalAmount || 0) - (item.paidAmount || 0);
-                        html += `<tr><td class="p-3 border border-slate-200">${item.name}</td><td class="p-3 border border-slate-200">${item.type}</td><td class="p-3 border border-slate-200">${item.totalAmount}</td><td class="p-3 border border-slate-200 text-emerald-600">${item.paidAmount}</td><td class="p-3 border border-slate-200 text-red-600 font-bold">${remaining}</td></tr>`;
+                        const nf = (v) => (Number(v) || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
+                        const remaining = (Number(item.totalAmount) || 0) - (Number(item.paidAmount) || 0);
+                        html += `<tr><td class="p-3 border border-slate-200">${item.name}</td><td class="p-3 border border-slate-200">${item.type}</td><td class="p-3 border border-slate-200">${nf(item.totalAmount)}</td><td class="p-3 border border-slate-200 text-emerald-600">${nf(item.paidAmount)}</td><td class="p-3 border border-slate-200 text-red-600 font-bold">${nf(remaining)}</td></tr>`;
                     });
                     html += '</tbody></table>'; container.innerHTML = html;
                 } else { container.innerHTML = '<p class="text-center text-red-500 text-sm">لا توجد بيانات لهذا الشهر</p>'; }
@@ -1290,10 +1301,45 @@
             }
         }
 
+        // حذف شهر مؤرشف بالكامل (مثلاً أرشيف اتعمل بالغلط) — مع تأكيدين
+        window.deleteArchivedMonth = async function() {
+            const key = currentArchiveSelectedKey;
+            if (!key) return alert('يرجى اختيار شهر من القائمة أولاً');
+            try {
+                const snap = await get(ref(db, `monthlyArchive/${key}`));
+                if (!snap.exists()) return alert('تعذر العثور على بيانات هذا الشهر');
+                const items = Object.values(snap.val() || {});
+                const paid = items.reduce((s, i) => s + (Number(i.paidAmount) || 0), 0);
+                const paidTxt = paid.toLocaleString('en-US', { maximumFractionDigits: 2 });
+                let msg = `سيتم حذف أرشيف شهر ${key} نهائيًا (${items.length} بند).`;
+                msg += paid > 0 ? `\n⚠️ تنبيه: هذا الأرشيف فيه سدادات مسجلة بإجمالي ${paidTxt} ﷼ وستُحذف معه.` : '\nلا توجد فيه أي سدادات مسجلة.';
+                msg += '\nننصح بأخذ نسخة احتياطية قبل الحذف. هل تريد المتابعة؟';
+                if (!confirm(msg)) return;
+                const typed = prompt(`للتأكيد اكتب الشهر ${key} كما هو:`);
+                if (typed === null) return;
+                if (typed.trim() !== key) return alert('الشهر المكتوب غير مطابق، لم يتم الحذف.');
+                await set(ref(db, `monthlyArchive/${key}`), null);
+                alert(`تم حذف أرشيف ${key}`);
+                await openArchiveModal();
+                loadArchivedMonth('');
+            } catch (e) {
+                console.error(e);
+                alert('حدث خطأ أثناء الحذف: ' + e);
+            }
+        }
+
         window.closeArchiveModal = function() {
             document.getElementById('archive-modal').classList.add('hidden');
             document.getElementById('archive-table-container').innerHTML = '<p class="text-center text-slate-400 text-sm">اختر شهراً لعرض بنوده</p>';
         }
+
+        window.archivedMonthKeys = [];
+        onValue(ref(db, 'monthlyArchive'), (snapshot) => {
+            window.archivedMonthKeys = snapshot.exists() ? Object.keys(snapshot.val()) : [];
+            if (typeof renderMonthlyItems === 'function' && document.getElementById('m-current-month-label')) {
+                try { renderMonthlyItems(); } catch (e) { console.error(e); }
+            }
+        });
 
         onValue(ref(db, 'monthlyItems'), (snapshot) => {
             const data = snapshot.val();
