@@ -279,7 +279,14 @@
 
                     <!-- إدخال حركة -->
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6 editor-only-section">
-                        <h2 id="bt-form-title" class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-plus-circle text-emerald-600"></i> تسجيل حركة بنكية</h2>
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                            <h2 id="bt-form-title" class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-plus-circle text-emerald-600"></i> تسجيل حركة بنكية</h2>
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="downloadBankTemplate()" class="border border-emerald-600 text-emerald-700 hover:bg-emerald-50 px-3 py-2 rounded-lg text-sm font-medium"><i class="fa-solid fa-file-arrow-down ml-1"></i> تحميل قالب إكسيل</button>
+                                <label class="border border-indigo-600 text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer"><i class="fa-solid fa-file-excel ml-1"></i> رفع ملف الحركات<input type="file" id="bt-excel-upload" accept=".xlsx, .xls" class="hidden" onchange="handleBankExcelUpload(event)"></label>
+                                <button onclick="openBankCategoriesModal()" class="border border-slate-400 text-slate-700 hover:bg-slate-50 px-3 py-2 rounded-lg text-sm font-medium"><i class="fa-solid fa-tags ml-1"></i> إدارة التصنيفات</button>
+                            </div>
+                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div><label class="block text-sm text-slate-500 mb-1">التاريخ</label><input type="date" id="bt-date" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></div>
                             <div><label class="block text-sm text-slate-500 mb-1">نوع الحركة</label>
@@ -300,7 +307,8 @@
                             <div><label class="block text-sm text-slate-500 mb-1">البيان / الوصف</label><input type="text" id="bt-desc" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="مثال: تحصيل من عميل / سداد مورد"></div>
                             <div><label class="block text-sm text-slate-500 mb-1">التصنيف (اختياري)</label>
                                 <input type="text" id="bt-category" list="bt-category-list" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="مبيعات، موردين، رواتب، إيجار...">
-                                <datalist id="bt-category-list"><option value="مبيعات"><option value="تحصيل عملاء"><option value="موردين"><option value="رواتب"><option value="إيجار"><option value="مصروفات تشغيل"><option value="ضريبة"><option value="أخرى"></datalist>
+                                <datalist id="bt-category-list"></datalist>
+                                <p class="text-xs text-slate-400 mt-1">اختر من القائمة أو اكتب تصنيفًا جديدًا، وسيُضاف للقائمة تلقائيًا.</p>
                             </div>
                         </div>
                         <div class="mt-4 flex gap-2">
@@ -748,6 +756,37 @@
                 </button>
             </div>
             <div id="archive-table-container" class="text-center text-slate-400 text-sm">اختر شهراً لعرض بنوده</div>
+        </div>
+    </div>
+
+    <!-- نافذة إدارة تصنيفات حركة البنك -->
+    <div id="bank-cat-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width:640px;">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-tags ml-2 text-indigo-600"></i> تصنيفات حركة البنك</h3>
+                <button onclick="closeBankCategoriesModal()" class="text-slate-400 hover:text-red-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="flex gap-2 mb-2">
+                <input type="text" id="bank-cat-new" class="flex-1 p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="اسم تصنيف جديد" onkeydown="if(event.key==='Enter')addBankCategory()">
+                <button onclick="addBankCategory()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium"><i class="fa-solid fa-plus ml-1"></i> إضافة</button>
+            </div>
+            <p class="text-xs text-slate-500 mb-4">تعديل الاسم يغيّره في كل الحركات المسجلة به. ولو عدّلت الاسم لاسم تصنيف موجود، يتم دمج التصنيفين. الحذف يشيله من القائمة بس، والحركات المسجلة به تفضل زي ما هي.</p>
+            <div id="bank-cat-list"></div>
+        </div>
+    </div>
+
+    <!-- نافذة معاينة رفع حركات البنك من إكسيل -->
+    <div id="bank-import-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width:1100px;">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-file-excel ml-2 text-emerald-600"></i> مراجعة الحركات قبل الرفع</h3>
+                <button onclick="closeBankImportModal()" class="text-slate-400 hover:text-red-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="bank-import-body"></div>
+            <div class="mt-4 flex flex-wrap gap-2 justify-end">
+                <button onclick="closeBankImportModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-5 py-2 rounded-lg font-medium">إلغاء</button>
+                <button id="bank-import-confirm" onclick="confirmBankImport()" class="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white px-5 py-2 rounded-lg font-medium"><i class="fa-solid fa-check ml-1"></i> رفع الحركات</button>
+            </div>
         </div>
     </div>
 
@@ -3941,6 +3980,7 @@
                 updatedBy: window.currentUserName || ''
             };
             set(ref(db, 'bankTransactions/' + id), tx).then(() => {
+                if (category) bcEnsureCategories([category]);
                 document.getElementById('bt-amount').value = '';
                 document.getElementById('bt-desc').value = '';
                 document.getElementById('bt-category').value = '';
@@ -3983,6 +4023,396 @@
         }
         function bmBankText(t) {
             return t.type === 'transfer' ? `${BANK_NAMES[t.bank]} ← ${BANK_NAMES[bmOtherBank(t.bank)]}` : BANK_NAMES[t.bank];
+        }
+
+
+        // =========================================
+        // تصنيفات حركة البنك (قائمة قابلة للتعديل) + قالب ورفع إكسيل
+        // =========================================
+        const BANK_DEFAULT_CATEGORIES = ['مبيعات', 'تحصيل عملاء', 'موردين', 'رواتب', 'إيجار', 'مصروفات تشغيل', 'ضريبة', 'أخرى'];
+        window.bankCategoriesArr = BANK_DEFAULT_CATEGORIES.slice();
+        let bankCategoriesLoaded = false, bankCategoriesStored = false;
+
+        onValue(ref(db, 'bankCategories'), (snapshot) => {
+            const v = snapshot.val();
+            bankCategoriesLoaded = true;
+            bankCategoriesStored = !!v;
+            const arr = v ? (Array.isArray(v) ? v : Object.values(v)) : BANK_DEFAULT_CATEGORIES.slice();
+            window.bankCategoriesArr = [...new Set(arr.map(x => String(x || '').trim()).filter(Boolean))];
+            bcRenderDatalist();
+            if (!document.getElementById('bank-cat-modal').classList.contains('hidden')) bcRenderList();
+        });
+
+        function bcNorm(x) { return String(x || '').trim().replace(/\s+/g, ' '); }
+        function bcRenderDatalist() {
+            const dl = document.getElementById('bt-category-list');
+            if (dl) dl.innerHTML = window.bankCategoriesArr.map(c => `<option value="${bmEsc(c)}">`).join('');
+        }
+        function bcSave(arr) {
+            const clean = [...new Set(arr.map(bcNorm).filter(Boolean))];
+            return set(ref(db, 'bankCategories'), clean);
+        }
+        // يضيف أي تصنيفات جديدة للقائمة (لا يكرر الموجود)
+        function bcEnsureCategories(list) {
+            const cur = window.bankCategoriesArr || [];
+            const add = [...new Set(list.map(bcNorm).filter(c => c && !cur.includes(c)))];
+            if (!add.length) return Promise.resolve();
+            return bcSave(cur.concat(add)).catch(e => console.error(e));
+        }
+        function bcUsage() {
+            const m = {};
+            (window.bankTransactionsArr || []).forEach(t => { const c = bcNorm(t.category); if (c) m[c] = (m[c] || 0) + 1; });
+            return m;
+        }
+
+        window.openBankCategoriesModal = function() {
+            document.getElementById('bank-cat-modal').classList.remove('hidden');
+            bcRenderList();
+            setTimeout(() => document.getElementById('bank-cat-new').focus(), 50);
+        }
+        window.closeBankCategoriesModal = function() { document.getElementById('bank-cat-modal').classList.add('hidden'); }
+
+        function bcRenderList() {
+            const box = document.getElementById('bank-cat-list');
+            const usage = bcUsage();
+            const cats = window.bankCategoriesArr || [];
+            // تصنيفات مستخدمة في حركات لكنها مش في القائمة
+            const orphans = Object.keys(usage).filter(c => !cats.includes(c));
+            const row = (c, inList) => {
+                const n = usage[c] || 0;
+                const ce = encodeURIComponent(c);
+                return `<div class="flex items-center justify-between gap-2 p-2 border-b border-slate-100">
+                    <div class="flex items-center gap-2"><span class="font-medium ${inList ? 'text-slate-800' : 'text-amber-700'}">${bmEsc(c)}</span>
+                    <span class="text-xs text-slate-400">${n ? n + ' حركة' : 'غير مستخدم'}</span>
+                    ${inList ? '' : '<span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">مستخدم وغير موجود في القائمة</span>'}</div>
+                    <div class="flex gap-1">
+                        ${inList ? '' : `<button onclick="addBankCategory(decodeURIComponent('${ce}'))" class="text-xs bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-2 py-1 rounded"><i class="fa-solid fa-plus"></i> للقائمة</button>`}
+                        <button onclick="renameBankCategory(decodeURIComponent('${ce}'))" class="text-xs bg-amber-50 text-amber-700 hover:bg-amber-100 px-2 py-1 rounded"><i class="fa-solid fa-pen"></i> تعديل</button>
+                        ${inList ? `<button onclick="deleteBankCategory(decodeURIComponent('${ce}'))" class="text-xs bg-red-50 text-red-600 hover:bg-red-100 px-2 py-1 rounded"><i class="fa-solid fa-trash"></i> حذف</button>` : ''}
+                    </div></div>`;
+            };
+            let html = cats.length ? cats.map(c => row(c, true)).join('') : '<p class="text-center text-slate-400 text-sm p-4">لا توجد تصنيفات</p>';
+            if (orphans.length) html += '<div class="mt-4 text-sm font-bold text-amber-700">تصنيفات مكتوبة في الحركات وغير موجودة في القائمة</div>' + orphans.map(c => row(c, false)).join('');
+            box.innerHTML = html;
+        }
+
+        window.addBankCategory = function(name) {
+            const input = document.getElementById('bank-cat-new');
+            const c = bcNorm(name != null ? name : input.value);
+            if (!c) return;
+            if ((window.bankCategoriesArr || []).includes(c)) { alert('هذا التصنيف موجود بالفعل'); return; }
+            bcSave((window.bankCategoriesArr || []).concat([c])).then(() => { if (name == null) input.value = ''; }).catch(e => alert('حدث خطأ: ' + e));
+        }
+
+        window.renameBankCategory = async function(oldName) {
+            const raw = prompt(`الاسم الجديد للتصنيف "${oldName}":`, oldName);
+            if (raw === null) return;
+            const newName = bcNorm(raw);
+            if (!newName || newName === oldName) return;
+            const cats = window.bankCategoriesArr || [];
+            const merging = cats.includes(newName);
+            const affected = (window.bankTransactionsArr || []).filter(t => bcNorm(t.category) === oldName);
+            let msg = merging ? `التصنيف "${newName}" موجود بالفعل، وسيتم دمج "${oldName}" فيه.` : `سيتم تغيير الاسم من "${oldName}" إلى "${newName}".`;
+            msg += `\nعدد الحركات اللي هيتغير تصنيفها: ${affected.length}. هل تريد المتابعة؟`;
+            if (!confirm(msg)) return;
+            try {
+                const updates = {};
+                affected.forEach(t => { updates[`/bankTransactions/${t.id}/category`] = newName; });
+                let newCats = cats.map(c => c === oldName ? newName : c);
+                if (!newCats.includes(newName)) newCats.push(newName);
+                newCats = [...new Set(newCats)];
+                updates['/bankCategories'] = newCats;
+                await update(ref(db), updates);
+            } catch (e) { alert('حدث خطأ: ' + e); }
+        }
+
+        window.deleteBankCategory = function(name) {
+            const n = bcUsage()[name] || 0;
+            const msg = n ? `التصنيف "${name}" مستخدم في ${n} حركة. سيتم حذفه من القائمة فقط، والحركات تفضل مسجلة به. هل تريد المتابعة؟` : `حذف التصنيف "${name}" من القائمة؟`;
+            if (!confirm(msg)) return;
+            bcSave((window.bankCategoriesArr || []).filter(c => c !== name)).catch(e => alert('حدث خطأ: ' + e));
+        }
+
+        // ---------- قالب الإكسيل ----------
+        const BT_HEADERS = ['التاريخ', 'نوع الحركة', 'البنك', 'المبلغ', 'البيان', 'التصنيف'];
+        const BT_TYPE_LABELS = ['وارد', 'صادر', 'تحويل'];
+        const BT_BANK_LABELS = ['البنك الأهلي', 'بنك الإنماء'];
+
+        function loadScriptOnce(src) {
+            return new Promise((resolve, reject) => {
+                if (document.querySelector(`script[src="${src}"]`)) return resolve();
+                const sc = document.createElement('script'); sc.src = src; sc.onload = resolve; sc.onerror = reject; document.head.appendChild(sc);
+            });
+        }
+
+        window.downloadBankTemplate = async function() {
+            const cats = (window.bankCategoriesArr || []).slice();
+            const instructions = [
+                ['تعليمات تعبئة قالب حركة البنك'],
+                [''],
+                ['التاريخ', 'تاريخ الحركة بصيغة تاريخ إكسيل، أو مكتوب مثل 2026-11-01 أو 01/11/2026 (يوم/شهر/سنة).'],
+                ['نوع الحركة', 'وارد = إيداع أو تحصيل، صادر = سحب أو سداد، تحويل = تحويل بين البنكين.'],
+                ['البنك', 'البنك الأهلي أو بنك الإنماء. في التحويل اكتب البنك اللي خرج منه المبلغ، والنظام يضيفه للبنك التاني.'],
+                ['المبلغ', 'رقم موجب بدون إشارة سالب. ينفع يكون فيه كسور.'],
+                ['البيان', 'وصف الحركة (اختياري).'],
+                ['التصنيف', 'اختر من القائمة أو اكتب تصنيفًا جديدًا. التصنيفات الجديدة تتضاف لقائمة النظام تلقائيًا عند الرفع (اختياري).'],
+                [''],
+                ['ملاحظات', 'الصفوف الفاضية بيتم تجاهلها. قبل الحفظ بتظهر لك شاشة مراجعة فيها الأخطاء والحركات المكررة.'],
+                ['', 'الحركة المكررة = نفس التاريخ والنوع والبنك والمبلغ والبيان لحركة مسجلة بالفعل، وبتتخطى إلا لو اخترت ترفعها.'],
+                [''],
+                ['مثال', '2026-11-01 | وارد | البنك الأهلي | 15000 | تحصيل من عميل | تحصيل عملاء'],
+                ['مثال', '2026-11-01 | تحويل | بنك الإنماء | 50000 | تغطية رواتب | '],
+            ];
+            try {
+                await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js');
+                const wb = new ExcelJS.Workbook();
+                const ws = wb.addWorksheet('حركة البنك', { views: [{ rightToLeft: true, state: 'frozen', ySplit: 1 }] });
+                ws.columns = [
+                    { header: BT_HEADERS[0], key: 'd', width: 14, style: { numFmt: 'yyyy-mm-dd' } },
+                    { header: BT_HEADERS[1], key: 't', width: 12 },
+                    { header: BT_HEADERS[2], key: 'b', width: 16 },
+                    { header: BT_HEADERS[3], key: 'a', width: 14, style: { numFmt: '#,##0.00' } },
+                    { header: BT_HEADERS[4], key: 'desc', width: 40 },
+                    { header: BT_HEADERS[5], key: 'c', width: 20 },
+                ];
+                const hr = ws.getRow(1);
+                hr.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                hr.alignment = { horizontal: 'center', vertical: 'middle' };
+                hr.height = 22;
+                hr.eachCell(cell => { cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } }; });
+
+                const lists = wb.addWorksheet('القوائم', { views: [{ rightToLeft: true }] });
+                lists.getCell('A1').value = 'نوع الحركة'; lists.getCell('B1').value = 'البنك'; lists.getCell('C1').value = 'التصنيف';
+                ['A1', 'B1', 'C1'].forEach(a => lists.getCell(a).font = { bold: true });
+                BT_TYPE_LABELS.forEach((v, i) => lists.getCell(i + 2, 1).value = v);
+                BT_BANK_LABELS.forEach((v, i) => lists.getCell(i + 2, 2).value = v);
+                cats.forEach((v, i) => lists.getCell(i + 2, 3).value = v);
+                lists.getColumn(1).width = 14; lists.getColumn(2).width = 16; lists.getColumn(3).width = 24;
+
+                const N = 1000;
+                for (let r = 2; r <= N + 1; r++) {
+                    ws.getCell(r, 1).dataValidation = { type: 'date', operator: 'greaterThan', allowBlank: true, formulae: [new Date(2000, 0, 1)], showErrorMessage: true, errorStyle: 'stop', errorTitle: 'تاريخ غير صحيح', error: 'أدخل تاريخًا صحيحًا مثل 2026-11-01' };
+                    ws.getCell(r, 2).dataValidation = { type: 'list', allowBlank: true, formulae: [`'القوائم'!$A$2:$A$${BT_TYPE_LABELS.length + 1}`], showErrorMessage: true, errorStyle: 'stop', errorTitle: 'نوع غير صحيح', error: 'اختر: وارد أو صادر أو تحويل' };
+                    ws.getCell(r, 3).dataValidation = { type: 'list', allowBlank: true, formulae: [`'القوائم'!$B$2:$B$${BT_BANK_LABELS.length + 1}`], showErrorMessage: true, errorStyle: 'stop', errorTitle: 'بنك غير صحيح', error: 'اختر: البنك الأهلي أو بنك الإنماء' };
+                    ws.getCell(r, 4).dataValidation = { type: 'decimal', operator: 'greaterThan', allowBlank: true, formulae: [0], showErrorMessage: true, errorStyle: 'stop', errorTitle: 'مبلغ غير صحيح', error: 'أدخل رقمًا أكبر من صفر' };
+                    // التصنيف: قائمة مع السماح بكتابة تصنيف جديد (تحذير فقط)
+                    ws.getCell(r, 6).dataValidation = { type: 'list', allowBlank: true, formulae: [`'القوائم'!$C$2:$C$${Math.max(cats.length + 1, 2)}`], showErrorMessage: true, errorStyle: 'information', errorTitle: 'تصنيف جديد', error: 'التصنيف ده مش في القائمة، وهيتضاف للنظام عند الرفع.' };
+                }
+
+                const ins = wb.addWorksheet('تعليمات', { views: [{ rightToLeft: true }] });
+                instructions.forEach(r => ins.addRow(r));
+                ins.getCell('A1').font = { bold: true, size: 14 };
+                ins.getColumn(1).width = 14; ins.getColumn(2).width = 110;
+                ins.getColumn(1).font = { bold: true };
+
+                const buf = await wb.xlsx.writeBuffer();
+                const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'قالب_حركة_البنك.xlsx';
+                document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+            } catch (e) {
+                // بديل بدون قوائم منسدلة لو تعذر تحميل المكتبة
+                console.warn('ExcelJS unavailable, fallback to SheetJS', e);
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet([BT_HEADERS]);
+                ws['!cols'] = [{ wch: 14 }, { wch: 12 }, { wch: 16 }, { wch: 14 }, { wch: 40 }, { wch: 20 }];
+                XLSX.utils.book_append_sheet(wb, ws, 'حركة البنك');
+                const maxLen = Math.max(BT_TYPE_LABELS.length, BT_BANK_LABELS.length, cats.length);
+                const listRows = [['نوع الحركة', 'البنك', 'التصنيف']];
+                for (let i = 0; i < maxLen; i++) listRows.push([BT_TYPE_LABELS[i] || '', BT_BANK_LABELS[i] || '', cats[i] || '']);
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(listRows), 'القوائم');
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(instructions), 'تعليمات');
+                XLSX.writeFile(wb, 'قالب_حركة_البنك.xlsx');
+            }
+        }
+
+        // ---------- قراءة ملف الإكسيل ----------
+        function btParseDate(v) {
+            if (v == null || v === '') return null;
+            const pad = n => String(n).padStart(2, '0');
+            const ok = (y, m, d) => { const dt = new Date(Date.UTC(y, m - 1, d)); return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d && y >= 2000 && y <= 2100 ? `${y}-${pad(m)}-${pad(d)}` : null; };
+            if (typeof v === 'number') {
+                const pc = XLSX.SSF.parse_date_code(v);
+                return pc ? ok(pc.y, pc.m, pc.d) : null;
+            }
+            if (v instanceof Date && !isNaN(v)) return ok(v.getFullYear(), v.getMonth() + 1, v.getDate());
+            let s = String(v).trim().replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+            let m = s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);
+            if (m) return ok(+m[1], +m[2], +m[3]);
+            m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})/);
+            if (m) return ok(+m[3], +m[2], +m[1]); // يوم/شهر/سنة
+            return null;
+        }
+        function btParseType(v) {
+            const s = String(v || '').trim().toLowerCase().replace(/[أإآ]/g, 'ا');
+            if (!s) return null;
+            if (s.includes('تحويل') || s === 'transfer') return 'transfer';
+            if (s.includes('وارد') || s.includes('ايداع') || s.includes('تحصيل') || s === 'in') return 'in';
+            if (s.includes('صادر') || s.includes('سحب') || s.includes('سداد') || s.includes('صرف') || s === 'out') return 'out';
+            return null;
+        }
+        function btParseBank(v) {
+            const s = String(v || '').trim().toLowerCase().replace(/[أإآ]/g, 'ا');
+            if (!s) return null;
+            if (s.includes('اهلي') || s.includes('alahli') || s.includes('ahli') || s === 'snb') return 'alahli';
+            if (s.includes('انماء') || s.includes('alinma') || s.includes('inma')) return 'alinma';
+            return null;
+        }
+        function btParseAmount(v) {
+            if (typeof v === 'number') return v;
+            const s = String(v == null ? '' : v).trim().replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/٫/g, '.').replace(/[,،\s﷼]/g, '').replace(/ر\.?س/g, '');
+            if (!s) return NaN;
+            return Number(s);
+        }
+        function btDupKey(t) { return [t.date, t.type, t.bank, Math.round((Number(t.amount) || 0) * 100), bcNorm(t.description)].join('|'); }
+
+        let bankImportRows = [];
+
+        window.handleBankExcelUpload = function(event) {
+            const file = event.target.files[0];
+            event.target.value = '';
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                    const sheetName = wb.SheetNames.find(n => n.trim() === 'حركة البنك') || wb.SheetNames[0];
+                    const aoa = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, raw: true, defval: '' });
+                    // البحث عن صف العناوين
+                    const norm = x => String(x || '').trim().replace(/[أإآ]/g, 'ا');
+                    const want = { date: 'التاريخ', type: 'نوع الحركة', bank: 'البنك', amount: 'المبلغ', desc: 'البيان', cat: 'التصنيف' };
+                    let hIdx = -1, col = {};
+                    for (let i = 0; i < Math.min(aoa.length, 15); i++) {
+                        const row = aoa[i].map(norm);
+                        const find = (label, alts = []) => row.findIndex(c => c === norm(label) || alts.some(a => c.includes(norm(a))));
+                        const c = { date: find(want.date, ['تاريخ']), type: find(want.type, ['النوع', 'نوع']), bank: find(want.bank, ['بنك']), amount: find(want.amount, ['مبلغ', 'القيمة']), desc: find(want.desc, ['الوصف', 'بيان']), cat: find(want.cat, ['تصنيف']) };
+                        if (c.date >= 0 && c.type >= 0 && c.bank >= 0 && c.amount >= 0) { hIdx = i; col = c; break; }
+                    }
+                    if (hIdx < 0) return alert('ما لقيتش عناوين الأعمدة في الملف. استخدم "تحميل قالب إكسيل" واملأ الشيت "حركة البنك".');
+
+                    const existing = new Set((window.bankTransactionsArr || []).map(btDupKey));
+                    const inFile = new Set();
+                    const cats = window.bankCategoriesArr || [];
+                    const bo = window.bankOpeningObj;
+                    bankImportRows = [];
+                    for (let i = hIdx + 1; i < aoa.length; i++) {
+                        const r = aoa[i];
+                        const get_ = k => col[k] >= 0 ? r[col[k]] : '';
+                        if (['date', 'type', 'bank', 'amount', 'desc', 'cat'].every(k => String(get_(k) ?? '').trim() === '')) continue;
+                        const errors = [];
+                        const date = btParseDate(get_('date')); if (!date) errors.push('تاريخ غير صحيح');
+                        const type = btParseType(get_('type')); if (!type) errors.push('نوع الحركة غير معروف');
+                        const bank = btParseBank(get_('bank')); if (!bank) errors.push('البنك غير معروف');
+                        const amount = btParseAmount(get_('amount')); if (!(amount > 0)) errors.push('المبلغ لازم يكون رقم أكبر من صفر');
+                        const description = bcNorm(get_('desc'));
+                        const category = bcNorm(get_('cat'));
+                        const row = { excelRow: i + 1, date, type, bank, amount: amount > 0 ? Math.round(amount * 100) / 100 : amount, description, category, errors, warnings: [], status: 'ok' };
+                        if (errors.length) row.status = 'error';
+                        else {
+                            const k = btDupKey(row);
+                            if (existing.has(k)) { row.status = 'dup'; row.warnings.push('مسجلة بالفعل في النظام'); }
+                            else if (inFile.has(k)) { row.warnings.push('مكررة داخل الملف'); }
+                            inFile.add(k);
+                            if (bo && bo.date && date < bo.date) row.warnings.push('قبل تاريخ الرصيد الافتتاحي');
+                            if (category && !cats.includes(category)) row.newCat = true;
+                        }
+                        bankImportRows.push(row);
+                    }
+                    if (!bankImportRows.length) return alert('الملف مفيهوش حركات.');
+                    window.btRenderImportPreview();
+                    document.getElementById('bank-import-modal').classList.remove('hidden');
+                } catch (err) { console.error(err); alert('تعذر قراءة الملف: ' + err); }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function btImportSelected() {
+            const incDup = document.getElementById('bt-imp-dups')?.checked;
+            return bankImportRows.filter(r => r.status === 'ok' || (r.status === 'dup' && incDup));
+        }
+
+        window.btRenderImportPreview = function() {
+            const rows = bankImportRows;
+            const incDup = document.getElementById('bt-imp-dups')?.checked || false;
+            const ok = rows.filter(r => r.status === 'ok'), err = rows.filter(r => r.status === 'error'), dup = rows.filter(r => r.status === 'dup');
+            const sel = rows.filter(r => r.status === 'ok' || (r.status === 'dup' && incDup));
+            const newCats = [...new Set(sel.filter(r => r.newCat).map(r => r.category))];
+            const tot = { alahli: { in: 0, out: 0 }, alinma: { in: 0, out: 0 } }; let trans = 0;
+            sel.forEach(r => { if (r.type === 'transfer') trans += r.amount; else tot[r.bank][r.type] += r.amount; });
+            const dates = sel.map(r => r.date).sort();
+            const card = (label, val, cls) => `<div class="p-3 rounded-lg border ${cls}"><div class="text-xs">${label}</div><div class="text-xl font-bold">${val}</div></div>`;
+            let html = `<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                ${card('هتترفع', sel.length, 'border-emerald-200 bg-emerald-50 text-emerald-800')}
+                ${card('فيها أخطاء (مش هتترفع)', err.length, err.length ? 'border-red-200 bg-red-50 text-red-700' : 'border-slate-200 text-slate-600')}
+                ${card('مسجلة قبل كده', dup.length, dup.length ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-slate-200 text-slate-600')}
+                ${card('تصنيفات جديدة', newCats.length, 'border-indigo-200 bg-indigo-50 text-indigo-800')}
+            </div>`;
+            if (sel.length) {
+                html += `<div class="text-sm text-slate-600 mb-3 leading-7">الفترة: <b>${dates[0]}</b> إلى <b>${dates[dates.length - 1]}</b> —
+                    الأهلي: وارد <b class="text-emerald-700">${bmMoney(tot.alahli.in)}</b> / صادر <b class="text-red-600">${bmMoney(tot.alahli.out)}</b> —
+                    الإنماء: وارد <b class="text-emerald-700">${bmMoney(tot.alinma.in)}</b> / صادر <b class="text-red-600">${bmMoney(tot.alinma.out)}</b>
+                    ${trans ? ` — تحويلات بين البنكين <b class="text-indigo-700">${bmMoney(trans)}</b>` : ''}</div>`;
+            }
+            if (newCats.length) html += `<div class="text-sm bg-indigo-50 text-indigo-800 rounded-lg p-2 mb-3"><i class="fa-solid fa-tags ml-1"></i> التصنيفات دي هتتضاف للقائمة: ${newCats.map(bmEsc).join('، ')}</div>`;
+            if (dup.length) html += `<label class="flex items-center gap-2 text-sm mb-3 cursor-pointer"><input type="checkbox" id="bt-imp-dups" ${incDup ? 'checked' : ''} onchange="btRenderImportPreview()"> ارفع الحركات المسجلة قبل كده برضه (${dup.length})</label>`;
+            const badge = r => r.status === 'error' ? '<span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">خطأ</span>'
+                : r.status === 'dup' ? `<span class="text-xs ${incDup ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'} px-2 py-0.5 rounded-full">${incDup ? 'هتترفع' : 'هتتخطى'}</span>`
+                : '<span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">تمام</span>';
+            html += `<div class="overflow-x-auto border border-slate-200 rounded-lg"><table class="w-full text-sm text-right"><thead class="bg-slate-50 text-slate-600"><tr>
+                <th class="p-2">صف</th><th class="p-2">الحالة</th><th class="p-2">التاريخ</th><th class="p-2">النوع</th><th class="p-2">البنك</th><th class="p-2">المبلغ</th><th class="p-2">البيان</th><th class="p-2">التصنيف</th><th class="p-2">ملاحظات</th></tr></thead><tbody class="divide-y divide-slate-100">`;
+            const order = { error: 0, dup: 1, ok: 2 };
+            rows.slice().sort((a, b) => order[a.status] - order[b.status] || a.excelRow - b.excelRow).forEach(r => {
+                const notes = r.errors.concat(r.warnings).map(bmEsc).join('، ');
+                html += `<tr class="${r.status === 'error' ? 'bg-red-50/50' : ''}"><td class="p-2 text-slate-400">${r.excelRow}</td><td class="p-2">${badge(r)}</td>
+                    <td class="p-2 whitespace-nowrap">${r.date || '—'}</td><td class="p-2">${r.type ? bmTypeBadge(r) : '—'}</td><td class="p-2 whitespace-nowrap">${r.bank ? bmBankText(r) : '—'}</td>
+                    <td class="p-2 font-medium whitespace-nowrap">${r.amount > 0 ? bmMoney(r.amount) : '—'}</td><td class="p-2">${bmEsc(r.description)}</td>
+                    <td class="p-2">${bmEsc(r.category)}${r.newCat ? ' <span class="text-xs text-indigo-600">(جديد)</span>' : ''}</td>
+                    <td class="p-2 text-xs ${r.status === 'error' ? 'text-red-600' : 'text-amber-700'}">${notes}</td></tr>`;
+            });
+            html += '</tbody></table></div>';
+            document.getElementById('bank-import-body').innerHTML = html;
+            const btn = document.getElementById('bank-import-confirm');
+            btn.disabled = sel.length === 0;
+            btn.innerHTML = `<i class="fa-solid fa-check ml-1"></i> رفع ${sel.length} حركة`;
+        }
+
+        window.closeBankImportModal = function() {
+            document.getElementById('bank-import-modal').classList.add('hidden');
+            bankImportRows = [];
+        }
+
+        window.confirmBankImport = async function() {
+            const sel = btImportSelected();
+            if (!sel.length) return;
+            if (!window.bankOpeningObj || !window.bankOpeningObj.date) {
+                if (!confirm('لم يتم إدخال الرصيد الافتتاحي للبنوك بعد، ولن تظهر الأرصدة قبل إدخاله. هل تريد رفع الحركات على أي حال؟')) return;
+            }
+            if (!confirm(`هيتم رفع ${sel.length} حركة للنظام. متأكد؟`)) return;
+            const btn = document.getElementById('bank-import-confirm');
+            btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin ml-1"></i> جاري الرفع...';
+            try {
+                const base = Date.now();
+                const updates = {};
+                const user = window.currentUserName || '';
+                sel.slice().sort((a, b) => a.date.localeCompare(b.date) || a.excelRow - b.excelRow).forEach((r, i) => {
+                    const id = push(ref(db, 'bankTransactions')).key;
+                    updates[`/bankTransactions/${id}`] = {
+                        id, date: r.date, type: r.type, bank: r.bank, amount: r.amount, description: r.description, category: r.category,
+                        createdAt: new Date(base + i).toISOString(), createdBy: user, updatedBy: user, source: 'excel'
+                    };
+                });
+                const newCats = [...new Set(sel.map(r => r.category).filter(c => c && !(window.bankCategoriesArr || []).includes(c)))];
+                if (newCats.length) updates['/bankCategories'] = [...new Set((window.bankCategoriesArr || []).concat(newCats))];
+                await update(ref(db), updates);
+                const last = sel.map(r => r.date).sort().pop();
+                window.closeBankImportModal();
+                document.getElementById('br-date').value = last;
+                renderBankReport();
+                alert(`تم رفع ${sel.length} حركة بنجاح${newCats.length ? ` وإضافة ${newCats.length} تصنيف جديد` : ''}.`);
+            } catch (e) {
+                console.error(e);
+                alert('حدث خطأ أثناء الرفع، ولم يتم حفظ أي حركة: ' + e);
+                window.btRenderImportPreview();
+            }
         }
 
         window.renderBankReport = function() {
@@ -4135,7 +4565,7 @@
         // =========================================
         // ===        8. النسخ الاحتياطي         ===
         // =========================================
-        const BACKUP_KEYS = ['dailyStatements', 'monthlyItems', 'monthlyArchive', 'users', 'manualMonthlySales', 'bankTransactions', 'bankOpening'];
+        const BACKUP_KEYS = ['dailyStatements', 'monthlyItems', 'monthlyArchive', 'users', 'manualMonthlySales', 'bankTransactions', 'bankOpening', 'bankCategories'];
 
         // ينشئ نص تاريخ ووقت مناسب لاستخدامه في اسم ملف النسخة الاحتياطية (مثال: 2026-08-12_14-35-02)
         function getBackupTimestamp() {
