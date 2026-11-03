@@ -398,6 +398,7 @@
                                 <select id="ba-cat" class="p-2 border rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"><option value="all">الكل</option></select>
                             </div>
                             <button onclick="calcBankAnalysis()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg h-10 font-medium transition-colors"><i class="fa-solid fa-magnifying-glass ml-1"></i> عرض التقرير</button>
+                            <label id="ba-pdf-opt" class="hidden items-center gap-2 text-sm text-slate-600 cursor-pointer h-10"><input type="checkbox" id="ba-pdf-details" checked> تضمين الحركات التفصيلية في PDF</label>
                             <button id="ba-pdf-btn" onclick="exportBankAnalysisPDF()" class="hidden bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg h-10 font-medium transition-colors items-center gap-2"><i class="fa-solid fa-file-pdf"></i> تصدير PDF</button>
                         </div>
                     </div>
@@ -4829,6 +4830,7 @@
                 : d.txs.map(t => `<tr class="hover:bg-slate-50"><td class="p-3">${bmEsc(t.date)}</td><td class="p-3">${bmTypeBadge(t)}</td><td class="p-3">${BANK_NAMES[t.bank]}</td><td class="p-3 font-bold ${t.type === 'in' ? 'text-emerald-600' : 'text-red-600'}">${bmMoney(t.amount)} <span class="currency">﷼</span></td><td class="p-3">${bmEsc(t.description) || '<span class="text-slate-300">—</span>'}</td><td class="p-3 text-slate-500">${bmEsc(t.category) || '<span class="text-slate-300">—</span>'}</td><td class="p-3 text-slate-500">${FLOW_NAMES[t.flowType] || '<span class="text-slate-300">—</span>'}</td></tr>`).join('');
             const pdfBtn = document.getElementById('ba-pdf-btn');
             pdfBtn.classList.remove('hidden'); pdfBtn.classList.add('flex');
+            const pdfOpt = document.getElementById('ba-pdf-opt'); pdfOpt.classList.remove('hidden'); pdfOpt.classList.add('flex');
         }
 
         window.exportBankAnalysisPDF = async function() {
@@ -4841,6 +4843,7 @@
             const num = (v, color, extra) => `<span style="font-family:Arial,Helvetica,sans-serif;white-space:nowrap;${color ? 'color:' + color + ';' : ''}${extra || ''}">${bmMoney(v)}</span>`;
             const netSpan = (v) => `<span style="font-family:Arial,Helvetica,sans-serif;white-space:nowrap;direction:ltr;display:inline-block;font-weight:800;color:${v > 0 ? '#059669' : v < 0 ? '#b91c1c' : '#475569'};">${v > 0 ? '+' : ''}${bmMoney(v)}</span>`;
             const chartImage = baChartInstance ? baChartInstance.toBase64Image('image/png', 1) : '';
+            const withDetails = document.getElementById('ba-pdf-details').checked;
 
             let groupRows = d.rows.map(r => `<tr><td style="${td}text-align:right;font-weight:700;">${bmEsc(r.key)}</td><td style="${td}">${num(r.inn, '#059669')}</td><td style="${td}">${num(r.out, '#b91c1c')}</td><td style="${td}">${netSpan(r.net)}</td><td style="${td}color:#64748b;">${r.count}</td></tr>`).join('');
             if (!groupRows) groupRows = `<tr><td colspan="5" style="${td}color:#94a3b8;">لا توجد حركات مطابقة</td></tr>`;
@@ -4880,8 +4883,10 @@
             html += `<div style="margin-bottom:20px;"><h4 style="font-size:14px;font-weight:700;color:#334155;margin:0 0 12px;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">الملخص حسب ${groupLabel} (﷼)</h4>`;
             html += `<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f1f5f9;"><th style="${th}text-align:right;">${groupLabel}</th><th style="${th}">الوارد</th><th style="${th}">الصادر</th><th style="${th}">الصافي</th><th style="${th}">عدد الحركات</th></tr></thead><tbody>${groupRows}</tbody></table></div>`;
 
+            if (withDetails) {
             html += `<div style="margin-bottom:20px;"><h4 style="font-size:14px;font-weight:700;color:#334155;margin:0 0 12px;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">الحركات التفصيلية</h4>`;
             html += `<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f1f5f9;"><th style="${th}">التاريخ</th><th style="${th}">النوع</th><th style="${th}">البنك</th><th style="${th}">المبلغ</th><th style="${th}text-align:right;">البيان</th><th style="${th}">التصنيف</th><th style="${th}">نوع التدفق</th></tr></thead><tbody>${detailRows}</tbody></table></div>`;
+            }
 
             html += `<div style="margin-top:48px;padding-top:24px;border-top:2px solid #e2e8f0;text-align:center;">`;
             html += `<p style="font-size:12px;color:#64748b;margin:0 0 40px;">المدير المالى</p>`;
