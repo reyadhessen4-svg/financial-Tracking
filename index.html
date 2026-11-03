@@ -321,6 +321,16 @@
                         </div>
                     </div>
 
+                    <!-- رفع حركات البنك من إكسيل -->
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6 editor-only-section">
+                        <h2 class="text-md font-bold mb-1 flex items-center gap-2"><i class="fa-solid fa-file-excel text-emerald-600"></i> رفع حركات البنك من ملف إكسيل</h2>
+                        <p class="text-xs text-slate-500 mb-4">عندك حركات كثيرة (كشف حساب أو أيام سابقة)؟ نزّل القالب، عبّيه، وارفعه دفعة واحدة. الحركات المكررة (نفس التاريخ والنوع والبنك والمبلغ والبيان) يتم تجاهلها تلقائيًا.</p>
+                        <div class="flex flex-wrap gap-3">
+                            <button onclick="downloadBankTemplate()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium"><i class="fa-solid fa-download ml-2"></i> تنزيل قالب إكسيل</button>
+                            <label class="border border-emerald-600 text-emerald-700 hover:bg-emerald-50 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer"><i class="fa-solid fa-upload ml-2"></i> رفع ملف إكسيل<input type="file" id="bt-excel-upload" accept=".xlsx, .xls" class="hidden" onchange="handleBankExcelUpload(event)"></label>
+                        </div>
+                    </div>
+
                     <!-- التقرير اليومي -->
                     <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
                         <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-building-columns text-indigo-600"></i> التقرير اليومي لحركة البنك</h2>
@@ -4180,6 +4190,123 @@
             workspace.style.display = 'none';
             workspace.innerHTML = '';
             loadingEl.style.display = 'none';
+        }
+
+        // =========================================
+        // ===   قالب ورفع حركات البنك من إكسيل     ===
+        // =========================================
+        window.downloadBankTemplate = function() {
+            const headers = ['التاريخ', 'النوع', 'البنك', 'المبلغ', 'البيان', 'التصنيف', 'نوع التدفق'];
+            const example = [
+                ['2026-11-01', 'وارد', 'البنك الأهلي', 1500, 'تحصيل من عميل', 'تحصيل عملاء', 'تشغيلي'],
+                ['2026-11-01', 'صادر', 'بنك الإنماء', 800, 'سداد مورد', 'موردين', 'تشغيلي'],
+                ['2026-11-02', 'تحويل', 'البنك الأهلي', 5000, 'تحويل إلى الإنماء', '', '']
+            ];
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...example]);
+            ws['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 16 }, { wch: 12 }, { wch: 30 }, { wch: 18 }, { wch: 14 }];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'حركة البنك');
+            const ins = [
+                ['تعليمات تعبئة قالب حركة البنك'],
+                [''],
+                ['1) التاريخ: بصيغة سنة-شهر-يوم مثل 2026-11-01 (أو تاريخ إكسيل عادي).'],
+                ['2) النوع: اكتب إحدى الكلمات: وارد / صادر / تحويل.'],
+                ['3) البنك: البنك الأهلي أو بنك الإنماء. وفي التحويل اكتب البنك الذي خرج منه المبلغ، وسيدخل تلقائيًا في البنك الآخر.'],
+                ['4) المبلغ: رقم موجب فقط بدون رموز.'],
+                ['5) البيان والتصنيف: اختياريان.'],
+                ['6) نوع التدفق: تشغيلي / استثماري / تمويلي، أو اتركه فارغًا (غير مصنف). لا ينطبق على التحويل.'],
+                ['7) احذف صفوف الأمثلة (الثلاثة الأولى) قبل التعبئة، ولا تغيّر أسماء الأعمدة في الصف الأول.'],
+                ['8) ارفع الملف من نفس مكان تنزيل القالب في صفحة "حركة البنك". الحركات المكررة يتم تجاهلها.']
+            ];
+            const wsI = XLSX.utils.aoa_to_sheet(ins);
+            wsI['!cols'] = [{ wch: 100 }];
+            XLSX.utils.book_append_sheet(wb, wsI, 'تعليمات');
+            XLSX.writeFile(wb, 'قالب_حركة_البنك.xlsx');
+        }
+
+        function bmParseExcelDate(v) {
+            if (v instanceof Date && !isNaN(v)) {
+                return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}-${String(v.getDate()).padStart(2, '0')}`;
+            }
+            if (typeof v === 'number') {
+                const d = XLSX.SSF.parse_date_code(v);
+                if (d) return `${d.y}-${String(d.m).padStart(2, '0')}-${String(d.d).padStart(2, '0')}`;
+            }
+            const str = normalizeDate(String(v == null ? '' : v).trim());
+            const m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+            if (!m) return '';
+            const mo = +m[2], da = +m[3];
+            if (mo < 1 || mo > 12 || da < 1 || da > 31) return '';
+            return `${m[1]}-${String(mo).padStart(2, '0')}-${String(da).padStart(2, '0')}`;
+        }
+
+        window.handleBankExcelUpload = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: true });
+                    const sheetName = wb.SheetNames.includes('حركة البنك') ? 'حركة البنك' : wb.SheetNames[0];
+                    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { raw: true, defval: '' });
+
+                    const typeMap = { 'وارد': 'in', 'in': 'in', 'صادر': 'out', 'out': 'out', 'تحويل': 'transfer', 'تحويل بين البنكين': 'transfer', 'transfer': 'transfer' };
+                    const bankMap = { 'البنك الأهلي': 'alahli', 'الأهلي': 'alahli', 'الاهلي': 'alahli', 'البنك الاهلي': 'alahli', 'alahli': 'alahli', 'بنك الإنماء': 'alinma', 'بنك الانماء': 'alinma', 'الإنماء': 'alinma', 'الانماء': 'alinma', 'alinma': 'alinma' };
+                    const flowMap = { 'تشغيلي': 'operating', 'استثماري': 'investing', 'تمويلي': 'financing' };
+                    const sig = (t) => [t.date, t.type, t.bank, Number(t.amount), String(t.description || '').trim()].join('|');
+                    const existing = new Set(window.bankTransactionsArr.map(sig));
+
+                    const updates = {};
+                    let added = 0, dup = 0, bad = 0, sumIn = 0, sumOut = 0, sumTr = 0, beforeOpening = 0;
+                    const badRows = [];
+                    const opDate = window.bankOpeningObj && window.bankOpeningObj.date;
+                    const stamp = new Date().toISOString();
+
+                    rows.forEach((row, idx) => {
+                        const rawDate = row['التاريخ'];
+                        if ((rawDate === '' || rawDate == null) && !row['المبلغ'] && !row['النوع']) return; // صف فارغ
+                        const date = bmParseExcelDate(rawDate);
+                        const type = typeMap[String(row['النوع']).trim()];
+                        const bank = bankMap[String(row['البنك']).trim()];
+                        const amount = parseFloat(String(row['المبلغ']).replace(/,/g, ''));
+                        if (!date || !type || !bank || isNaN(amount) || amount <= 0) { bad++; if (badRows.length < 5) badRows.push(idx + 2); return; }
+                        const tx = {
+                            date, type, bank, amount,
+                            description: String(row['البيان'] || '').trim(),
+                            category: String(row['التصنيف'] || '').trim(),
+                            flowType: type === 'transfer' ? '' : (flowMap[String(row['نوع التدفق'] || '').trim()] || ''),
+                        };
+                        const k = sig(tx);
+                        if (existing.has(k)) { dup++; return; }
+                        existing.add(k);
+                        const id = push(ref(db, 'bankTransactions')).key;
+                        updates['/bankTransactions/' + id] = { id, ...tx, createdAt: stamp, createdBy: window.currentUserName || '', updatedBy: window.currentUserName || '' };
+                        added++;
+                        if (type === 'in') sumIn += amount; else if (type === 'out') sumOut += amount; else sumTr += amount;
+                        if (opDate && date < opDate) beforeOpening++;
+                    });
+
+                    if (added === 0) {
+                        alert(`لا توجد حركات جديدة للرفع.${dup ? `\nتم تجاهل ${dup} حركة مكررة.` : ''}${bad ? `\nصفوف غير صالحة: ${bad} (مثل الصفوف ${badRows.join('، ')})` : ''}\n\nتأكد من أسماء الأعمدة وقيم النوع (وارد/صادر/تحويل) والبنك.`);
+                        event.target.value = '';
+                        return;
+                    }
+                    let msg = `سيتم رفع ${added} حركة:\n• إجمالي الوارد: ${bmMoney(sumIn)}\n• إجمالي الصادر: ${bmMoney(sumOut)}\n• تحويلات بين البنكين: ${bmMoney(sumTr)}`;
+                    if (dup) msg += `\n\nتم تجاهل ${dup} حركة مكررة موجودة مسبقًا.`;
+                    if (bad) msg += `\nتم تجاهل ${bad} صف غير صالح (مثل الصفوف ${badRows.join('، ')}).`;
+                    if (!opDate) msg += `\n\nتنبيه: لم تُدخل الرصيد الافتتاحي بعد، ولن تظهر الأرصدة قبل إدخاله.`;
+                    else if (beforeOpening) msg += `\n\nتنبيه: ${beforeOpening} حركة تاريخها قبل تاريخ الرصيد الافتتاحي (${opDate}) ولن تدخل في حساب الأرصدة.`;
+                    msg += '\n\nهل تريد المتابعة؟';
+                    if (!confirm(msg)) { event.target.value = ''; return; }
+
+                    update(ref(db), updates).then(() => alert(`تم رفع ${added} حركة بنجاح!`)).catch(err => alert('حدث خطأ أثناء الرفع: ' + err));
+                } catch (err) {
+                    console.error(err);
+                    alert('حدث خطأ أثناء قراءة الملف. تأكد أنه ملف إكسيل مبني على نفس القالب.');
+                }
+                event.target.value = '';
+            };
+            reader.readAsArrayBuffer(file);
         }
 
         // =========================================
